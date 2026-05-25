@@ -103,31 +103,35 @@ def buscar_tendencias_reales_api(prod_info):
     return palabras_clave
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
+    # Prompt ultra optimizado con ejemplos negativos y positivos para frenar los hashtags robóticos
     prompt = f"""
-    Eres un redactor experto en Instagram e Instagram Growth.
+    Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
     Marca: {prod_info['nombre']}
     Producto: {prod_info['detalle_producto']}
-    Precio actual: {precio}
-    Términos más calientes de hoy en internet: {', '.join(tendencias_reales)}
+    Precio actual de oferta: {precio}
+    Términos calientes detectados hoy en la red: {', '.join(tendencias_reales)}
     
-    Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente este orden y reglas:
+    Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas dos reglas obligatorias:
     
-    1. Escribe un CAPTION (máximo 130 palabras) persuasivo y vendedor. Debes incluir de forma clara y atractiva el precio de {precio}. Usa emojis y cierra con un llamado a la acción directo al DM.
+    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos y un llamado a la acción claro invitando a comprar al DM.
     
-    2. Al final, agrega exactamente SOLO 5 HASHTAGS VIRALES basados en los términos calientes de hoy. Ni uno más, ni uno menos.
+    2. 5 HASHTAGS VIRALES (REGLA CRÍTICA): Agrega al final del post exactamente SOLO 5 hashtags separados por un espacio. Tienen que ser etiquetas reales, cortas y orgánicas que la gente de verdad use y busque en Instagram. No te limites a poner un '#' antes de los términos calientes que te pasé. Transfórmalos en conceptos de nicho reales.
     
-    Formato de salida esperado:
+    Ejemplo de lo que NO debes hacer (Prohibido): #MicrosoftOfficeExcelCertification #MicrosoftOfficeExcelDownload #MicrosoftOfficeExcelOnline
+    Ejemplo de lo que SÍ debes hacer (Permitido): #excel #productividad #teletrabajo #aurakey #chile
+    
+    Formato estricto de salida:
     [Aquí va el texto de tu caption con emojis...]
     
     #Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5
     
-    No respondas con introducciones, ni digas "Aquí tienes tu post", ve directo al contenido.
+    Ve directo al contenido del post. No metas notas del sistema, saludos ni introducciones.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=400,
-        temperature=0.75
+        temperature=0.7
     )
     return response.choices[0].message.content
 
@@ -238,4 +242,5 @@ if __name__ == '__main__':
     hilo_scheduler.start()
 
     puerto = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=puerto, debug=False)
+    # Corregido: Usamos socketio.run para que no se caiga la transmisión de logs en vivo hacia la web
+    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
