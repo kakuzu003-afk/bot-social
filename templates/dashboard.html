@@ -128,6 +128,7 @@
         <div class="controls">
             <button class="btn btn-success" onclick="ejecutarCiclo()">▶ Ejecutar ciclo ahora</button>
             <button class="btn btn-danger btn-sm" onclick="limpiarLogs()">🗑 Limpiar logs</button>
+            <button class="btn btn-sm" style="background: #2a2a3e; color: #aaa;" onclick="limpiarTodosLosCaptions()">🧼 Limpiar todos los captions</button>
         </div>
 
         <div class="grid-2">
@@ -220,9 +221,12 @@
                     '<textarea rows="4" id="caption_' + i + '">' + c.caption + '</textarea>' +
                     '<div style="font-size:11px;color:#888;margin:8px 0 4px;">🎨 Prompt para imagen (Kling / Midjourney / DALL-E):</div>' +
                     '<textarea rows="3" id="prompt_' + i + '" style="border-color:#7c6aff33;">' + (c.prompt_imagen || 'No generado aún') + '</textarea>' +
-                    '<div class="caption-actions">' +
-                        '<button class="btn btn-primary btn-sm" onclick="copiarCaption(' + i + ')">📋 Copiar caption</button>' +
-                        '<button class="btn btn-sm" style="background:#7c6aff;color:#fff;" onclick="copiarPrompt(' + i + ')">🎨 Copiar prompt imagen</button>' +
+                    '<div class="caption-actions" style="display: flex; justify-content: space-between; align-items: center;">' +
+                        '<div style="display: flex; gap: 8px;">' +
+                            '<button class="btn btn-primary btn-sm" onclick="copiarCaption(' + i + ')">📋 Copiar caption</button>' +
+                            '<button class="btn btn-sm" style="background:#7c6aff;color:#fff;" onclick="copiarPrompt(' + i + ')">🎨 Copiar prompt imagen</button>' +
+                        '</div>' +
+                        '<button class="btn btn-danger btn-sm" style="padding: 6px 10px;" onclick="borrarCaption(' + i + ')">🗑️ Borrar</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -238,6 +242,22 @@
             const ta = document.getElementById('prompt_' + i);
             navigator.clipboard.writeText(ta.value);
             agregarLog('Prompt de imagen copiado ✅ Pégalo en Kling, Midjourney o DALL-E', 'success');
+        }
+
+        function borrarCaption(i) {
+            if (confirm('¿Seguro que quieres borrar este caption?')) {
+                captions.splice(i, 1);
+                renderCaptions();
+                agregarLog('Caption eliminado de la lista 🗑️', 'warning');
+            }
+        }
+
+        function limpiarTodosLosCaptions() {
+            if (confirm('¿Quieres limpiar TODOS los captions de la pantalla?')) {
+                captions = [];
+                renderCaptions();
+                agregarLog('Lista de captions vaciada por completo 🧼', 'warning');
+            }
         }
 
         function limpiarLogs() {
@@ -265,7 +285,6 @@
             .catch(err => agregarLog('Error al lanzar el ciclo', 'error'));
         }
 
-        // Corregido: Dibuja únicamente el nombre del cliente evitando errores por variables inexistentes
         fetch('/api/clientes')
             .then(r => r.json())
             .then(data => {
