@@ -30,19 +30,37 @@ stats_global = {}
 logs_global = []
 bot_activo = False
 
-# Mapeo interno para identificar qué producto se seleccionó en el Dashboard
 PRODUCTOS_INFO = {
-    "aurakey_software": {
+    "aurakey_autocad": {
         "nombre": "Aurakey",
-        "detalle_producto": "Licencias de Software Originales (AutoCAD, Adobe Creative Cloud, Windows, Office)",
-        "nicho": "licencias de software, AutoCAD, Adobe, tecnología y herramientas de productividad",
-        "hashtags": ["#software", "#autocad", "#adobe", "#tecnologia", "#diseño", "#aurakey", "#chile"],
-        "tono": "profesional, directo, confiable y vendedor"
+        "detalle_producto": "Licencia Original de AutoCAD (Ideal para arquitectos, ingenieros y diseñadores)",
+        "keyword_busqueda": "autocad architecture design engineering",
+        "nicho": "diseño e ingeniería, planos, arquitectura, software AutoCAD profesional",
+        "tono": "profesional, directo, de alto valor, confiable y vendedor"
+    },
+    "aurakey_adobe": {
+        "nombre": "Aurakey",
+        "detalle_producto": "Suscripción Original a Adobe Creative Cloud (Acceso a Photoshop, Illustrator, Premiere Pro, etc.)",
+        "keyword_busqueda": "adobe photoshop premiere video editing graphic design",
+        "nicho": "diseño gráfico, edición de video, fotografía, creadores de contenido, herramientas digitales de Adobe",
+        "tono": "creativo, enérgico, moderno, disruptivo y vendedor"
+    },
+    "aurakey_windows": {
+        "nombre": "Aurakey",
+        "detalle_producto": "Licencia Original de Windows 10 / Windows 11 Pro",
+        "keyword_busqueda": "windows 11 pro pc gaming computer optimization",
+        "nicho": "sistemas operativos, optimización de PC, seguridad informática, computación y rendimiento",
+        "tono": "técnico pero accesible, confiable, seguro y directo"
+    },
+    "aurakey_office": {
+        "nombre": "Aurakey",
+        "detalle_producto": "Licencia Original de Microsoft Office Professional Plus (Word, Excel, PowerPoint)",
+        "keyword_busqueda": "microsoft office excel productivity remote work",
+        "nicho": "herramientas de oficina, productividad, teletrabajo, estudiantes, organización y eficiencia",
+        "tono": "profesional, enfocado en eficiencia, práctico y vendedor"
     }
-    # En el futuro, cuando agregues más <option> en el HTML, solo pones su configuración aquí abajo.
 }
 
-# Inicializar estadísticas usando la estructura
 for clave, info in PRODUCTOS_INFO.items():
     stats_global[info['nombre']] = {
         'posts': 0,
@@ -53,7 +71,7 @@ for clave, info in PRODUCTOS_INFO.items():
     }
 
 # ============================================
-# FUNCIONES DE IA Y LOGS
+# FUNCIONES DE IA, LOGS Y BÚSQUEDA EN VIVO
 # ============================================
 
 def log(msg, tipo='info'):
@@ -64,109 +82,131 @@ def log(msg, tipo='info'):
     socketio.emit('log', entrada)
     print(f"[{tipo.upper()}] {msg}")
 
-def generar_caption(prod_info, tendencia, precio):
-    # Modificamos el prompt para forzar a la IA a integrar el precio manual
-    prompt = f"""
-    Eres un experto en marketing digital para Instagram enfocado en ventas y alta conversión.
-    Marca: {prod_info['nombre']}
-    Producto Específico a promocionar hoy: {prod_info['detalle_producto']}
-    Nicho: {prod_info['nicho']}
-    Tono: {prod_info['tono']}
-    Tendencia del día: {tendencia}
-    PRECIO DE VENTA: {precio}
+def buscar_hashtags_y_tendencias_reales(prod_info):
+    """
+    Esta función se conecta en tiempo real a internet para buscar qué tópicos
+    y palabras clave están calientes en este segundo sobre el producto elegido.
+    """
+    keyword = prod_info["keyword_busqueda"]
+    log(f"🌐 Escaneando la red en busca de tendencias para: '{keyword}'...", "info")
     
-    Genera un caption muy atractivo para Instagram en español chileno neutro, máximo 150 palabras.
-    REGLA OBLIGATORIA: Debes integrar e informar de forma clara, natural y llamativa el PRECIO DE VENTA ({precio}) dentro del texto o como parte de una oferta.
-    Incluye emojis estratégicos y un fuerte Call to Action (Llamado a la acción) invitando a comprar o preguntar al DM.
-    Solo responde con el caption terminado, sin introducciones ni comentarios adicionales.
+    contexto_internet = ""
+    try:
+        # Hacemos una consulta en vivo usando un motor de búsqueda público y rápido
+        url_busqueda = f"https://html.duckduckgo.com/html/?q={keyword}+trends+2026"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        res = req.get(url_busqueda, headers=headers, timeout=8)
+        
+        if res.status_code == 200 and "No results" not in res.text:
+            # Extraemos texto de los primeros resultados para que la IA vea qué es tendencia hoy
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(res.text, "html.parser")
+            resultados = [a.get_text() for a in soup.find_all("a", class_="result__snippet")[:4]]
+            contexto_internet = " ".join(resultados)
+            log("🔥 Datos de tendencias de última hora recopilados con éxito.", "success")
+        else:
+            log("⚠️ No se pudieron extraer datos frescos directos, usando base de ganchos rápidos.", "warning")
+    except Exception as e:
+        log(f"⚠️ Error en scraping de tendencias ({e}). Usando ganchos dinámicos de respaldo.", "warning")
+
+    # Le pasamos los datos reales extraídos a Groq para que nos dé los hashtags del momento exacto
+    prompt = f"""
+    Analiza este reporte de tendencias actuales de internet sobre el nicho del producto:
+    ---
+    {contexto_internet if contexto_internet else 'Herramientas digitales, automatización, trabajo remoto eficiente y optimización de flujos creativos en 2026.'}
+    ---
+    
+    En base a esos datos reales y al nicho '{prod_info['nicho']}', genera una lista de 5 ganchos o temáticas del momento que estén siendo ultra virales en Instagram hoy en día, junto con una sugerencia de 8 hashtags que estén rompiendo el algoritmo en este segundo para este producto específico.
+    
+    Responde estrictamente en este formato:
+    GANCHOS: [Escribe aquí las 5 ideas separadas por comas]
+    HASHTAGS_DEL_MOMENTO: [Escribe aquí los 8 hashtags sugeridos de alta tendencia]
+    """
+    
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=250,
+        temperature=0.7
+    )
+    
+    contenido = response.choices[0].message.content.strip()
+    return contenido
+
+def generar_caption_y_hashtags_pro(prod_info, info_tendencias, precio):
+    prompt = f"""
+    Eres un estratega experto de Instagram especializado en viralidad y embudos de ventas.
+    Marca: {prod_info['nombre']}
+    Producto a reventar en ventas hoy: {prod_info['detalle_producto']}
+    Tono de la cuenta: {prod_info['tono']}
+    PRECIO DE OFERTA HOY: {precio}
+    
+    INFORMACIÓN DE ÚLTIMA HORA (Extraída en tiempo real de internet):
+    {info_tendencias}
+    
+    Tu misión es redactar el post perfecto para Instagram usando los datos reales de arriba:
+    
+    1. CAPTION: Redacta un copy demoledor y persuasivo en español chileno neutro (máximo 140 palabras). Integra el precio ({precio}) de una forma tan atractiva que parezca una oportunidad imperdible de último minuto. Usa emojis modernos y termina con un Call to Action (CTA) claro empujando al usuario a enviar un DM para comprar.
+    
+    2. HASHTAGS DEL MOMENTO: Pon un bloque de hashtags mezclando los extraídos en la búsqueda en tiempo real junto con ganchos virales de emprendimiento, productividad y geolocalización (#chile, #santiago). Tienen que ser los mejores para posicionar el post en la sección "Explorar" HOY.
+    
+    No agregues introducciones, textos de relleno ni notas del sistema. Entrega directo el post listo.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=300,
+        max_tokens=450,
         temperature=0.8
     )
     return response.choices[0].message.content
 
-def generar_prompt_imagen(prod_info, tendencia, caption):
+def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    Eres un experto en generar prompts para IA de imágenes como Midjourney, Kling o DALL-E.
-    
-    Marca: {prod_info['nombre']}
-    Producto: {prod_info['detalle_producto']}
-    Nicho: {prod_info['nicho']}
-    Tendencia: {tendencia}
-    Caption de Instagram: {caption[:200]}
-    
-    Genera un prompt en inglés para crear una imagen fotorrealista y comercial para Instagram.
-    El prompt debe:
-    - Ser en inglés.
-    - Describir una escena visual moderna, limpia e ideal para acompañar la promoción de este producto.
-    - Incluir estilo: cinematic, 9:16 vertical, high quality, studio lighting, clean background, Instagram aesthetic.
-    - Máximo 100 palabras.
-    - Solo responde con el prompt en inglés, sin explicaciones.
+    Eres un director de arte digital experto en prompts para Midjourney, Kling y DALL-E 3.
+    Analiza este caption de ventas que acabamos de crear:
+    ---
+    {caption[:200]}
+    ---
+    Genera un prompt hiper detallado en inglés para crear una imagen fotorrealista y de altísimo impacto comercial para Instagram.
+    Estilo obligatorio: cinematic style, 9:16 vertical format, hyper-realistic texture, professional studio clean lighting, modern tech setup aesthetic, trendy Instagram visual layout. Max 90 words. No explanations.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=200,
-        temperature=0.8
+        temperature=0.75
     )
     return response.choices[0].message.content
-
-def buscar_tendencias(prod_info):
-    prompt = f"""
-    Dame 5 tendencias o ganchos de contenido para Instagram relacionados con: {prod_info['nicho']}
-    Formato estricto:
-    1. tendencia
-    2. tendencia
-    3. tendencia
-    4. tendencia
-    5. tendencia
-    Solo las tendencias, sin saludos ni explicaciones.
-    """
-    response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=200,
-        temperature=0.9
-    )
-    tendencias = response.choices[0].message.content.strip().split('\n')
-    return [t.split('. ', 1)[1] if '. ' in t else t for t in tendencias if t.strip()]
 
 captions_guardados = []
 
-def ciclo_completo(id_producto="aurakey_software", precio_manual="No especificado"):
+def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado"):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
-    log(f'🚀 Iniciando ciclo para el producto: {id_producto}...', 'info')
+    log(f'🚀 Iniciando ciclo dinámico en vivo para: {id_producto}...', 'info')
 
-    # Verificar si el producto existe en nuestra base de datos
     if id_producto not in PRODUCTOS_INFO:
-        log(f'❌ Error: El producto "{id_producto}" no está configurado en Python.', 'error')
+        log(f'❌ Error: El producto "{id_producto}" no está configurado.', 'error')
         return
 
     prod_info = PRODUCTOS_INFO[id_producto]
     nombre_marca = prod_info['nombre']
 
     try:
-        log(f'🔍 Buscando ángulos de contenido para {nombre_marca}...', 'info')
-        tendencias = buscar_tendencias(prod_info)
-        tendencia = random.choice(tendencias)
-        log(f'📌 Ángulo elegido: {tendencia}', 'info')
+        # PASO 1: Buscar las tendencias reales haciendo Web Scraping instantáneo
+        info_tendencias = buscar_hashtags_y_tendencias_reales(prod_info)
+        
+        log(f'✍️ Redactando post con hashtags calientes rastreados para el precio de {precio_manual}...', 'info')
+        # PASO 2: Inyectar esos datos frescos en el copy final
+        caption_completo = generar_caption_y_hashtags_pro(prod_info, info_tendencias, precio_manual)
 
-        log(f'✍️ Redactando caption comercial con precio: {precio_manual}...', 'info')
-        caption = generar_caption(prod_info, tendencia, precio_manual)
-        hashtags = ' '.join(prod_info['hashtags'])
-        caption_completo = f"{caption}\n\n{hashtags}"
-
-        log(f'🎨 Estructurando prompt fotorrealista para la imagen...', 'info')
-        prompt_imagen = generar_prompt_imagen(prod_info, tendencia, caption)
+        log(f'🎨 Diseñando prompt visual optimizado para la tendencia capturada...', 'info')
+        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
 
         entrada = {
-            'cliente': f"{nombre_marca} ({precio_manual})",
-            'tendencia': tendencia,
+            'cliente': f"{nombre_marca} - {id_producto.split('_')[1].upper()}",
+            'tendencia': "Tendencias rastreadas en vivo 🌐🔥",
             'caption': caption_completo,
             'prompt_imagen': prompt_imagen,
             'fecha': datetime.now().strftime('%d/%m %H:%M')
@@ -175,15 +215,15 @@ def ciclo_completo(id_producto="aurakey_software", precio_manual="No especificad
         socketio.emit('caption', entrada)
 
         stats_global[nombre_marca]['posts'] += 1
-        log(f'✅ ¡Post y Prompt generados con éxito para {nombre_marca}! 🚀', 'success')
+        log(f'✅ ¡Post con Tendencias y Hashtags en Tiempo Real generado para {id_producto}! 🔥', 'success')
 
     except Exception as e:
-        log(f'❌ Error ejecutando el ciclo del bot: {e}', 'error')
+        log(f'❌ Error ejecutando el ciclo dinámico: {e}', 'error')
 
     socketio.emit('stats', stats_global)
 
 # ============================================
-# RUTAS API ALTERADAS
+# RUTAS API
 # ============================================
 
 @app.route('/')
@@ -192,7 +232,6 @@ def index():
 
 @app.route('/api/clientes')
 def api_clientes():
-    # Retorna la lista formateada para la UI
     lista = [{"nombre": v["nombre"], "nicho": v["detalle_producto"]} for k, v in PRODUCTOS_INFO.items()]
     return jsonify(lista)
 
@@ -207,32 +246,26 @@ def api_captions():
 @app.route('/api/ciclo', methods=['POST'])
 def api_ciclo():
     data = request.get_json() or {}
-    producto = data.get('producto', 'aurakey_software')
+    producto = data.get('producto', 'aurakey_autocad')
     precio = data.get('precio', 'Consultar por interno')
 
-    # Lanzamos el ciclo en un hilo pasando el producto y el precio que pusiste en el celular
     hilo = threading.Thread(target=ciclo_completo, args=(producto, precio))
     hilo.daemon = True
     hilo.start()
-    return jsonify({'msg': f'Ciclo iniciado para {producto} a {precio}'})
+    return jsonify({'msg': f'Ciclo en tiempo real iniciado para {producto}'})
 
 # ============================================
-# SCHEDULER EN HILO SEPARADO
+# SCHEDULER
 # ============================================
 def run_scheduler():
-    # El ciclo automático por defecto usa Aurakey sin precio fijo establecido
-    schedule.every(3).hours.do(ciclo_completo, id_producto="aurakey_software", precio_manual="Precio Promocional")
+    schedule.every(3).hours.do(ciclo_completo, id_producto="aurakey_autocad", precio_manual="Precio Promo")
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-# ============================================
-# INICIO DEL SERVIDOR
-# ============================================
 if __name__ == '__main__':
-    print("🤖 Social Bot Manager - Panel Web")
-    print("⏰ Ciclos automáticos activos en segundo plano")
-
+    print("🤖 Social Bot Manager - Modo Tendencias en Vivo Activado")
+    
     hilo_scheduler = threading.Thread(target=run_scheduler)
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
