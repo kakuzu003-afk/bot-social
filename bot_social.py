@@ -83,22 +83,16 @@ def log(msg, tipo='info'):
     print(f"[{tipo.upper()}] {msg}")
 
 def buscar_hashtags_y_tendencias_reales(prod_info):
-    """
-    Esta función se conecta en tiempo real a internet para buscar qué tópicos
-    y palabras clave están calientes en este segundo sobre el producto elegido.
-    """
     keyword = prod_info["keyword_busqueda"]
     log(f"🌐 Escaneando la red en busca de tendencias para: '{keyword}'...", "info")
     
     contexto_internet = ""
     try:
-        # Hacemos una consulta en vivo usando un motor de búsqueda público y rápido
         url_busqueda = f"https://html.duckduckgo.com/html/?q={keyword}+trends+2026"
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         res = req.get(url_busqueda, headers=headers, timeout=8)
         
         if res.status_code == 200 and "No results" not in res.text:
-            # Extraemos texto de los primeros resultados para que la IA vea qué es tendencia hoy
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(res.text, "html.parser")
             resultados = [a.get_text() for a in soup.find_all("a", class_="result__snippet")[:4]]
@@ -109,7 +103,6 @@ def buscar_hashtags_y_tendencias_reales(prod_info):
     except Exception as e:
         log(f"⚠️ Error en scraping de tendencias ({e}). Usando ganchos dinámicos de respaldo.", "warning")
 
-    # Le pasamos los datos reales extraídos a Groq para que nos dé los hashtags del momento exacto
     prompt = f"""
     Analiza este reporte de tendencias actuales de internet sobre el nicho del producto:
     ---
@@ -194,11 +187,9 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
     nombre_marca = prod_info['nombre']
 
     try:
-        # PASO 1: Buscar las tendencias reales haciendo Web Scraping instantáneo
         info_tendencias = buscar_hashtags_y_tendencias_reales(prod_info)
         
         log(f'✍️ Redactando post con hashtags calientes rastreados para el precio de {precio_manual}...', 'info')
-        # PASO 2: Inyectar esos datos frescos en el copy final
         caption_completo = generar_caption_y_hashtags_pro(prod_info, info_tendencias, precio_manual)
 
         log(f'🎨 Diseñando prompt visual optimizado para la tendencia capturada...', 'info')
@@ -232,9 +223,9 @@ def index():
 
 @app.route('/api/clientes')
 def api_clientes():
-    # Dejamos un único cliente activo real en la interfaz visual
+    # Retorna únicamente la lista con tu marca limpia para la interfaz visual
     lista = [{
-        "nombre": "Aurakey", 
+        "nombre": "Aurakey"
     }]
     return jsonify(lista)
 
