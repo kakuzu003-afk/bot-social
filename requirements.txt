@@ -2,3 +2,5 @@ groq
 instagrapi
 schedule
 requests
+flask
+flask-socketio
