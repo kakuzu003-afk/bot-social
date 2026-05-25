@@ -235,7 +235,6 @@ def api_clientes():
     # Dejamos un único cliente activo real en la interfaz visual
     lista = [{
         "nombre": "Aurakey", 
-        "nicho": "Licencias Digitales (AutoCAD, Adobe, Office, Windows)"
     }]
     return jsonify(lista)
 
