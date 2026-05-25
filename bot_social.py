@@ -16,12 +16,34 @@ app.config['SECRET_KEY'] = 'sushiloveaurakey2025'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ============================================
-# CARGAR CONFIGURACIÓN
+# CONFIGURACIÓN GLOBAL DE VARIABLES
 # ============================================
-with open('config.json', 'r', encoding='utf-8') as f:
-    CONFIG = json.load(f)
+groq_client = Groq(api_key=groq_api_key)
+sesiones = {}
+stats_global = {}
+logs_global = []
+bot_activo = False
 
-groq_client = Groq(api_key=CONFIG['groq_api_key'])
+# Dejamos la configuración de Aurakey fija
+CONFIG = {
+    "clientes": [
+        {
+            "nombre": "Aurakey",
+            "nicho": "licencias de software, AutoCAD, Adobe, tecnología",
+            "hashtags": ["#software", "#autocad", "#adobe", "#tecnologia", "#diseño"],
+            "tono": "profesional y confiable"
+        }
+    ]
+}
+
+for c in CONFIG['clientes']:
+    stats_global[c['nombre']] = {
+        'posts': 0,
+        'comentarios': 0,
+        'likes': 0,
+        'interacciones': 0,
+        'ultimo_ciclo': 'Nunca'
+    }
 sesiones = {}
 stats_global = {}
 logs_global = []
