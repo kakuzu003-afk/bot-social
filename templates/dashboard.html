@@ -44,7 +44,6 @@
         
         .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
         
-        /* Contenedor Flex para Producto y Precio alineados de pana */
         .config-row { display: flex; gap: 12px; margin-bottom: 16px; width: 100%; }
         .config-field-main { flex: 2; display: flex; flex-direction: column; }
         .config-field-side { flex: 1; display: flex; flex-direction: column; }
@@ -75,7 +74,6 @@
         .client-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a3e; }
         .client-row:last-child { border-bottom: none; }
         .client-name { font-size: 14px; font-weight: 500; }
-        .client-handle { font-size: 12px; color: #666; }
 
         textarea { background: #0f0f1a; border: 1px solid #2a2a3e; border-radius: 8px; color: #e0e0e0; padding: 10px; font-size: 13px; width: 100%; resize: vertical; font-family: inherit; }
         textarea:focus { outline: none; border-color: #7c6aff; }
@@ -115,8 +113,11 @@
             <div class="config-field-main">
                 <label for="select-producto" class="config-label">Producto / Marca:</label>
                 <select id="select-producto">
-                    <option value="aurakey_software">Aurakey: Licencias (AutoCAD/Adobe)</option>
-                    </select>
+                    <option value="aurakey_autocad">Aurakey: AutoCAD</option>
+                    <option value="aurakey_adobe">Aurakey: Adobe Creative Cloud</option>
+                    <option value="aurakey_windows">Aurakey: Windows Pro</option>
+                    <option value="aurakey_office">Aurakey: Microsoft Office</option>
+                </select>
             </div>
             <div class="config-field-side">
                 <label for="input-precio" class="config-label">Precio Manual:</label>
@@ -243,7 +244,6 @@
             document.getElementById('logBox').innerHTML = '';
         }
 
-        // Función actualizada para enviar el Producto y el Precio Manual a Python
         function ejecutarCiclo() {
             const productoSeleccionado = document.getElementById('select-producto').value;
             const precioIngresado = document.getElementById('input-precio').value || "No especificado";
@@ -265,6 +265,7 @@
             .catch(err => agregarLog('Error al lanzar el ciclo', 'error'));
         }
 
+        // Corregido: Dibuja únicamente el nombre del cliente evitando errores por variables inexistentes
         fetch('/api/clientes')
             .then(r => r.json())
             .then(data => {
@@ -272,8 +273,7 @@
                 list.innerHTML = data.map(c => `
                     <div class="client-row">
                         <div>
-                            <div class="client-name">${c.nombre}</div>
-                            <div class="client-handle">${c.nicho.substring(0, 40)}...</div>
+                            <div class="client-name" style="font-size: 15px; font-weight: 600; color: #fff;">${c.nombre}</div>
                         </div>
                         <span class="badge badge-green">Activo</span>
                     </div>
