@@ -30,19 +30,21 @@ stats_global = {}
 logs_global = []
 bot_activo = False
 
-CONFIG = {
-    "clientes": [
-        {
-            "nombre": "Aurakey",
-            "nicho": "licencias de software, AutoCAD, Adobe, tecnología",
-            "hashtags": ["#software", "#autocad", "#adobe", "#tecnologia", "#diseño"],
-            "tono": "profesional y confiable"
-        }
-    ]
+# Mapeo interno para identificar qué producto se seleccionó en el Dashboard
+PRODUCTOS_INFO = {
+    "aurakey_software": {
+        "nombre": "Aurakey",
+        "detalle_producto": "Licencias de Software Originales (AutoCAD, Adobe Creative Cloud, Windows, Office)",
+        "nicho": "licencias de software, AutoCAD, Adobe, tecnología y herramientas de productividad",
+        "hashtags": ["#software", "#autocad", "#adobe", "#tecnologia", "#diseño", "#aurakey", "#chile"],
+        "tono": "profesional, directo, confiable y vendedor"
+    }
+    # En el futuro, cuando agregues más <option> en el HTML, solo pones su configuración aquí abajo.
 }
 
-for c in CONFIG['clientes']:
-    stats_global[c['nombre']] = {
+# Inicializar estadísticas usando la estructura
+for clave, info in PRODUCTOS_INFO.items():
+    stats_global[info['nombre']] = {
         'posts': 0,
         'comentarios': 0,
         'likes': 0,
@@ -51,7 +53,7 @@ for c in CONFIG['clientes']:
     }
 
 # ============================================
-# FUNCIONES DE IA
+# FUNCIONES DE IA Y LOGS
 # ============================================
 
 def log(msg, tipo='info'):
@@ -62,17 +64,21 @@ def log(msg, tipo='info'):
     socketio.emit('log', entrada)
     print(f"[{tipo.upper()}] {msg}")
 
-def generar_caption(cliente, tendencia):
+def generar_caption(prod_info, tendencia, precio):
+    # Modificamos el prompt para forzar a la IA a integrar el precio manual
     prompt = f"""
-    Eres un experto en marketing digital para Instagram.
-    Cliente: {cliente['nombre']}
-    Nicho: {cliente['nicho']}
-    Tono: {cliente['tono']}
-    Tendencia: {tendencia}
+    Eres un experto en marketing digital para Instagram enfocado en ventas y alta conversión.
+    Marca: {prod_info['nombre']}
+    Producto Específico a promocionar hoy: {prod_info['detalle_producto']}
+    Nicho: {prod_info['nicho']}
+    Tono: {prod_info['tono']}
+    Tendencia del día: {tendencia}
+    PRECIO DE VENTA: {precio}
     
-    Genera un caption atractivo para Instagram en español,
-    máximo 150 palabras, con emojis y call to action.
-    Solo responde con el caption.
+    Genera un caption muy atractivo para Instagram en español chileno neutro, máximo 150 palabras.
+    REGLA OBLIGATORIA: Debes integrar e informar de forma clara, natural y llamativa el PRECIO DE VENTA ({precio}) dentro del texto o como parte de una oferta.
+    Incluye emojis estratégicos y un fuerte Call to Action (Llamado a la acción) invitando a comprar o preguntar al DM.
+    Solo responde con el caption terminado, sin introducciones ni comentarios adicionales.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -82,22 +88,23 @@ def generar_caption(cliente, tendencia):
     )
     return response.choices[0].message.content
 
-def generar_prompt_imagen(cliente, tendencia, caption):
+def generar_prompt_imagen(prod_info, tendencia, caption):
     prompt = f"""
     Eres un experto en generar prompts para IA de imágenes como Midjourney, Kling o DALL-E.
     
-    Cliente: {cliente['nombre']}
-    Nicho: {cliente['nicho']}
+    Marca: {prod_info['nombre']}
+    Producto: {prod_info['detalle_producto']}
+    Nicho: {prod_info['nicho']}
     Tendencia: {tendencia}
     Caption de Instagram: {caption[:200]}
     
-    Genera un prompt en inglés para crear una imagen fotorrealista y atractiva para Instagram.
+    Genera un prompt en inglés para crear una imagen fotorrealista y comercial para Instagram.
     El prompt debe:
-    - Ser en inglés
-    - Describir la escena visual ideal para acompañar el caption
-    - Incluir estilo: cinematic, 9:16 vertical, high quality, Instagram aesthetic
-    - Máximo 100 palabras
-    - Solo responde con el prompt, sin explicaciones
+    - Ser en inglés.
+    - Describir una escena visual moderna, limpia e ideal para acompañar la promoción de este producto.
+    - Incluir estilo: cinematic, 9:16 vertical, high quality, studio lighting, clean background, Instagram aesthetic.
+    - Máximo 100 palabras.
+    - Solo responde con el prompt en inglés, sin explicaciones.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -107,16 +114,16 @@ def generar_prompt_imagen(cliente, tendencia, caption):
     )
     return response.choices[0].message.content
 
-def buscar_tendencias(cliente):
+def buscar_tendencias(prod_info):
     prompt = f"""
-    Dame 5 tendencias de Instagram para: {cliente['nicho']}
-    Formato:
+    Dame 5 tendencias o ganchos de contenido para Instagram relacionados con: {prod_info['nicho']}
+    Formato estricto:
     1. tendencia
     2. tendencia
     3. tendencia
     4. tendencia
     5. tendencia
-    Solo las tendencias, sin explicación.
+    Solo las tendencias, sin saludos ni explicaciones.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -129,51 +136,54 @@ def buscar_tendencias(cliente):
 
 captions_guardados = []
 
-def ciclo_completo():
+def ciclo_completo(id_producto="aurakey_software", precio_manual="No especificado"):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
-    log('🚀 Iniciando ciclo completo...', 'info')
+    log(f'🚀 Iniciando ciclo para el producto: {id_producto}...', 'info')
 
-    for cliente in CONFIG['clientes']:
-        nombre = cliente['nombre']
-        log(f'👤 Procesando {nombre}...', 'info')
+    # Verificar si el producto existe en nuestra base de datos
+    if id_producto not in PRODUCTOS_INFO:
+        log(f'❌ Error: El producto "{id_producto}" no está configurado en Python.', 'error')
+        return
 
-        try:
-            tendencias = buscar_tendencias(cliente)
-            tendencia = random.choice(tendencias)
-            log(f'🔍 Tendencia: {tendencia}', 'info')
+    prod_info = PRODUCTOS_INFO[id_producto]
+    nombre_marca = prod_info['nombre']
 
-            caption = generar_caption(cliente, tendencia)
-            hashtags = ' '.join(cliente['hashtags'])
-            caption_completo = f"{caption}\n\n{hashtags}"
+    try:
+        log(f'🔍 Buscando ángulos de contenido para {nombre_marca}...', 'info')
+        tendencias = buscar_tendencias(prod_info)
+        tendencia = random.choice(tendencias)
+        log(f'📌 Ángulo elegido: {tendencia}', 'info')
 
-            log(f'🎨 Generando prompt de imagen...', 'info')
-            prompt_imagen = generar_prompt_imagen(cliente, tendencia, caption)
+        log(f'✍️ Redactando caption comercial con precio: {precio_manual}...', 'info')
+        caption = generar_caption(prod_info, tendencia, precio_manual)
+        hashtags = ' '.join(prod_info['hashtags'])
+        caption_completo = f"{caption}\n\n{hashtags}"
 
-            entrada = {
-                'cliente': nombre,
-                'tendencia': tendencia,
-                'caption': caption_completo,
-                'prompt_imagen': prompt_imagen,
-                'fecha': datetime.now().strftime('%d/%m %H:%M')
-            }
-            captions_guardados.insert(0, entrada)
-            socketio.emit('caption', entrada)
+        log(f'🎨 Estructurando prompt fotorrealista para la imagen...', 'info')
+        prompt_imagen = generar_prompt_imagen(prod_info, tendencia, caption)
 
-            stats_global[nombre]['posts'] += 1
-            log(f'✅ Caption + prompt de imagen generado para {nombre}', 'success')
+        entrada = {
+            'cliente': f"{nombre_marca} ({precio_manual})",
+            'tendencia': tendencia,
+            'caption': caption_completo,
+            'prompt_imagen': prompt_imagen,
+            'fecha': datetime.now().strftime('%d/%m %H:%M')
+        }
+        captions_guardados.insert(0, entrada)
+        socketio.emit('caption', entrada)
 
-        except Exception as e:
-            log(f'❌ Error en {nombre}: {e}', 'error')
+        stats_global[nombre_marca]['posts'] += 1
+        log(f'✅ ¡Post y Prompt generados con éxito para {nombre_marca}! 🚀', 'success')
 
-        time.sleep(2)
+    except Exception as e:
+        log(f'❌ Error ejecutando el ciclo del bot: {e}', 'error')
 
     socketio.emit('stats', stats_global)
-    log('✅ Ciclo completado', 'success')
 
 # ============================================
-# RUTAS API
+# RUTAS API ALTERADAS
 # ============================================
 
 @app.route('/')
@@ -182,7 +192,9 @@ def index():
 
 @app.route('/api/clientes')
 def api_clientes():
-    return jsonify(CONFIG['clientes'])
+    # Retorna la lista formateada para la UI
+    lista = [{"nombre": v["nombre"], "nicho": v["detalle_producto"]} for k, v in PRODUCTOS_INFO.items()]
+    return jsonify(lista)
 
 @app.route('/api/stats')
 def api_stats():
@@ -194,54 +206,32 @@ def api_captions():
 
 @app.route('/api/ciclo', methods=['POST'])
 def api_ciclo():
-    hilo = threading.Thread(target=ciclo_completo)
+    data = request.get_json() or {}
+    producto = data.get('producto', 'aurakey_software')
+    precio = data.get('precio', 'Consultar por interno')
+
+    # Lanzamos el ciclo en un hilo pasando el producto y el precio que pusiste en el celular
+    hilo = threading.Thread(target=ciclo_completo, args=(producto, precio))
     hilo.daemon = True
     hilo.start()
-    return jsonify({'msg': 'Ciclo iniciado correctamente'})
-
-@app.route('/api/caption', methods=['POST'])
-def api_caption():
-    def generar():
-        for cliente in CONFIG['clientes']:
-            try:
-                tendencias = buscar_tendencias(cliente)
-                tendencia = random.choice(tendencias)
-                caption = generar_caption(cliente, tendencia)
-                hashtags = ' '.join(cliente['hashtags'])
-                entrada = {
-                    'cliente': cliente['nombre'],
-                    'tendencia': tendencia,
-                    'caption': f"{caption}\n\n{hashtags}",
-                    'fecha': datetime.now().strftime('%d/%m %H:%M')
-                }
-                captions_guardados.insert(0, entrada)
-                socketio.emit('caption', entrada)
-                log(f"✅ Caption generado para {cliente['nombre']}", 'success')
-            except Exception as e:
-                log(f"❌ Error: {e}", 'error')
-
-    hilo = threading.Thread(target=generar)
-    hilo.daemon = True
-    hilo.start()
-    return jsonify({'msg': 'Generando captions...'})
+    return jsonify({'msg': f'Ciclo iniciado para {producto} a {precio}'})
 
 # ============================================
 # SCHEDULER EN HILO SEPARADO
 # ============================================
-
 def run_scheduler():
-    schedule.every(3).hours.do(ciclo_completo)
+    # El ciclo automático por defecto usa Aurakey sin precio fijo establecido
+    schedule.every(3).hours.do(ciclo_completo, id_producto="aurakey_software", precio_manual="Precio Promocional")
     while True:
         schedule.run_pending()
         time.sleep(60)
 
 # ============================================
-# INICIO
+# INICIO DEL SERVIDOR
 # ============================================
-
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Panel Web")
-    print("⏰ Ciclos automáticos cada 3 horas")
+    print("⏰ Ciclos automáticos activos en segundo plano")
 
     hilo_scheduler = threading.Thread(target=run_scheduler)
     hilo_scheduler.daemon = True
