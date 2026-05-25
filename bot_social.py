@@ -232,7 +232,11 @@ def index():
 
 @app.route('/api/clientes')
 def api_clientes():
-    lista = [{"nombre": v["nombre"], "nicho": v["detalle_producto"]} for k, v in PRODUCTOS_INFO.items()]
+    # Dejamos un único cliente activo real en la interfaz visual
+    lista = [{
+        "nombre": "Aurakey", 
+        "nicho": "Licencias Digitales (AutoCAD, Adobe, Office, Windows)"
+    }]
     return jsonify(lista)
 
 @app.route('/api/stats')
