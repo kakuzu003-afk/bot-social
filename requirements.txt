@@ -4,3 +4,4 @@ schedule
 requests
 flask
 flask-socketio
+openai
