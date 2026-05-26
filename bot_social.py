@@ -9,6 +9,7 @@ import time
 import random
 from groq import Groq
 import requests as req
+import openai
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sushiloveaurakey2025'
@@ -21,6 +22,10 @@ groq_api_key = os.environ.get("GROQ_API_KEY")
 
 if not groq_api_key:
     raise ValueError("❌ ERROR: La variable de entorno GROQ_API_KEY no está configurada en Railway.")
+
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+meta_token     = os.environ.get("META_ACCESS_TOKEN")
+ig_user_id     = os.environ.get("IG_USER_ID")
 
 groq_client = Groq(api_key=groq_api_key)
 
@@ -152,6 +157,78 @@ def generar_prompt_imagen(prod_info, caption):
 
 captions_guardados = []
 
+# ============================================
+# DALL-E 3 — GENERACIÓN DE IMAGEN
+# ============================================
+
+def generar_imagen_dalle(prompt_imagen):
+    if not openai_api_key:
+        log("⚠️ OPENAI_API_KEY no configurada. Saltando generación de imagen.", "warning")
+        return None
+    try:
+        client = openai.OpenAI(api_key=openai_api_key)
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=prompt_imagen,
+            size="1024x1024",
+            quality="standard",
+            n=1
+        )
+        url = response.data[0].url
+        log(f"🖼️ Imagen generada con DALL-E 3 ✅", "success")
+        return url
+    except Exception as e:
+        log(f"❌ Error generando imagen con DALL-E: {e}", "error")
+        return None
+
+# ============================================
+# GRAPH API — PUBLICAR EN INSTAGRAM
+# ============================================
+
+def publicar_en_instagram(imagen_url, caption):
+    if not meta_token or not ig_user_id:
+        log("⚠️ META_ACCESS_TOKEN o IG_USER_ID no configurados. Saltando publicación.", "warning")
+        return False
+    try:
+        # Paso 1: crear contenedor de media
+        log("📤 Creando contenedor en Graph API...", "info")
+        res = req.post(
+            f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
+            data={
+                "image_url": imagen_url,
+                "caption": caption,
+                "access_token": meta_token
+            }
+        )
+        data = res.json()
+        container_id = data.get("id")
+
+        if not container_id:
+            log(f"❌ Error creando contenedor: {data}", "error")
+            return False
+
+        # Paso 2: publicar el contenedor
+        log("🚀 Publicando en Instagram...", "info")
+        res2 = req.post(
+            f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
+            data={
+                "creation_id": container_id,
+                "access_token": meta_token
+            }
+        )
+        data2 = res2.json()
+
+        if data2.get("id"):
+            log(f"✅ Post publicado en Instagram! ID: {data2['id']}", "success")
+            return True
+        else:
+            log(f"❌ Error publicando: {data2}", "error")
+            return False
+
+    except Exception as e:
+        log(f"❌ Error en Graph API: {e}", "error")
+        return False
+
 def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado"):
     global bot_activo
     bot_activo = True
@@ -175,18 +252,33 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
         log(f'🎨 Diseñando prompt visual optimizado 9:16...', 'info')
         prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
 
+        # Generar imagen con DALL-E 3
+        imagen_url = None
+        publicado = False
+        if openai_api_key:
+            imagen_url = generar_imagen_dalle(prompt_imagen)
+
+        # Publicar en Instagram vía Graph API
+        if imagen_url and meta_token and ig_user_id:
+            publicado = publicar_en_instagram(imagen_url, caption_completo)
+        elif not meta_token or not ig_user_id:
+            log("ℹ️ Sin credenciales Meta — caption guardado para publicación manual.", "warning")
+
         entrada = {
             'cliente': f"{nombre_marca} - {id_producto.split('_')[1].upper()}",
             'tendencia': gancho_usado,
             'caption': caption_completo,
             'prompt_imagen': prompt_imagen,
+            'imagen_url': imagen_url or '',
+            'publicado': publicado,
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
 
         stats_global[nombre_marca]['posts'] += 1
-        log(f'✅ Post estructurado con éxito para {id_producto}!', 'success')
+        stats_global[nombre_marca]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        log(f'✅ Ciclo completo para {id_producto} — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
 
     except Exception as e:
         log(f'❌ Error ejecutando el ciclo: {e}', 'error')
