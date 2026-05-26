@@ -336,4 +336,4 @@ if __name__ == '__main__':
     hilo_scheduler.start()
 
     puerto = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True))
+    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
