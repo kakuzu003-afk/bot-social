@@ -147,7 +147,7 @@ def generar_prompt_imagen(prod_info, caption):
     Eres un experto en Midjourney y DALL-E 3.
     Basándote en este producto: {prod_info['detalle_producto']}.
     Genera un prompt detallado en inglés para crear una imagen comercial fotorrealista para Instagram.
-    Estilo: cinematic shot, 9:16 vertical format, hyper-realistic, clean studio lighting, modern tech layout. Max 80 words. No explanations.
+    Estilo: cinematic shot, hyper-realistic, clean studio lighting, modern tech layout. Max 80 words. No explanations.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -160,7 +160,7 @@ def generar_prompt_imagen(prod_info, caption):
 captions_guardados = []
 
 # ============================================
-# DALL-E 3 — GENERACIÓN DE IMAGEN (CORREGIDO)
+# DALL-E 2 — GENERACIÓN DE IMAGEN (PLAN B TEMPORAL)
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen):
@@ -168,16 +168,16 @@ def generar_imagen_dalle(prompt_imagen):
         log("⚠️ OPENAI_API_KEY no configurada. Saltando generación de imagen.", "warning")
         return None
     try:
-        # Petición limpia usando el cliente global y formato 9:16 exacto
+        # PLAN B: Forzamos dall-e-2 en tamaño 1024x1024 para saltar el bloqueo de cuenta nueva
         response = openai_client.images.generate(
-            model="dall-e-3",
+            model="dall-e-2",
             prompt=prompt_imagen,
-            size="1024x1792",  # CORREGIDO: Medida vertical nativa para DALL-E 3
+            size="1024x1024",  
             quality="standard",
             n=1
         )
         url = response.data[0].url
-        log(f"🖼️ Imagen generada con DALL-E 3 ✅", "success")
+        log(f"🖼️ Imagen generada con DALL-E 2 (Plan B temporal) ✅", "success")
         return url
     except Exception as e:
         log(f"❌ Error generando imagen con DALL-E: {e}", "error")
@@ -251,10 +251,10 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
         log(f'✍️ Redactando post comercial y calculando exactamente 5 hashtags...', 'info')
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
 
-        log(f'🎨 Diseñando prompt visual optimizado 9:16...', 'info')
+        log(f'🎨 Diseñando prompt visual optimizado...', 'info')
         prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
 
-        # Generar imagen con DALL-E 3
+        # Generar imagen con DALL-E 2
         imagen_url = None
         publicado = False
         if openai_api_key:
@@ -336,4 +336,4 @@ if __name__ == '__main__':
     hilo_scheduler.start()
 
     puerto = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True))
