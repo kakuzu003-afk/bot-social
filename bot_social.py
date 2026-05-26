@@ -168,16 +168,15 @@ def generar_imagen_dalle(prompt_imagen):
         log("⚠️ OPENAI_API_KEY no configurada. Saltando generación de imagen.", "warning")
         return None
     try:
-        # PLAN B: Forzamos dall-e-2 en tamaño 1024x1024 para saltar el bloqueo de cuenta nueva
         response = openai_client.images.generate(
-            model="dall-e-2",
+            model="dall-e-3",
             prompt=prompt_imagen,
-            size="1024x1024",  
+            size="1024x1792",  # Formato vertical impecable 9:16
             quality="standard",
             n=1
         )
         url = response.data[0].url
-        log(f"🖼️ Imagen generada con DALL-E 2 (Plan B temporal) ✅", "success")
+        log(f"🖼️ Imagen generada con DALL-E 3 ✅", "success")
         return url
     except Exception as e:
         log(f"❌ Error generando imagen con DALL-E: {e}", "error")
