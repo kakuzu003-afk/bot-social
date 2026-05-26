@@ -219,17 +219,35 @@
                     '<div style="font-size:11px;color:#f59e0b;margin-bottom:6px;">🔍 ' + c.tendencia + '</div>' +
                     '<div style="font-size:11px;color:#888;margin-bottom:4px;">📝 Caption:</div>' +
                     '<textarea rows="4" id="caption_' + i + '">' + c.caption + '</textarea>' +
-                    '<div style="font-size:11px;color:#888;margin:8px 0 4px;">🎨 Prompt para imagen (Kling / Midjourney / DALL-E):</div>' +
+                    '<div style="font-size:11px;color:#888;margin:8px 0 4px;">🎨 Prompt para imagen:</div>' +
                     '<textarea rows="3" id="prompt_' + i + '" style="border-color:#7c6aff33;">' + (c.prompt_imagen || 'No generado aún') + '</textarea>' +
-                    '<div class="caption-actions" style="display: flex; justify-content: space-between; align-items: center;">' +
+                    (c.imagen_url ? (
+                        '<div style="font-size:11px;color:#22c55e;margin:10px 0 6px;">🖼️ Imagen generada por DALL-E 3:</div>' +
+                        '<div style="position:relative;">' +
+                            '<img src="' + c.imagen_url + '" alt="Imagen generada" style="width:100%;border-radius:8px;border:1px solid #2a2a3e;display:block;" onerror="this.parentElement.innerHTML=\'<div style=&quot;background:#1a1a2e;border:1px dashed #444;border-radius:8px;padding:20px;text-align:center;color:#666;font-size:12px;&quot;>⚠️ URL de imagen expirada (DALL-E URLs duran 1 hora).<br>El post ya fue publicado en Instagram.</div>\'">' +
+                            '<div style="position:absolute;top:8px;right:8px;">' +
+                                '<span style="background:rgba(34,197,94,0.9);color:#fff;font-size:10px;padding:3px 8px;border-radius:99px;font-weight:600;">' + (c.publicado ? '✅ Publicado en IG' : '⏳ No publicado') + '</span>' +
+                            '</div>' +
+                        '</div>'
+                    ) : (
+                        '<div style="background:#1a1a2e;border:1px dashed #2a2a3e;border-radius:8px;padding:16px;text-align:center;color:#555;font-size:12px;margin-top:8px;">' +
+                            (c.publicado === false && !c.imagen_url ? '⚠️ Sin OPENAI_API_KEY — imagen no generada. Configúrala en Railway.' : '🎨 Imagen no disponible') +
+                        '</div>'
+                    )) +
+                    '<div class="caption-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top:10px;">' +
                         '<div style="display: flex; gap: 8px;">' +
                             '<button class="btn btn-primary btn-sm" onclick="copiarCaption(' + i + ')">📋 Copiar caption</button>' +
-                            '<button class="btn btn-sm" style="background:#7c6aff;color:#fff;" onclick="copiarPrompt(' + i + ')">🎨 Copiar prompt imagen</button>' +
+                            '<button class="btn btn-sm" style="background:#7c6aff;color:#fff;" onclick="copiarPrompt(' + i + ')">🎨 Copiar prompt</button>' +
+                            (c.imagen_url ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff;" onclick="abrirImagen(\'' + c.imagen_url + '\')">🔗 Ver imagen</button>' : '') +
                         '</div>' +
                         '<button class="btn btn-danger btn-sm" style="padding: 6px 10px;" onclick="borrarCaption(' + i + ')">🗑️ Borrar</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
+        }
+
+        function abrirImagen(url) {
+            window.open(url, '_blank');
         }
 
         function copiarCaption(i) {
