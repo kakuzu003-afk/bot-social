@@ -9,7 +9,7 @@ import time
 import random
 from groq import Groq
 import requests as req
-import openai
+from openai import OpenAI  # Sintaxis moderna importada de forma global
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sushiloveaurakey2025'
@@ -29,6 +29,9 @@ ig_user_id     = os.environ.get("IG_USER_ID")
 
 groq_client = Groq(api_key=groq_api_key)
 
+# Inicialización segura de OpenAI solo si la llave existe
+openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
+
 sesiones = {}
 stats_global = {}
 logs_global = []
@@ -39,7 +42,7 @@ PRODUCTOS_INFO = {
         "nombre": "Aurakey",
         "detalle_producto": "Licencia Original de AutoCAD (Ideal para arquitectos, ingenieros y diseñadores)",
         "keyword_busqueda": "autocad",
-        "nicho": "diseño e ingeniería, planos, arquitectura, software AutoCAD profesional",
+        "nicho": "diseño e ingeniería, planos, architecture, software AutoCAD profesional",
         "tono": "profesional, directo, de alto valor, confiable y vendedor"
     },
     "aurakey_adobe": {
@@ -108,7 +111,6 @@ def buscar_tendencias_reales_api(prod_info):
     return palabras_clave
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
-    # Prompt ultra optimizado con ejemplos negativos y positivos para frenar los hashtags robóticos
     prompt = f"""
     Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
     Marca: {prod_info['nombre']}
@@ -158,19 +160,19 @@ def generar_prompt_imagen(prod_info, caption):
 captions_guardados = []
 
 # ============================================
-# DALL-E 3 — GENERACIÓN DE IMAGEN
+# DALL-E 3 — GENERACIÓN DE IMAGEN (CORREGIDO)
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen):
-    if not openai_api_key:
+    if not openai_client:
         log("⚠️ OPENAI_API_KEY no configurada. Saltando generación de imagen.", "warning")
         return None
     try:
-        client = openai.OpenAI(api_key=openai_api_key)
-        response = client.images.generate(
+        # Petición limpia usando el cliente global y formato 9:16 exacto
+        response = openai_client.images.generate(
             model="dall-e-3",
             prompt=prompt_imagen,
-            size="1024x1024",
+            size="1024x1792",  # CORREGIDO: Medida vertical nativa para DALL-E 3
             quality="standard",
             n=1
         )
@@ -281,7 +283,7 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
         log(f'✅ Ciclo completo para {id_producto} — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
 
     except Exception as e:
-        log(f'❌ Error ejecutando el ciclo: {e}', 'error')
+        log(f'❌ Error executing el ciclo: {e}', 'error')
 
     socketio.emit('stats', stats_global)
 
@@ -334,5 +336,4 @@ if __name__ == '__main__':
     hilo_scheduler.start()
 
     puerto = int(os.environ.get("PORT", 5000))
-    # Corregido: Usamos socketio.run para que no se caiga la transmisión de logs en vivo hacia la web
     socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
