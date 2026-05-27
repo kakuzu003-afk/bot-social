@@ -182,10 +182,12 @@ def buscar_musica_pixabay(mood="energico"):
     log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
 
     try:
-        url = "https://pixabay.com/api/music"  # Barra final removida para evitar errores 403/400
+        # Endpoint oficial unificado para peticiones de audio/música sin conflicto de rutas
+        url = "https://pixabay.com/api/"
         params = {
             "key": pixabay_key.strip(),
             "q": query,
+            "media_type": "music",  # Pasamos el tipo como parámetro para evitar el 404 de la ruta
             "per_page": 5,
         }
         res = req.get(url, params=params, timeout=10)
@@ -202,7 +204,11 @@ def buscar_musica_pixabay(mood="energico"):
 
         pista = None
         for hit in hits:
+            # Pixabay entrega la URL de descarga en 'audio' o en 'previewURL' según la versión de la API
             audio_url = hit.get("audio", {}).get("mp3", "") if isinstance(hit.get("audio"), dict) else hit.get("previewURL", "")
+            if not audio_url and "audio" in hit and isinstance(hit["audio"], str):
+                audio_url = hit["audio"]
+                
             if audio_url:
                 pista = {"titulo": hit.get("tags", "pista"), "url": audio_url}
                 break
@@ -224,7 +230,6 @@ def buscar_musica_pixabay(mood="energico"):
     except Exception as e:
         log(f"❌ Error buscando música en Pixabay: {e}", "error")
         return None
-
 
 # ============================================
 # FFMPEG — COMBINAR IMAGEN + AUDIO → VIDEO
