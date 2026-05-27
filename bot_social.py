@@ -122,26 +122,36 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    You are a world-class commercial product photographer. Your job is to create a prompt for an image generation AI.
+    You are a world-class 3D motion graphics designer specializing in premium software box art for Instagram ads.
     
     The product is: "{prod_info['detalle_producto']}"
     
-    Analyze the product name and determine what category it belongs to (software, electronics, food, clothing, tools, etc.), then create the most appropriate visual representation:
+    Create a prompt for a stunning 3D software box / product packaging design with these specifications:
     
-    - If it's SOFTWARE or DIGITAL: Show the product box, packaging, or iconic UI elements/logo on a premium dark studio surface with cinematic lighting.
-    - If it's ELECTRONICS or HARDWARE: Show the actual physical device in a premium lifestyle setting with dramatic lighting.
-    - If it's FOOD or BEVERAGE: Show the product in a fresh, appetizing setting with natural or warm lighting.
-    - If it's CLOTHING or ACCESSORIES: Show the item styled on a clean background or lifestyle setting.
-    - If it's a SERVICE or SUBSCRIPTION: Show a premium visual metaphor that clearly represents the service (ex: streaming = screen with content, antivirus = shield).
-    - For ANY other product: Show the actual product as the hero of the image in the most visually compelling way possible.
+    DESIGN STYLE:
+    - A premium 3D software retail box, slightly tilted at a heroic angle (like a AAA video game box)
+    - Dark background with deep space or futuristic tech atmosphere
+    - Dramatic neon lighting: electric blue, cyan, or colors that match the product's brand identity
+    - Holographic glow effects, light particles, and subtle lens flares around the box
+    - The box should look premium, glossy, and physical — like a real product you can buy
     
-    UNIVERSAL RULES (always apply):
-    - The product MUST be the absolute center and hero, occupying at least 60% of the frame.
-    - Vertical 9:16 composition, close-up heroic shot, strong depth of field.
-    - Premium studio or lifestyle lighting, high contrast, cinematic feel.
-    - NO text overlays, NO written words, NO logos with typos, NO distorted faces.
-    - NO abstract metaphors unless it's a service/subscription product.
-    - Photorealistic, hyper-detailed, commercial quality.
+    BOX DESIGN:
+    - Front face of the box shows abstract tech icons, shields, gears, or symbols related to "{prod_info['detalle_producto']}"
+    - Use geometric hexagon or badge shapes with glowing icons inside (no readable text needed)
+    - Bold color contrast between the box face and the dark background
+    - Subtle reflective surface beneath the box
+    
+    COMPOSITION:
+    - Vertical 9:16 format, box centered and large, occupying 70% of frame
+    - Dramatic rim lighting from behind creating a halo effect
+    - Cinematic depth of field, sharp on the box, softly blurred background
+    
+    PROHIBITIONS:
+    - NO readable text or words
+    - NO human faces
+    - NO flat or 2D designs
+    
+    Style: Photorealistic 3D render, Unreal Engine 5 quality, premium dark tech aesthetic, commercial product photography.
     
     Max 80 words. Output ONLY the English prompt. No introductions, no notes.
     """
@@ -149,7 +159,7 @@ def generar_prompt_imagen(prod_info, caption):
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.4
+        temperature=0.5
     )
     return response.choices[0].message.content
 
