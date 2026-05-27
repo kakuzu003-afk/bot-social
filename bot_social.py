@@ -136,34 +136,35 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    Eres un experto en generación de imágenes comerciales para Instagram.
-    Producto: {prod_info['detalle_producto']}
+    You are a world-class commercial 3D artist and creative director specializing in high-converting Instagram ads.
+    Product to feature: {prod_info['detalle_producto']}
     
-    Genera un prompt en inglés para una imagen comercial atractiva. Sigue estas reglas estrictas:
+    Generate a highly detailed, visually stunning prompt in English for an image generation model. Follow these precise guidelines:
     
-    PROHIBIDO absolutamente:
-    - NO mostrar documentos, contratos ni licencias impresas
-    - NO mostrar nombres de personas ficticias ni datos inventados
-    - NO mostrar números de serie, fechas de expedición ni formularios
-    - NO texto ilegible ni datos falsos de ningún tipo
+    1. VISUAL CONCEPT & SCENERY:
+       - Create a grand, premium conceptual scene that represents the essence of the product. 
+       - Avoid boring, flat tech setups. Instead, use metaphorical, abstract, or heroic representations. For digital software or services, you can visualize the product's core identity (like glowing modern icons, sleek dark key cards, or abstract data structures) floating as premium 3D crystal or metallic objects in a futuristic, cinematic space.
+       - Use dynamic elements like volumetric smoke, floating particles, sharp reflections, and dramatic rim lighting to give it a luxury catalog feel.
     
-    DEBE mostrar:
-    - Interfaz del software en una pantalla moderna o laptop elegante
-    - Ambiente oscuro tipo estudio profesional con iluminación dramática
-    - Estética tech premium, minimalista y moderna
-    - Logo o interfaz real del software si es conocido
-    - Composición vertical 9:16 optimizada para Instagram
+    2. COLOR & LIGHTING:
+       - Use high-contrast color theory. Incorporate cinematic neon accent lights (such as vibrant cyan, deep purple, or electric orange hues) slicing through a moody, dark premium atmosphere. 
     
-    Estilo: dark cinematic studio, hyper-realistic, premium tech aesthetic, dramatic lighting, 
-    ultra high quality commercial photography, no text overlays, no fake documents, no fake data.
+    3. SHOT SPECIFICATIONS:
+       - Composition: Vertical 9:16 framing, macro or close-up heroic shot, strong depth of field with an elegant blurred background.
     
-    Max 80 words. Solo el prompt en inglés, sin explicaciones.
+    4. ABSOLUTE PROHIBITIONS (CRITICAL):
+       - NO text overlays, NO written words, NO blurry fake logos, NO typos, NO paper documents.
+       - NO human faces with distorted features, NO serial numbers.
+    
+    Style: Photorealistic commercial 3D render, Unreal Engine 5 style, hyper-detailed textures, cinematic lighting, premium dark tech aesthetic.
+    
+    Max 80 words. Output ONLY the English prompt. No introductions, no notes.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=200,
-        temperature=0.7
+        max_tokens=250,
+        temperature=0.85
     )
     return response.choices[0].message.content
 
