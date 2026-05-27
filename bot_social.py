@@ -278,8 +278,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica="")
             data={
                 "image_url": imagen_url,
                 "caption": caption,
-                "access_token": meta_token,
-                **({"audio_name": musica} if musica else {})
+                "access_token": meta_token
             }
         )
         data = res.json()
