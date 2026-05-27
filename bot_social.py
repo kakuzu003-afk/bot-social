@@ -44,20 +44,7 @@ CLIENTES = {
         "meta_token": os.environ.get("META_ACCESS_TOKEN"),
         "ig_user_id": os.environ.get("IG_USER_ID"),
     },
-    # Para agregar un cliente nuevo, copia este bloque y cambia el ID:
-    # "cliente1": {
-    #     "nombre": "Nombre del cliente",
-    #     "meta_token": os.environ.get("META_ACCESS_TOKEN_CLIENTE1"),
-    #     "ig_user_id": os.environ.get("IG_USER_ID_CLIENTE1"),
-    # },
-    # "cliente2": {
-    #     "nombre": "Otro cliente",
-    #     "meta_token": os.environ.get("META_ACCESS_TOKEN_CLIENTE2"),
-    #     "ig_user_id": os.environ.get("IG_USER_ID_CLIENTE2"),
-    # },
 }
-
-
 
 for clave, cliente in CLIENTES.items():
     stats_global[clave] = {
@@ -194,20 +181,24 @@ def buscar_musica_pixabay(mood="energico"):
     log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
 
     try:
-        url = "https://pixabay.com/api/music/"
+        url = "https://pixabay.com/api/music"  # Barra final removida para evitar errores 403/400
         params = {
-            "key": pixabay_key,
+            "key": pixabay_key.strip(),
             "q": query,
             "per_page": 5,
         }
         res = req.get(url, params=params, timeout=10)
+        
+        if res.status_code != 200:
+            log(f"⚠️ Pixabay respondió con código de error {res.status_code}. Verifica tu API Key.", "warning")
+            return None
+            
         data = res.json()
         hits = data.get("hits", [])
         if not hits:
             log(f"⚠️ Sin resultados de música para '{query}'.", "warning")
             return None
 
-        # Tomar la primera pista disponible con URL de audio
         pista = None
         for hit in hits:
             audio_url = hit.get("audio", {}).get("mp3", "") if isinstance(hit.get("audio"), dict) else hit.get("previewURL", "")
@@ -221,7 +212,6 @@ def buscar_musica_pixabay(mood="energico"):
 
         log(f"🎶 Pista encontrada: {pista['titulo']}", "success")
 
-        # Descargar el mp3
         os.makedirs("static", exist_ok=True)
         audio_path = f"static/audio_{int(time.time())}.mp3"
         r_audio = req.get(pista["url"], timeout=30)
@@ -284,10 +274,6 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
 # ============================================
 
 def subir_video_a_cdn(video_path):
-    """Sube el video a ImgBB (como fallback) o a un CDN externo para obtener URL pública."""
-    # Instagram Graph API requiere URL pública del video.
-    # Usamos Cloudinary si está disponible, sino intentamos ImgBB (solo imágenes).
-    # Recomendado: configurar CLOUDINARY_URL en Railway.
     cloudinary_url = os.environ.get("CLOUDINARY_URL")
     if cloudinary_url:
         try:
@@ -311,7 +297,6 @@ def subir_video_a_cdn(video_path):
 
 
 def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
-    """Publica un video como Reel en Instagram usando Graph API."""
     cliente = CLIENTES.get(cliente_id)
     if not cliente:
         log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
@@ -347,7 +332,6 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
             log(f"❌ Error creando contenedor Reel: {data}", "error")
             return False
 
-        # Polling — los videos tardan más en procesarse
         log(f"⏳ Esperando que Meta procese el video (puede tardar ~30s)...", "info")
         max_intentos = 15
         listo = False
@@ -445,7 +429,6 @@ def subir_imgbb(filepath):
         return None
 
 def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
-    """Publica en el Instagram del cliente especificado."""
     cliente = CLIENTES.get(cliente_id)
     if not cliente:
         log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
@@ -479,7 +462,6 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
             log(f"❌ Error creando contenedor: {data}", "error")
             return False
 
-        # Polling: esperar hasta que Meta tenga el contenedor listo
         log(f"⏳ Esperando que Meta procese la imagen...", "info")
         max_intentos = 10
         listo = False
@@ -564,7 +546,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
 
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
-            # Publicar post estático de imagen
             publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
 
         # ── FLUJO REEL ──────────────────────────────────────────
@@ -602,7 +583,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         log(f'❌ Error en ciclo libre: {e}', 'error')
 
     socketio.emit('stats', stats_global)
-
 
 
 # ============================================
@@ -647,7 +627,6 @@ def api_ciclo():
 # SCHEDULER
 # ============================================
 def run_scheduler():
-    # Scheduler activo — agrega jobs aquí según necesites
     while True:
         schedule.run_pending()
         time.sleep(60)
