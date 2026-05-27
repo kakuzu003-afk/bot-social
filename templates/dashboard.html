@@ -67,6 +67,10 @@ select, .price-input { width: 100%; background: var(--bg3); border: 1px solid va
 select:focus, .price-input:focus { border-color: var(--cyan); }
 select option { background: var(--bg2); }
 
+/* selector de cliente resaltado */
+#select-cliente { border-color: rgba(0,229,255,0.3); color: #fff; }
+#select-cliente:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,0.1); }
+
 .btn-execute { width: 100%; background: linear-gradient(135deg, var(--cyan), #0099cc); border: none; border-radius: 8px; color: #000; padding: 12px; font-size: 13px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 12px; }
 .btn-execute:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,255,0.4); }
 .btn-execute:active { transform: translateY(0); }
@@ -76,9 +80,12 @@ select option { background: var(--bg2); }
 .btn-sm { flex: 1; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text2); padding: 7px; font-size: 11px; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.15s; }
 .btn-sm:hover { border-color: var(--red); color: var(--red); }
 
-.client-chip { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; }
+.client-chip { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.2s; }
+.client-chip:hover { border-color: var(--border2); }
+.client-chip.selected { border-color: rgba(0,229,255,0.4); background: rgba(0,229,255,0.05); }
 .client-name { font-size: 13px; font-weight: 600; }
 .badge-active { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--green); background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); border-radius: 99px; padding: 2px 8px; }
+.badge-posts { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text3); }
 
 .main { padding: 24px 28px; }
 .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
@@ -157,6 +164,18 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
       </div>
     </div>
 
+    <!-- SELECTOR DE CLIENTE -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">👤 Cliente activo</div>
+      <select id="select-cliente" onchange="actualizarClienteSeleccionado()">
+        <!-- Se llena dinámicamente desde /api/clientes -->
+      </select>
+      <div class="mode-indicator" id="clienteIndicator" style="margin-top:6px; color:var(--cyan); border-color:rgba(0,229,255,0.2); background:rgba(0,229,255,0.05);">
+        <div class="mode-dot" style="background:var(--cyan); box-shadow:0 0 6px var(--cyan);"></div>
+        <span id="clienteLabel">Cargando clientes...</span>
+      </div>
+    </div>
+
     <div class="sidebar-section">
       <div class="sidebar-label">⚡ Búsqueda libre</div>
       <div class="search-wrapper">
@@ -170,8 +189,29 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
     </div>
 
     <div class="sidebar-section">
+      <div class="field-label">Producto / Marca</div>
+      <select id="select-producto">
+        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
+        <option value="aurakey_adobe">Adobe Creative Cloud</option>
+        <option value="aurakey_windows">Windows 10/11 Pro</option>
+        <option value="aurakey_office">Office Pro Plus 2024</option>
+      </select>
       <div class="field-label">Precio</div>
       <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
+        <span class="field-label" style="margin:0;">🎵 Música con IA</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);" id="musicaLabel">OFF</span>
+          <div style="position:relative;width:36px;height:20px;" onclick="toggleMusica()">
+            <input type="checkbox" id="toggle-musica" style="opacity:0;width:0;height:0;position:absolute;">
+            <div id="toggle-track" style="position:absolute;inset:0;background:var(--border2);border-radius:10px;transition:background 0.2s;"></div>
+            <div id="toggle-thumb" style="position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform 0.2s;"></div>
+          </div>
+        </label>
+      </div>
+      <div id="musica-hint" style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);display:none;">
+        <span id="musica-hint-text">La IA elegirá la canción ideal para el contenido</span>
+      </div>
       <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
       <div class="btn-row">
         <button class="btn-sm" onclick="limpiarLogs()">🗑 Logs</button>
@@ -180,10 +220,9 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-label">Clientes activos</div>
-      <div class="client-chip">
-        <div class="client-name">Aurakey</div>
-        <div class="badge-active">ACTIVO</div>
+      <div class="sidebar-label">Clientes registrados</div>
+      <div id="clientesList">
+        <!-- Se llena dinámicamente -->
       </div>
     </div>
   </aside>
@@ -212,6 +251,8 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
 <script>
 const socket = io();
 let captions = [];
+let statsData = {};
+let clientesData = [];
 
 setInterval(() => {
   document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-CL');
@@ -220,20 +261,25 @@ setInterval(() => {
 const inputBusqueda = document.getElementById('input-busqueda');
 const modeIndicator = document.getElementById('modeIndicator');
 const modeLabel = document.getElementById('modeLabel');
+const selectProducto = document.getElementById('select-producto');
 
 inputBusqueda.addEventListener('input', () => {
   const val = inputBusqueda.value.trim();
   if (val) {
     modeIndicator.className = 'mode-indicator libre';
-    modeLabel.textContent = `Buscando: "${val}"`;
+    modeLabel.textContent = `Modo libre: "${val}"`;
+    selectProducto.style.opacity = '0.4';
+    selectProducto.style.pointerEvents = 'none';
   } else {
     modeIndicator.className = 'mode-indicator preset';
-    modeLabel.textContent = 'Escribe un producto para buscar';
+    modeLabel.textContent = 'Modo: producto preseleccionado';
+    selectProducto.style.opacity = '1';
+    selectProducto.style.pointerEvents = 'auto';
   }
 });
 
 socket.on('log', d => agregarLog(d.msg, d.tipo));
-socket.on('stats', d => actualizarStats(d));
+socket.on('stats', d => { statsData = d; actualizarStats(d); renderClientesList(); });
 socket.on('caption', d => { captions.unshift(d); renderCaptions(); });
 socket.on('bot_status', d => {
   const btn = document.getElementById('btnExecute');
@@ -260,6 +306,40 @@ function actualizarStats(data) {
   document.getElementById('statLikes').textContent = l;
 }
 
+function actualizarClienteSeleccionado() {
+  const sel = document.getElementById('select-cliente');
+  const nombre = sel.options[sel.selectedIndex]?.text || '';
+  document.getElementById('clienteLabel').textContent = `Publicando en: ${nombre}`;
+  renderClientesList();
+}
+
+function renderClientesList() {
+  const sel = document.getElementById('select-cliente');
+  const clienteActivo = sel.value;
+  const container = document.getElementById('clientesList');
+  if (!clientesData.length) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace;">Sin clientes registrados</div>';
+    return;
+  }
+  container.innerHTML = clientesData.map(c => {
+    const stats = statsData[c.id] || {};
+    const isSelected = c.id === clienteActivo;
+    return `<div class="client-chip ${isSelected ? 'selected' : ''}" onclick="seleccionarCliente('${c.id}')">
+      <div class="client-name">${c.nombre}</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="badge-posts">${stats.posts || 0} posts</span>
+        <span class="badge-active">ACTIVO</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function seleccionarCliente(clienteId) {
+  const sel = document.getElementById('select-cliente');
+  sel.value = clienteId;
+  actualizarClienteSeleccionado();
+}
+
 function renderCaptions() {
   const list = document.getElementById('captionList');
   document.getElementById('captionCount').textContent = captions.length;
@@ -279,6 +359,7 @@ function renderCaptions() {
           ? `<img src="${c.imagen_url}" class="caption-image" alt="Post" onerror="this.outerHTML='<div class=\\'no-image\\'>⚠️ Imagen expirada</div>'">`
           : `<div class="no-image">🎨 Sin imagen generada</div>`}
         <div class="published-badge ${c.publicado ? 'yes' : 'no'}">${c.publicado ? '✅ Publicado en Instagram' : '⏳ Pendiente'}</div>
+        ${c.cancion ? `<div style="font-size:10px;color:var(--purple);font-family:'Space Mono',monospace;margin-bottom:8px;">🎵 ${c.cancion}</div>` : ''}
         <div class="caption-field-label">Caption</div>
         <textarea class="caption-ta" rows="4" id="caption_${i}">${c.caption}</textarea>
         <div class="caption-field-label">Prompt imagen</div>
@@ -297,30 +378,64 @@ function copiarCaption(i) { navigator.clipboard.writeText(document.getElementByI
 function copiarPrompt(i) { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value); agregarLog('Prompt copiado ✅', 'success'); }
 function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); renderCaptions(); agregarLog('Caption eliminado','warning'); } }
 function limpiarLogs() { document.getElementById('logBox').innerHTML=''; }
+function toggleMusica() {
+  const cb = document.getElementById('toggle-musica');
+  cb.checked = !cb.checked;
+  const track = document.getElementById('toggle-track');
+  const thumb = document.getElementById('toggle-thumb');
+  const label = document.getElementById('musicaLabel');
+  const hint  = document.getElementById('musica-hint');
+  if (cb.checked) {
+    track.style.background = 'var(--cyan)';
+    thumb.style.transform = 'translateX(16px)';
+    label.style.color = 'var(--cyan)';
+    label.textContent = 'ON';
+    hint.style.display = 'block';
+  } else {
+    track.style.background = 'var(--border2)';
+    thumb.style.transform = 'translateX(0)';
+    label.style.color = 'var(--text3)';
+    label.textContent = 'OFF';
+    hint.style.display = 'none';
+  }
+}
+
 function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
 
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
+  const producto = selectProducto.value;
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
+  const cliente_id = document.getElementById('select-cliente').value;
+  const con_musica = document.getElementById('toggle-musica').checked;
 
-  if (!busqueda) {
-    agregarLog('⚠️ Escribe un producto en el buscador primero', 'warning');
-    inputBusqueda.focus();
-    return;
-  }
+  if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
 
-  agregarLog(`Iniciando ciclo libre: "${busqueda}"...`, 'info');
+  const body = busqueda
+    ? { busqueda_libre: busqueda, precio, cliente_id, con_musica }
+    : { producto, precio, cliente_id, con_musica };
+
+  const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
+  agregarLog(`Iniciando ciclo para ${nombreCliente}${busqueda ? ` — libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
+
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading');
   btn.textContent = '⏳ Procesando...';
 
-  fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ busqueda_libre: busqueda, precio }) })
+  fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
     .then(r => r.json())
     .then(d => agregarLog(d.msg, 'success'))
     .catch(() => { agregarLog('Error al lanzar ciclo','error'); btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo'; });
 }
 
-fetch('/api/stats').then(r=>r.json()).then(actualizarStats);
+// Cargar clientes y stats al iniciar
+fetch('/api/clientes').then(r=>r.json()).then(data => {
+  clientesData = data;
+  const sel = document.getElementById('select-cliente');
+  sel.innerHTML = data.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+  actualizarClienteSeleccionado();
+});
+fetch('/api/stats').then(r=>r.json()).then(d => { statsData = d; actualizarStats(d); renderClientesList(); });
 fetch('/api/captions').then(r=>r.json()).then(data=>{ captions=data; renderCaptions(); });
 </script>
 </body>
