@@ -142,15 +142,33 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    Eres un experto en Midjourney y DALL-E 3.
-    Basándote en este producto: {prod_info['detalle_producto']}.
-    Genera un prompt detallado en inglés para crear una imagen comercial fotorrealista para Instagram.
-    Estilo: cinematic shot, 9:16 vertical format, hyper-realistic, clean studio lighting, modern tech layout. Max 80 words. No explanations.
+    Eres un experto en generación de imágenes comerciales para Instagram.
+    Producto: {prod_info['detalle_producto']}
+    
+    Genera un prompt en inglés para una imagen comercial atractiva. Sigue estas reglas estrictas:
+    
+    PROHIBIDO absolutamente:
+    - NO mostrar documentos, contratos ni licencias impresas
+    - NO mostrar nombres de personas ficticias ni datos inventados
+    - NO mostrar números de serie, fechas de expedición ni formularios
+    - NO texto ilegible ni datos falsos de ningún tipo
+    
+    DEBE mostrar:
+    - Interfaz del software en una pantalla moderna o laptop elegante
+    - Ambiente oscuro tipo estudio profesional con iluminación dramática
+    - Estética tech premium, minimalista y moderna
+    - Logo o interfaz real del software si es conocido
+    - Composición vertical 9:16 optimizada para Instagram
+    
+    Estilo: dark cinematic studio, hyper-realistic, premium tech aesthetic, dramatic lighting, 
+    ultra high quality commercial photography, no text overlays, no fake documents, no fake data.
+    
+    Max 80 words. Solo el prompt en inglés, sin explicaciones.
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=150,
+        max_tokens=200,
         temperature=0.7
     )
     return response.choices[0].message.content
