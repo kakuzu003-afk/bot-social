@@ -189,15 +189,27 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
     </div>
 
     <div class="sidebar-section">
-      <div class="field-label">Producto / Marca</div>
-      <select id="select-producto">
-        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
-        <option value="aurakey_adobe">Adobe Creative Cloud</option>
-        <option value="aurakey_windows">Windows 10/11 Pro</option>
-        <option value="aurakey_office">Office Pro Plus 2024</option>
+      <div class="field-label">🎵 Mood musical</div>
+      <select id="select-mood">
+        <option value="energico">⚡ Enérgico</option>
+        <option value="motivador">🔥 Motivador</option>
+        <option value="alegre">😊 Alegre</option>
+        <option value="corporativo">💼 Corporativo</option>
+        <option value="relajado">🌿 Relajado</option>
+        <option value="misterioso">🌑 Misterioso</option>
       </select>
-      <div class="field-label">Precio</div>
+      <div class="field-label" style="margin-top:10px;">Precio</div>
       <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
+        <span style="font-size:12px;color:var(--text2);">🎬 Generar Reel</span>
+        <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer;">
+          <input type="checkbox" id="toggle-reel" checked style="opacity:0;width:0;height:0;">
+          <span id="toggle-track" style="position:absolute;inset:0;background:var(--cyan);border-radius:99px;transition:background 0.2s;">
+            <span id="toggle-thumb" style="position:absolute;left:2px;top:2px;width:16px;height:16px;background:#000;border-radius:50%;transition:transform 0.2s;transform:translateX(16px);"></span>
+          </span>
+        </label>
+      </div>
 
       <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
       <div class="btn-row">
@@ -248,20 +260,29 @@ setInterval(() => {
 const inputBusqueda = document.getElementById('input-busqueda');
 const modeIndicator = document.getElementById('modeIndicator');
 const modeLabel = document.getElementById('modeLabel');
-const selectProducto = document.getElementById('select-producto');
 
 inputBusqueda.addEventListener('input', () => {
   const val = inputBusqueda.value.trim();
   if (val) {
     modeIndicator.className = 'mode-indicator libre';
     modeLabel.textContent = `Modo libre: "${val}"`;
-    selectProducto.style.opacity = '0.4';
-    selectProducto.style.pointerEvents = 'none';
   } else {
     modeIndicator.className = 'mode-indicator preset';
-    modeLabel.textContent = 'Modo: producto preseleccionado';
-    selectProducto.style.opacity = '1';
-    selectProducto.style.pointerEvents = 'auto';
+    modeLabel.textContent = 'Escribe para iniciar modo libre';
+  }
+});
+
+// Toggle visual del switch Reel
+const toggleReel = document.getElementById('toggle-reel');
+const toggleThumb = document.getElementById('toggle-thumb');
+const toggleTrack = document.getElementById('toggle-track');
+toggleReel.addEventListener('change', () => {
+  if (toggleReel.checked) {
+    toggleThumb.style.transform = 'translateX(16px)';
+    toggleTrack.style.background = 'var(--cyan)';
+  } else {
+    toggleThumb.style.transform = 'translateX(0)';
+    toggleTrack.style.background = 'var(--border2)';
   }
 });
 
@@ -346,6 +367,7 @@ function renderCaptions() {
           ? `<img src="${c.imagen_url}" class="caption-image" alt="Post" onerror="this.outerHTML='<div class=\\'no-image\\'>⚠️ Imagen expirada</div>'">`
           : `<div class="no-image">🎨 Sin imagen generada</div>`}
         <div class="published-badge ${c.publicado ? 'yes' : 'no'}">${c.publicado ? '✅ Publicado en Instagram' : '⏳ Pendiente'}</div>
+        ${c.reel_generado ? `<div class="published-badge yes" style="background:rgba(139,92,246,0.1);color:var(--purple);border-color:rgba(139,92,246,0.3);">🎬 Reel generado</div>` : ''}
         <div class="caption-field-label">Caption</div>
         <textarea class="caption-ta" rows="4" id="caption_${i}">${c.caption}</textarea>
         <div class="caption-field-label">Prompt imagen</div>
@@ -368,15 +390,18 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
-  const producto = selectProducto.value;
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
   const cliente_id = document.getElementById('select-cliente').value;
-  if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
+  const mood = document.getElementById('select-mood').value;
+  const hacer_reel = document.getElementById('toggle-reel').checked;
 
-  const body = { busqueda_libre: busqueda, precio, cliente_id };
+  if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
+  if (!busqueda) { agregarLog('⚠️ Escribe algo en búsqueda libre para iniciar', 'warning'); return; }
+
+  const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel };
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
-  agregarLog(`Iniciando ciclo para ${nombreCliente}${busqueda ? ` — libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
+  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel ? 'sí' : 'no'}`, 'info');
 
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading');
