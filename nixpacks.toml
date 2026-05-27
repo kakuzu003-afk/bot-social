@@ -1,5 +1,9 @@
 [phases.setup]
+nixPkgs = ["ffmpeg"]
 aptPkgs = ["ffmpeg"]
 
 [phases.build]
 cmds = ["pip install -r requirements.txt"]
+
+[phases.start]
+cmd = "python bot_social.py"
