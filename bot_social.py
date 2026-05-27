@@ -124,27 +124,34 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    You are a world-class commercial 3D artist and creative director specializing in high-converting Instagram ads.
+    You are a world-class commercial photographer and creative director specializing in high-converting Instagram product ads.
     Product to feature: {prod_info['detalle_producto']}
     
     Generate a highly detailed, visually stunning prompt in English for an image generation model. Follow these precise guidelines:
     
-    1. VISUAL CONCEPT & SCENERY:
-       - Create a grand, premium conceptual scene that represents the essence of the product. 
-       - Avoid boring, flat tech setups. Instead, use metaphorical, abstract, or heroic representations. For digital software or services, you can visualize the product's core identity (like glowing modern icons, sleek dark key cards, or abstract data structures) floating as premium 3D crystal or metallic objects in a futuristic, cinematic space.
-       - Use dynamic elements like volumetric smoke, floating particles, sharp reflections, and dramatic rim lighting to give it a luxury catalog feel.
+    1. PRODUCT FOCUS (CRITICAL):
+       - The product "{prod_info['detalle_producto']}" MUST be the absolute center and hero of the image. Show the actual product clearly and recognizably.
+       - Do NOT use metaphors, abstract representations, or symbolic objects. Show the REAL product as it physically looks.
+       - The product must occupy at least 60% of the frame, sharp and in full detail.
     
-    2. COLOR & LIGHTING:
-       - Use high-contrast color theory. Incorporate cinematic neon accent lights (such as vibrant cyan, deep purple, or electric orange hues) slicing through a moody, dark premium atmosphere. 
+    2. VISUAL CONCEPT & SCENERY:
+       - Place the product in a premium lifestyle or studio setting that matches its category.
+       - Use dynamic elements like soft reflections, subtle particles, and dramatic rim lighting to give it a luxury catalog feel.
+       - Background should complement the product without distracting from it.
     
-    3. SHOT SPECIFICATIONS:
-       - Composition: Vertical 9:16 framing, macro or close-up heroic shot, strong depth of field with an elegant blurred background.
+    3. COLOR & LIGHTING:
+       - Professional studio lighting with cinematic accent lights.
+       - High contrast, clean and premium atmosphere.
     
-    4. ABSOLUTE PROHIBITIONS (CRITICAL):
+    4. SHOT SPECIFICATIONS:
+       - Composition: Vertical 9:16 framing, close-up heroic product shot, strong depth of field with elegant blurred background.
+    
+    5. ABSOLUTE PROHIBITIONS (CRITICAL):
        - NO text overlays, NO written words, NO blurry fake logos, NO typos, NO paper documents.
        - NO human faces with distorted features, NO serial numbers.
+       - NO abstract or metaphorical representations of the product.
     
-    Style: Photorealistic commercial 3D render, Unreal Engine 5 style, hyper-detailed textures, cinematic lighting, premium dark tech aesthetic.
+    Style: Photorealistic commercial product photography, hyper-detailed textures, cinematic lighting, premium aesthetic.
     
     Max 80 words. Output ONLY the English prompt. No introductions, no notes.
     """
@@ -152,7 +159,7 @@ def generar_prompt_imagen(prod_info, caption):
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.85
+        temperature=0.4
     )
     return response.choices[0].message.content
 
