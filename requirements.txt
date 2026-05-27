@@ -4,5 +4,5 @@ schedule
 requests
 flask
 flask-socketio
-openai
+replicate
 cloudinary
