@@ -9,7 +9,6 @@ import time
 import random
 from groq import Groq
 import requests as req
-import openai
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sushiloveaurakey2025'
@@ -22,8 +21,6 @@ groq_api_key = os.environ.get("GROQ_API_KEY")
 
 if not groq_api_key:
     raise ValueError("❌ ERROR: La variable de entorno GROQ_API_KEY no está configurada en Railway.")
-
-openai_api_key = os.environ.get("OPENAI_API_KEY")
 
 groq_client = Groq(api_key=groq_api_key)
 
@@ -122,6 +119,7 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
         temperature=0.7
     )
     return response.choices[0].message.content
+
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
     You are a world-class commercial photographer and creative director specializing in high-converting Instagram product ads.
@@ -189,12 +187,11 @@ def buscar_musica_pixabay(mood="energico"):
     log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
 
     try:
-        # Endpoint oficial unificado para peticiones de audio/música sin conflicto de rutas
         url = "https://pixabay.com/api/"
         params = {
             "key": pixabay_key.strip(),
             "q": query,
-            "media_type": "music",  # Pasamos el tipo como parámetro para evitar el 404 de la ruta
+            "media_type": "music",
             "per_page": 5,
         }
         res = req.get(url, params=params, timeout=10)
@@ -211,7 +208,6 @@ def buscar_musica_pixabay(mood="energico"):
 
         pista = None
         for hit in hits:
-            # Pixabay entrega la URL de descarga en 'audio' o en 'previewURL' según la versión de la API
             audio_url = hit.get("audio", {}).get("mp3", "") if isinstance(hit.get("audio"), dict) else hit.get("previewURL", "")
             if not audio_url and "audio" in hit and isinstance(hit["audio"], str):
                 audio_url = hit["audio"]
@@ -298,7 +294,47 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
 
 
 # ============================================
-# GRAPH API — PUBLICAR COMO REEL EN INSTAGRAM
+# FLUX 1.1 PRO — GENERACIÓN DE IMAGEN
+# ============================================
+
+def generar_imagen_dalle(prompt_imagen):
+    replicate_token = os.environ.get("REPLICATE_API_TOKEN")
+    if not replicate_token:
+        log("⚠️ REPLICATE_API_TOKEN no configurada. Saltando generación de imagen.", "warning")
+        return None
+    try:
+        import replicate
+        client = replicate.Client(api_token=replicate_token)
+        log(f"🖼️ Generando imagen con Flux 1.1 Pro...", "info")
+        output = client.run(
+            "black-forest-labs/flux-1.1-pro",
+            input={
+                "prompt": prompt_imagen,
+                "width": 1024,
+                "height": 1792,
+                "aspect_ratio": "9:16",
+                "output_format": "png",
+                "output_quality": 90,
+                "safety_tolerance": 2,
+                "prompt_upsampling": True
+            }
+        )
+        image_url = str(output)
+        img_bytes = req.get(image_url, timeout=30).content
+        os.makedirs("static", exist_ok=True)
+        filename = f"img_{int(time.time())}.png"
+        filepath = f"static/{filename}"
+        with open(filepath, "wb") as f:
+            f.write(img_bytes)
+        log(f"🖼️ Imagen generada con Flux 1.1 Pro ✅", "success")
+        return filepath
+    except Exception as e:
+        log(f"❌ Error generando imagen: {e}", "error")
+        return None
+
+
+# ============================================
+# CLOUDINARY — SUBIR VIDEO
 # ============================================
 
 def subir_video_a_cdn(video_path):
@@ -330,6 +366,10 @@ def subir_video_a_cdn(video_path):
     log("⚠️ Sin CDN de video configurado. El Reel requiere URL pública.", "warning")
     return None
 
+
+# ============================================
+# GRAPH API — PUBLICAR COMO REEL EN INSTAGRAM
+# ============================================
 
 def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
     cliente = CLIENTES.get(cliente_id)
@@ -409,46 +449,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
 
 
 # ============================================
-# DALL-E 3 — GENERACIÓN DE IMAGEN
-# ============================================
-
-def generar_imagen_dalle(prompt_imagen):
-    replicate_token = os.environ.get("REPLICATE_API_TOKEN")
-    if not replicate_token:
-        log("⚠️ REPLICATE_API_TOKEN no configurada. Saltando generación de imagen.", "warning")
-        return None
-    try:
-        import replicate
-        client = replicate.Client(api_token=replicate_token)
-        log(f"🖼️ Generando imagen con Flux 1.1 Pro...", "info")
-        output = client.run(
-            "black-forest-labs/flux-1.1-pro",
-            input={
-                "prompt": prompt_imagen,
-                "width": 1024,
-                "height": 1792,
-                "aspect_ratio": "9:16",
-                "output_format": "png",
-                "output_quality": 90,
-                "safety_tolerance": 2,
-                "prompt_upsampling": True
-            }
-        )
-        image_url = str(output)
-        img_bytes = req.get(image_url, timeout=30).content
-        os.makedirs("static", exist_ok=True)
-        filename = f"img_{int(time.time())}.png"
-        filepath = f"static/{filename}"
-        with open(filepath, "wb") as f:
-            f.write(img_bytes)
-        log(f"🖼️ Imagen generada con Flux 1.1 Pro ✅", "success")
-        return filepath
-    except Exception as e:
-        log(f"❌ Error generando imagen: {e}", "error")
-        return None
-
-# ============================================
-# GRAPH API — PUBLICAR EN INSTAGRAM
+# GRAPH API — PUBLICAR POST EN INSTAGRAM
 # ============================================
 
 def subir_imgbb(filepath):
@@ -553,6 +554,10 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
         return False
 
 
+# ============================================
+# CICLO PRINCIPAL
+# ============================================
+
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True):
     global bot_activo
     bot_activo = True
@@ -585,8 +590,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         publicado_reel = False
         reel_generado = False
 
-        if openai_api_key:
-            imagen_filepath = generar_imagen_dalle(prompt_imagen)
+        imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
         # ── FLUJO REEL (solo Reel, sin post de imagen) ──────────
         if hacer_reel and imagen_filepath:
