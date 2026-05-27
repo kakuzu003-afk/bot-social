@@ -29,12 +29,6 @@ stats_global = {}
 logs_global = []
 bot_activo = False
 
-# ============================================
-# CLIENTES — agrega aquí cada cliente nuevo
-# Para cada cliente necesitas en Railway:
-#   META_ACCESS_TOKEN_<ID>   (ej: META_ACCESS_TOKEN_CLIENTE1)
-#   IG_USER_ID_<ID>          (ej: IG_USER_ID_CLIENTE1)
-# ============================================
 CLIENTES = {
     "aurakey": {
         "nombre": "Aurakey",
@@ -54,7 +48,7 @@ for clave, cliente in CLIENTES.items():
     }
 
 # ============================================
-# FUNCIONES DE IA, LOGS Y BÚSQUEDA EN VIVO
+# LOGS
 # ============================================
 
 def log(msg, tipo='info'):
@@ -65,10 +59,13 @@ def log(msg, tipo='info'):
     socketio.emit('log', entrada)
     print(f"[{tipo.upper()}] {msg}")
 
+# ============================================
+# TENDENCIAS
+# ============================================
+
 def buscar_tendencias_reales_api(prod_info):
     keyword = prod_info["keyword_busqueda"]
     log(f"🌐 Escaneando tendencias globales para '{keyword}'...", "info")
-    
     palabras_clave = []
     try:
         url = f"https://suggestqueries.google.com/complete/search?client=firefox&q={keyword}"
@@ -80,11 +77,13 @@ def buscar_tendencias_reales_api(prod_info):
                 log(f"🔥 Datos frescos detectados en vivo: {', '.join(palabras_clave)}", "success")
     except Exception as e:
         log(f"⚠️ Error de conexión en vivo. Usando ganchos dinámicos.", "warning")
-        
     if not palabras_clave:
         palabras_clave = [f"{keyword} 2026", f"best {keyword} tools", "productividad", "trabajo remoto", "ofertas chile"]
-
     return palabras_clave
+
+# ============================================
+# GENERACIÓN DE CONTENIDO
+# ============================================
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
     prompt = f"""
@@ -101,7 +100,7 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, debes incluir obligatoriamente un llamado a la acción para comprar que incluya exactamente esta línea:
     📲 WhatsApp: +56946557876
     
-    2. 5 HASHTAGS VIRALES (REGLA CRÍTICA): Agrega al final del post exactamente SOLO 5 hashtags separados por un espacio. Tienen que ser etiquetas reales, cortas y orgánicas que la gente de verdad use y busque en Instagram. No te limites a poner un '#' antes de los términos calientes que te pasé. Transfórmalos en conceptos de nicho reales.
+    2. 5 HASHTAGS VIRALES (REGLA CRÍTICA): Agrega al final del post exactamente SOLO 5 hashtags separados por un espacio. Tienen que ser etiquetas reales, cortas y orgánicas que la gente de verdad use y busque en Instagram.
     
     Formato estricto de salida:
     [Aquí va el texto de tu caption con emojis...]
@@ -170,60 +169,44 @@ captions_guardados = []
 # ============================================
 
 MOOD_QUERIES = {
-    "energico":   "upbeat electronic",
-    "motivador":  "motivational epic",
-    "relajado":   "calm ambient",
+    "energico":    "upbeat electronic",
+    "motivador":   "motivational epic",
+    "relajado":    "calm ambient",
     "corporativo": "corporate background",
-    "misterioso": "dark cinematic",
-    "alegre":     "happy pop",
+    "misterioso":  "dark cinematic",
+    "alegre":      "happy pop",
 }
 
 def buscar_musica_pixabay(mood="energico"):
-    """Busca una pista de música libre en Pixabay según el mood. Retorna ruta local del .mp3."""
     pixabay_key = os.environ.get("PIXABAY_API_KEY")
     if not pixabay_key:
         log("⚠️ PIXABAY_API_KEY no configurada. Saltando música.", "warning")
         return None
-
     query = MOOD_QUERIES.get(mood, mood)
     log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
-
     try:
         url = "https://pixabay.com/api/"
-        params = {
-            "key": pixabay_key.strip(),
-            "q": query,
-            "media_type": "music",
-            "per_page": 5,
-        }
+        params = {"key": pixabay_key.strip(), "q": query, "media_type": "music", "per_page": 5}
         res = req.get(url, params=params, timeout=10)
-        
         if res.status_code != 200:
-            log(f"⚠️ Pixabay respondió con código de error {res.status_code}. Verifica tu API Key.", "warning")
+            log(f"⚠️ Pixabay respondió con código {res.status_code}.", "warning")
             return None
-            
-        data = res.json()
-        hits = data.get("hits", [])
+        hits = res.json().get("hits", [])
         if not hits:
             log(f"⚠️ Sin resultados de música para '{query}'.", "warning")
             return None
-
         pista = None
         for hit in hits:
             audio_url = hit.get("audio", {}).get("mp3", "") if isinstance(hit.get("audio"), dict) else hit.get("previewURL", "")
             if not audio_url and "audio" in hit and isinstance(hit["audio"], str):
                 audio_url = hit["audio"]
-                
             if audio_url:
                 pista = {"titulo": hit.get("tags", "pista"), "url": audio_url}
                 break
-
         if not pista:
             log("⚠️ Ninguna pista con URL de audio encontrada.", "warning")
             return None
-
         log(f"🎶 Pista encontrada: {pista['titulo']}", "success")
-
         os.makedirs("static", exist_ok=True)
         audio_path = f"static/audio_{int(time.time())}.mp3"
         r_audio = req.get(pista["url"], timeout=30)
@@ -231,7 +214,6 @@ def buscar_musica_pixabay(mood="energico"):
             f.write(r_audio.content)
         log(f"⬇️ Audio descargado → {audio_path}", "success")
         return audio_path
-
     except Exception as e:
         log(f"❌ Error buscando música en Pixabay: {e}", "error")
         return None
@@ -241,22 +223,11 @@ def buscar_musica_pixabay(mood="energico"):
 # ============================================
 
 def generar_video_reel(imagen_path, audio_path, duracion=10):
-    """Combina imagen + audio con ffmpeg para generar un Reel MP4 en formato 9:16."""
-    import subprocess
-    try:
-        os.makedirs("static", exist_ok=True)
-        video_path = f"static/reel_{int(time.time())}.mp4"
-        audio_converted = f"static/audio_conv_{int(time.time())}.mp3"
-        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
-
-       def generar_video_reel(imagen_path, audio_path, duracion=10):
-    """Combina imagen + audio con ffmpeg para generar un Reel MP4 en formato 9:16."""
     import subprocess
     try:
         os.makedirs("static", exist_ok=True)
         video_path = f"static/reel_{int(time.time())}.mp4"
         log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
-
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1",
@@ -278,21 +249,17 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
             video_path
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-
         if result.returncode != 0:
             log(f"❌ ffmpeg error: {result.stderr[-300:]}", "error")
             return None
-
         log(f"✅ Video Reel generado → {video_path}", "success")
         return video_path
-
     except FileNotFoundError:
-        log("❌ ffmpeg no está instalado. Agrega 'ffmpeg' a tu Dockerfile/buildpack.", "error")
+        log("❌ ffmpeg no está instalado.", "error")
         return None
     except Exception as e:
         log(f"❌ Error generando video: {e}", "error")
         return None
-
 
 # ============================================
 # FLUX 1.1 PRO — GENERACIÓN DE IMAGEN
@@ -323,8 +290,7 @@ def generar_imagen_dalle(prompt_imagen):
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
-        filename = f"img_{int(time.time())}.png"
-        filepath = f"static/{filename}"
+        filepath = f"static/img_{int(time.time())}.png"
         with open(filepath, "wb") as f:
             f.write(img_bytes)
         log(f"🖼️ Imagen generada con Flux 1.1 Pro ✅", "success")
@@ -332,7 +298,6 @@ def generar_imagen_dalle(prompt_imagen):
     except Exception as e:
         log(f"❌ Error generando imagen: {e}", "error")
         return None
-
 
 # ============================================
 # CLOUDINARY — SUBIR VIDEO
@@ -342,34 +307,23 @@ def subir_video_a_cdn(video_path):
     cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
     api_key = os.environ.get("CLOUDINARY_API_KEY")
     api_secret = os.environ.get("CLOUDINARY_API_SECRET")
-
     if cloud_name and api_key and api_secret:
         try:
             import cloudinary
             import cloudinary.uploader
-            cloudinary.config(
-                cloud_name=cloud_name,
-                api_key=api_key,
-                api_secret=api_secret
-            )
-            result = cloudinary.uploader.upload(
-                video_path,
-                resource_type="video",
-                folder="reels"
-            )
+            cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
+            result = cloudinary.uploader.upload(video_path, resource_type="video", folder="reels")
             url = result.get("secure_url")
             if url:
                 log(f"☁️ Video subido a Cloudinary ✅", "success")
                 return url
         except Exception as e:
             log(f"⚠️ Error subiendo a Cloudinary: {e}", "warning")
-
-    log("⚠️ Sin CDN de video configurado. El Reel requiere URL pública.", "warning")
+    log("⚠️ Sin CDN de video configurado.", "warning")
     return None
 
-
 # ============================================
-# GRAPH API — PUBLICAR COMO REEL EN INSTAGRAM
+# GRAPH API — PUBLICAR REEL
 # ============================================
 
 def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
@@ -377,80 +331,62 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
     if not cliente:
         log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
         return False
-
     meta_token = cliente.get("meta_token")
     ig_user_id = cliente.get("ig_user_id")
-
     if not meta_token or not ig_user_id:
-        log(f"⚠️ Credenciales de Instagram no configuradas para {cliente['nombre']}.", "warning")
+        log(f"⚠️ Credenciales no configuradas para {cliente['nombre']}.", "warning")
         return False
-
     try:
         video_url = subir_video_a_cdn(video_path)
         if not video_url:
-            log("❌ No se pudo obtener URL pública del video. Reel no publicado.", "error")
+            log("❌ No se pudo obtener URL pública del video.", "error")
             return False
-
         log(f"📤 Creando contenedor Reel en Graph API para {cliente['nombre']}...", "info")
         res = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
-            data={
-                "media_type": "REELS",
-                "video_url": video_url,
-                "caption": caption,
-                "access_token": meta_token
-            }
+            data={"media_type": "REELS", "video_url": video_url, "caption": caption, "access_token": meta_token}
         )
-        data = res.json()
-        container_id = data.get("id")
-
+        container_id = res.json().get("id")
         if not container_id:
-            log(f"❌ Error creando contenedor Reel: {data}", "error")
+            log(f"❌ Error creando contenedor Reel: {res.json()}", "error")
             return False
-
-        log(f"⏳ Esperando que Meta procese el video (puede tardar ~30s)...", "info")
-        max_intentos = 15
+        log(f"⏳ Esperando que Meta procese el video...", "info")
         listo = False
-        for intento in range(max_intentos):
+        for intento in range(15):
             time.sleep(6)
             check = req.get(
                 f"https://graph.facebook.com/v19.0/{container_id}",
                 params={"fields": "status_code", "access_token": meta_token}
             ).json()
             status = check.get("status_code")
-            log(f"📡 Estado Reel ({intento+1}/{max_intentos}): {status}", "info")
+            log(f"📡 Estado Reel ({intento+1}/15): {status}", "info")
             if status == "FINISHED":
                 listo = True
                 break
             elif status == "ERROR":
                 log(f"❌ Meta rechazó el video: {check}", "error")
                 return False
-
         if not listo:
-            log("❌ Timeout: Meta no procesó el Reel a tiempo.", "error")
+            log("❌ Timeout: Meta no procesó el Reel.", "error")
             return False
-
         log(f"🚀 Publicando Reel en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
             data={"creation_id": container_id, "access_token": meta_token}
         )
         data2 = res2.json()
-
         if data2.get("id"):
-            log(f"🎬 Reel publicado en Instagram de {cliente['nombre']}! ID: {data2['id']}", "success")
+            log(f"🎬 Reel publicado! ID: {data2['id']}", "success")
             return True
         else:
             log(f"❌ Error publicando Reel: {data2}", "error")
             return False
-
     except Exception as e:
         log(f"❌ Error en Graph API (Reel): {e}", "error")
         return False
 
-
 # ============================================
-# GRAPH API — PUBLICAR POST EN INSTAGRAM
+# GRAPH API — PUBLICAR POST
 # ============================================
 
 def subir_imgbb(filepath):
@@ -462,10 +398,7 @@ def subir_imgbb(filepath):
         import base64
         with open(filepath, "rb") as f:
             img_b64 = base64.b64encode(f.read()).decode()
-        res = req.post(
-            "https://api.imgbb.com/1/upload",
-            data={"key": imgbb_key, "image": img_b64}
-        )
+        res = req.post("https://api.imgbb.com/1/upload", data={"key": imgbb_key, "image": img_b64})
         url = res.json().get("data", {}).get("url")
         if url:
             log(f"☁️ Imagen subida a ImgBB ✅", "success")
@@ -479,81 +412,59 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
     if not cliente:
         log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
         return False
-
     meta_token = cliente.get("meta_token")
     ig_user_id = cliente.get("ig_user_id")
-
     if not meta_token or not ig_user_id:
-        log(f"⚠️ Credenciales de Instagram no configuradas para {cliente['nombre']}. Guardado para publicación manual.", "warning")
+        log(f"⚠️ Credenciales no configuradas para {cliente['nombre']}.", "warning")
         return False
     try:
         imagen_url = subir_imgbb(imagen_path)
         if not imagen_url:
             log("❌ No se pudo obtener URL pública de la imagen.", "error")
             return False
-
         log(f"📤 Creando contenedor en Graph API para {cliente['nombre']}...", "info")
         res = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
-            data={
-                "image_url": imagen_url,
-                "caption": caption,
-                "access_token": meta_token
-            }
+            data={"image_url": imagen_url, "caption": caption, "access_token": meta_token}
         )
-        data = res.json()
-        container_id = data.get("id")
-
+        container_id = res.json().get("id")
         if not container_id:
-            log(f"❌ Error creando contenedor: {data}", "error")
+            log(f"❌ Error creando contenedor: {res.json()}", "error")
             return False
-
         log(f"⏳ Esperando que Meta procese la imagen...", "info")
-        max_intentos = 10
         listo = False
-        for intento in range(max_intentos):
+        for intento in range(10):
             time.sleep(4)
             check = req.get(
                 f"https://graph.facebook.com/v19.0/{container_id}",
-                params={
-                    "fields": "status_code",
-                    "access_token": meta_token
-                }
+                params={"fields": "status_code", "access_token": meta_token}
             ).json()
             status = check.get("status_code")
-            log(f"📡 Estado contenedor ({intento+1}/{max_intentos}): {status}", "info")
+            log(f"📡 Estado contenedor ({intento+1}/10): {status}", "info")
             if status == "FINISHED":
                 listo = True
                 break
             elif status == "ERROR":
                 log(f"❌ Meta rechazó la imagen: {check}", "error")
                 return False
-
         if not listo:
-            log(f"❌ Timeout: Meta no procesó la imagen a tiempo.", "error")
+            log(f"❌ Timeout: Meta no procesó la imagen.", "error")
             return False
-
         log(f"🚀 Publicando en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
-            data={
-                "creation_id": container_id,
-                "access_token": meta_token
-            }
+            data={"creation_id": container_id, "access_token": meta_token}
         )
         data2 = res2.json()
-
         if data2.get("id"):
-            log(f"✅ Post publicado en Instagram de {cliente['nombre']}! ID: {data2['id']}", "success")
+            log(f"✅ Post publicado! ID: {data2['id']}", "success")
             return True
         else:
             log(f"❌ Error publicando: {data2}", "error")
             return False
-
     except Exception as e:
         log(f"❌ Error en Graph API: {e}", "error")
         return False
-
 
 # ============================================
 # CICLO PRINCIPAL
@@ -566,7 +477,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
     cliente = CLIENTES.get(cliente_id, CLIENTES["aurakey"])
     nombre_cliente = cliente["nombre"]
     log(f'🔍 Ciclo libre para "{busqueda}" — Cliente: {nombre_cliente}...', 'info')
-
     prod_info = {
         "nombre": nombre_cliente,
         "detalle_producto": busqueda,
@@ -574,23 +484,18 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         "nicho": busqueda,
         "tono": "profesional, vendedor, directo y confiable"
     }
-
     try:
         tendencias_reales = buscar_tendencias_reales_api(prod_info)
         gancho_usado = f"Tendencias en vivo: {', '.join(tendencias_reales[:2])}"
-
         log(f'✍️ Redactando post para "{busqueda}"...', 'info')
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
-
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
         prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
-
         imagen_filepath = None
         imagen_url_publica = None
         publicado_post = False
         publicado_reel = False
         reel_generado = False
-
         imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
         # ── FLUJO REEL (solo Reel, sin post de imagen) ──────────
@@ -608,10 +513,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         elif not hacer_reel and imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
             publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
-        # ────────────────────────────────────────────────────────
 
         publicado = publicado_post or publicado_reel
-
         entrada = {
             'cliente': f"{nombre_cliente} — {busqueda.upper()}",
             'cliente_id': cliente_id,
@@ -628,12 +531,9 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         stats_global[cliente_id]['posts'] += 1
         stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
         log(f'✅ Ciclo completo — Post: {"✅" if publicado_post else "—"} | Reel: {"✅" if publicado_reel else ("generado, sin CDN" if reel_generado else "—")}', 'success')
-
     except Exception as e:
         log(f'❌ Error en ciclo libre: {e}', 'error')
-
     socketio.emit('stats', stats_global)
-
 
 # ============================================
 # RUTAS API
@@ -664,10 +564,8 @@ def api_ciclo():
     cliente_id = data.get('cliente_id', 'aurakey')
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
-
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
-
     hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel))
     hilo.daemon = True
     hilo.start()
@@ -676,6 +574,7 @@ def api_ciclo():
 # ============================================
 # SCHEDULER
 # ============================================
+
 def run_scheduler():
     while True:
         schedule.run_pending()
@@ -683,10 +582,8 @@ def run_scheduler():
 
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")
-    
     hilo_scheduler = threading.Thread(target=run_scheduler)
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
-
     puerto = int(os.environ.get("PORT", 5000))
     socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
