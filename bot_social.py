@@ -227,7 +227,11 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
     try:
         os.makedirs("static", exist_ok=True)
         video_path = f"static/reel_{int(time.time())}.mp4"
-        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
+        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")# Diagnóstico audio
+        probe = subprocess.run([
+            "ffprobe", "-v", "error", "-show_streams", "-of", "json", audio_path
+        ], capture_output=True, text=True)
+        log(f"🔍 Audio info: {probe.stdout[:300]}", "info")
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1",
