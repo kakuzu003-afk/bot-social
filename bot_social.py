@@ -24,8 +24,6 @@ if not groq_api_key:
     raise ValueError("❌ ERROR: La variable de entorno GROQ_API_KEY no está configurada en Railway.")
 
 openai_api_key = os.environ.get("OPENAI_API_KEY")
-meta_token     = os.environ.get("META_ACCESS_TOKEN")
-ig_user_id     = os.environ.get("IG_USER_ID")
 
 groq_client = Groq(api_key=groq_api_key)
 
@@ -33,6 +31,31 @@ sesiones = {}
 stats_global = {}
 logs_global = []
 bot_activo = False
+
+# ============================================
+# CLIENTES — agrega aquí cada cliente nuevo
+# Para cada cliente necesitas en Railway:
+#   META_ACCESS_TOKEN_<ID>   (ej: META_ACCESS_TOKEN_CLIENTE1)
+#   IG_USER_ID_<ID>          (ej: IG_USER_ID_CLIENTE1)
+# ============================================
+CLIENTES = {
+    "aurakey": {
+        "nombre": "Aurakey",
+        "meta_token": os.environ.get("META_ACCESS_TOKEN"),
+        "ig_user_id": os.environ.get("IG_USER_ID"),
+    },
+    # Para agregar un cliente nuevo, copia este bloque y cambia el ID:
+    # "cliente1": {
+    #     "nombre": "Nombre del cliente",
+    #     "meta_token": os.environ.get("META_ACCESS_TOKEN_CLIENTE1"),
+    #     "ig_user_id": os.environ.get("IG_USER_ID_CLIENTE1"),
+    # },
+    # "cliente2": {
+    #     "nombre": "Otro cliente",
+    #     "meta_token": os.environ.get("META_ACCESS_TOKEN_CLIENTE2"),
+    #     "ig_user_id": os.environ.get("IG_USER_ID_CLIENTE2"),
+    # },
+}
 
 PRODUCTOS_INFO = {
     "aurakey_autocad": {
@@ -65,8 +88,9 @@ PRODUCTOS_INFO = {
     }
 }
 
-for clave, info in PRODUCTOS_INFO.items():
-    stats_global[info['nombre']] = {
+for clave, cliente in CLIENTES.items():
+    stats_global[clave] = {
+        'nombre': cliente['nombre'],
         'posts': 0,
         'comentarios': 0,
         'likes': 0,
@@ -108,7 +132,6 @@ def buscar_tendencias_reales_api(prod_info):
     return palabras_clave
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
-    # Prompt ultra optimizado con ejemplos negativos y positivos para frenar los hashtags robóticos
     prompt = f"""
     Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
     Marca: {prod_info['nombre']}
@@ -192,7 +215,6 @@ def generar_imagen_dalle(prompt_imagen):
             size="1024x1024",
             n=1
         )
-        # gpt-image-1 devuelve base64
         image_data = response.data[0].b64_json
         img_bytes = base64.b64decode(image_data)
         os.makedirs("static", exist_ok=True)
@@ -211,7 +233,6 @@ def generar_imagen_dalle(prompt_imagen):
 # ============================================
 
 def subir_imgbb(filepath):
-    """Sube imagen local a ImgBB y devuelve URL pública."""
     imgbb_key = os.environ.get("IMGBB_API_KEY")
     if not imgbb_key:
         log("⚠️ IMGBB_API_KEY no configurada.", "warning")
@@ -232,25 +253,33 @@ def subir_imgbb(filepath):
         log(f"❌ Error subiendo a ImgBB: {e}", "error")
         return None
 
-def publicar_en_instagram(imagen_path, caption):
+def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica=""):
+    """Publica en el Instagram del cliente especificado."""
+    cliente = CLIENTES.get(cliente_id)
+    if not cliente:
+        log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
+        return False
+
+    meta_token = cliente.get("meta_token")
+    ig_user_id = cliente.get("ig_user_id")
+
     if not meta_token or not ig_user_id:
-        log("⚠️ META_ACCESS_TOKEN o IG_USER_ID no configurados. Saltando publicación.", "warning")
+        log(f"⚠️ Credenciales de Instagram no configuradas para {cliente['nombre']}. Guardado para publicación manual.", "warning")
         return False
     try:
-        # Subir imagen local a ImgBB para obtener URL pública
         imagen_url = subir_imgbb(imagen_path)
         if not imagen_url:
             log("❌ No se pudo obtener URL pública de la imagen.", "error")
             return False
 
-        # Paso 1: crear contenedor de media
-        log("📤 Creando contenedor en Graph API...", "info")
+        log(f"📤 Creando contenedor en Graph API para {cliente['nombre']}...", "info")
         res = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
             data={
                 "image_url": imagen_url,
                 "caption": caption,
-                "access_token": meta_token
+                "access_token": meta_token,
+                **({"audio_name": musica} if musica else {})
             }
         )
         data = res.json()
@@ -260,8 +289,7 @@ def publicar_en_instagram(imagen_path, caption):
             log(f"❌ Error creando contenedor: {data}", "error")
             return False
 
-        # Paso 2: publicar el contenedor
-        log("🚀 Publicando en Instagram...", "info")
+        log(f"🚀 Publicando en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
             data={
@@ -272,7 +300,7 @@ def publicar_en_instagram(imagen_path, caption):
         data2 = res2.json()
 
         if data2.get("id"):
-            log(f"✅ Post publicado en Instagram! ID: {data2['id']}", "success")
+            log(f"✅ Post publicado en Instagram de {cliente['nombre']}! ID: {data2['id']}", "success")
             return True
         else:
             log(f"❌ Error publicando: {data2}", "error")
@@ -282,16 +310,48 @@ def publicar_en_instagram(imagen_path, caption):
         log(f"❌ Error en Graph API: {e}", "error")
         return False
 
-def ciclo_libre(busqueda, precio_manual="No especificado"):
-    """Ciclo con producto libre — el usuario escribe cualquier cosa."""
+
+def sugerir_cancion(prod_info, caption):
+    """Usa Groq para sugerir la canción más adecuada para el post."""
+    prompt = f"""
+    Eres un experto en marketing musical para Instagram.
+    Producto: {prod_info['detalle_producto']}
+    Nicho: {prod_info.get('nicho', '')}
+    Caption del post: {caption[:200]}
+    
+    Sugiere UNA sola canción real y popular que:
+    - Esté disponible en el catálogo de Instagram/Meta
+    - Sea perfecta para el ambiente del producto
+    - Sea reconocible y tenga buen engagement
+    
+    Responde SOLO con el nombre exacto de la canción y el artista, sin explicaciones.
+    Formato: Nombre de la canción - Artista
+    Ejemplo: Blinding Lights - The Weeknd
+    """
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=50,
+            temperature=0.6
+        )
+        cancion = response.choices[0].message.content.strip()
+        log(f"🎵 Canción sugerida por IA: {cancion}", "success")
+        return cancion
+    except Exception as e:
+        log(f"⚠️ No se pudo sugerir canción: {e}", "warning")
+        return ""
+
+def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", con_musica=False):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
-    log(f'🔍 Ciclo libre iniciado para: "{busqueda}"...', 'info')
+    cliente = CLIENTES.get(cliente_id, CLIENTES["aurakey"])
+    nombre_cliente = cliente["nombre"]
+    log(f'🔍 Ciclo libre para "{busqueda}" — Cliente: {nombre_cliente}...', 'info')
 
-    # Crear prod_info dinámico desde la búsqueda
     prod_info = {
-        "nombre": "Aurakey",
+        "nombre": nombre_cliente,
         "detalle_producto": busqueda,
         "keyword_busqueda": busqueda,
         "nicho": busqueda,
@@ -318,13 +378,17 @@ def ciclo_libre(busqueda, precio_manual="No especificado"):
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
-        if imagen_filepath and meta_token and ig_user_id:
-            publicado = publicar_en_instagram(imagen_filepath, caption_completo)
-        elif not meta_token or not ig_user_id:
-            log("ℹ️ Sin credenciales Meta — guardado para publicación manual.", "warning")
+        cancion = ""
+        if con_musica:
+            cancion = sugerir_cancion(prod_info, caption_completo)
+
+        if imagen_filepath:
+            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id, cancion)
 
         entrada = {
-            'cliente': f"Búsqueda libre — {busqueda.upper()}",
+            'cliente': f"{nombre_cliente} — {busqueda.upper()}",
+            'cancion': cancion,
+            'cliente_id': cliente_id,
             'tendencia': gancho_usado,
             'caption': caption_completo,
             'prompt_imagen': prompt_imagen,
@@ -334,8 +398,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado"):
         }
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
-        stats_global['Aurakey']['posts'] += 1
-        stats_global['Aurakey']['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        stats_global[cliente_id]['posts'] += 1
+        stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
         log(f'✅ Ciclo libre completo — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
 
     except Exception as e:
@@ -343,48 +407,53 @@ def ciclo_libre(busqueda, precio_manual="No especificado"):
 
     socketio.emit('stats', stats_global)
 
-def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado"):
+def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado", cliente_id="aurakey", con_musica=False):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
-    log(f'🚀 Iniciando ciclo inteligente para: {id_producto}...', 'info')
+    
+    cliente = CLIENTES.get(cliente_id, CLIENTES["aurakey"])
+    nombre_cliente = cliente["nombre"]
+    log(f'🚀 Iniciando ciclo para: {id_producto} — Cliente: {nombre_cliente}...', 'info')
 
     if id_producto not in PRODUCTOS_INFO:
         log(f'❌ Error: El producto "{id_producto}" no existe.', 'error')
         return
 
-    prod_info = PRODUCTOS_INFO[id_producto]
-    nombre_marca = prod_info['nombre']
+    prod_info = PRODUCTOS_INFO[id_producto].copy()
+    prod_info['nombre'] = nombre_cliente  # usar el nombre del cliente seleccionado
 
     try:
         tendencias_reales = buscar_tendencias_reales_api(prod_info)
         gancho_usado = f"Tendencias en vivo: {', '.join(tendencias_reales[:2])}"
 
-        log(f'✍️ Redactando post comercial y calculando exactamente 5 hashtags...', 'info')
+        log(f'✍️ Redactando post comercial...', 'info')
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
 
         log(f'🎨 Diseñando prompt visual optimizado 9:16...', 'info')
         prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
 
-        # Generar imagen con gpt-image-1
         imagen_filepath = None
         imagen_url_publica = None
         publicado = False
+
         if openai_api_key:
             imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
-        # Subir a ImgBB para URL pública (dashboard + Instagram)
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
-        # Publicar en Instagram vía Graph API
-        if imagen_filepath and meta_token and ig_user_id:
-            publicado = publicar_en_instagram(imagen_filepath, caption_completo)
-        elif not meta_token or not ig_user_id:
-            log("ℹ️ Sin credenciales Meta — caption guardado para publicación manual.", "warning")
+        cancion = ""
+        if con_musica:
+            cancion = sugerir_cancion(prod_info, caption_completo)
+
+        if imagen_filepath:
+            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id, cancion)
 
         entrada = {
-            'cliente': f"{nombre_marca} - {id_producto.split('_')[1].upper()}",
+            'cliente': f"{nombre_cliente} - {id_producto.split('_')[1].upper()}",
+            'cancion': cancion,
+            'cliente_id': cliente_id,
             'tendencia': gancho_usado,
             'caption': caption_completo,
             'prompt_imagen': prompt_imagen,
@@ -395,9 +464,9 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
 
-        stats_global[nombre_marca]['posts'] += 1
-        stats_global[nombre_marca]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
-        log(f'✅ Ciclo completo para {id_producto} — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
+        stats_global[cliente_id]['posts'] += 1
+        stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        log(f'✅ Ciclo completo — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
 
     except Exception as e:
         log(f'❌ Error ejecutando el ciclo: {e}', 'error')
@@ -414,7 +483,7 @@ def index():
 
 @app.route('/api/clientes')
 def api_clientes():
-    lista = [{"nombre": "Aurakey"}]
+    lista = [{"id": k, "nombre": v["nombre"]} for k, v in CLIENTES.items()]
     return jsonify(lista)
 
 @app.route('/api/stats')
@@ -431,11 +500,13 @@ def api_ciclo():
     producto = data.get('producto', 'aurakey_autocad')
     precio = data.get('precio', 'Consultar por interno')
     busqueda_libre = data.get('busqueda_libre', '').strip()
+    cliente_id = data.get('cliente_id', 'aurakey')
+    con_musica = data.get('con_musica', False)
 
     if busqueda_libre:
-        hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio))
+        hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, con_musica))
     else:
-        hilo = threading.Thread(target=ciclo_completo, args=(producto, precio))
+        hilo = threading.Thread(target=ciclo_completo, args=(producto, precio, cliente_id, con_musica))
     hilo.daemon = True
     hilo.start()
     return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre or producto}'})
@@ -444,7 +515,7 @@ def api_ciclo():
 # SCHEDULER
 # ============================================
 def run_scheduler():
-    schedule.every(3).hours.do(ciclo_completo, id_producto="aurakey_autocad", precio_manual="Precio Especial")
+    schedule.every(3).hours.do(ciclo_completo, id_producto="aurakey_autocad", precio_manual="Precio Especial", cliente_id="aurakey")
     while True:
         schedule.run_pending()
         time.sleep(60)
@@ -457,5 +528,4 @@ if __name__ == '__main__':
     hilo_scheduler.start()
 
     puerto = int(os.environ.get("PORT", 5000))
-    # Corregido: Usamos socketio.run para que no se caiga la transmisión de logs en vivo hacia la web
     socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
