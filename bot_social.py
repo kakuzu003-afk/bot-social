@@ -122,34 +122,26 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    You are a world-class commercial photographer and creative director specializing in high-converting Instagram product ads.
-    Product to feature: {prod_info['detalle_producto']}
+    You are a world-class commercial product photographer. Your job is to create a prompt for an image generation AI.
     
-    Generate a highly detailed, visually stunning prompt in English for an image generation model. Follow these precise guidelines:
+    The product is: "{prod_info['detalle_producto']}"
     
-    1. PRODUCT FOCUS (CRITICAL):
-       - The product "{prod_info['detalle_producto']}" MUST be the absolute center and hero of the image. Show the actual product clearly and recognizably.
-       - Do NOT use metaphors, abstract representations, or symbolic objects. Show the REAL product as it physically looks.
-       - The product must occupy at least 60% of the frame, sharp and in full detail.
+    Analyze the product name and determine what category it belongs to (software, electronics, food, clothing, tools, etc.), then create the most appropriate visual representation:
     
-    2. VISUAL CONCEPT & SCENERY:
-       - Place the product in a premium lifestyle or studio setting that matches its category.
-       - Use dynamic elements like soft reflections, subtle particles, and dramatic rim lighting to give it a luxury catalog feel.
-       - Background should complement the product without distracting from it.
+    - If it's SOFTWARE or DIGITAL: Show the product box, packaging, or iconic UI elements/logo on a premium dark studio surface with cinematic lighting.
+    - If it's ELECTRONICS or HARDWARE: Show the actual physical device in a premium lifestyle setting with dramatic lighting.
+    - If it's FOOD or BEVERAGE: Show the product in a fresh, appetizing setting with natural or warm lighting.
+    - If it's CLOTHING or ACCESSORIES: Show the item styled on a clean background or lifestyle setting.
+    - If it's a SERVICE or SUBSCRIPTION: Show a premium visual metaphor that clearly represents the service (ex: streaming = screen with content, antivirus = shield).
+    - For ANY other product: Show the actual product as the hero of the image in the most visually compelling way possible.
     
-    3. COLOR & LIGHTING:
-       - Professional studio lighting with cinematic accent lights.
-       - High contrast, clean and premium atmosphere.
-    
-    4. SHOT SPECIFICATIONS:
-       - Composition: Vertical 9:16 framing, close-up heroic product shot, strong depth of field with elegant blurred background.
-    
-    5. ABSOLUTE PROHIBITIONS (CRITICAL):
-       - NO text overlays, NO written words, NO blurry fake logos, NO typos, NO paper documents.
-       - NO human faces with distorted features, NO serial numbers.
-       - NO abstract or metaphorical representations of the product.
-    
-    Style: Photorealistic commercial product photography, hyper-detailed textures, cinematic lighting, premium aesthetic.
+    UNIVERSAL RULES (always apply):
+    - The product MUST be the absolute center and hero, occupying at least 60% of the frame.
+    - Vertical 9:16 composition, close-up heroic shot, strong depth of field.
+    - Premium studio or lifestyle lighting, high contrast, cinematic feel.
+    - NO text overlays, NO written words, NO logos with typos, NO distorted faces.
+    - NO abstract metaphors unless it's a service/subscription product.
+    - Photorealistic, hyper-detailed, commercial quality.
     
     Max 80 words. Output ONLY the English prompt. No introductions, no notes.
     """
