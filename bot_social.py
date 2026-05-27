@@ -249,23 +249,20 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
         audio_converted = f"static/audio_conv_{int(time.time())}.mp3"
         log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
 
-        # Paso 1: convertir audio a MP3 limpio
-        conv = subprocess.run([
-            "ffmpeg", "-y", "-i", audio_path,
-            "-c:a", "libmp3lame", "-b:a", "192k", "-ar", "44100", "-ac", "2",
-            audio_converted
-        ], capture_output=True, text=True, timeout=60)
+       def generar_video_reel(imagen_path, audio_path, duracion=10):
+    """Combina imagen + audio con ffmpeg para generar un Reel MP4 en formato 9:16."""
+    import subprocess
+    try:
+        os.makedirs("static", exist_ok=True)
+        video_path = f"static/reel_{int(time.time())}.mp4"
+        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
 
-        if conv.returncode != 0:
-            log(f"⚠️ Error convirtiendo audio: {conv.stderr[-200:]}", "warning")
-            audio_converted = audio_path  # usar original si falla
-
-        # Paso 2: combinar imagen + audio convertido
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1",
             "-i", imagen_path,
-            "-i", audio_converted,
+            "-stream_loop", "-1",
+            "-i", audio_path,
             "-t", str(duracion),
             "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
             "-c:v", "libx264",
@@ -276,6 +273,8 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
             "-ac", "2",
             "-pix_fmt", "yuv420p",
             "-movflags", "+faststart",
+            "-map", "0:v:0",
+            "-map", "1:a:0",
             video_path
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
