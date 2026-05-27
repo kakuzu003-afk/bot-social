@@ -184,28 +184,21 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
       </div>
       <div class="mode-indicator preset" id="modeIndicator">
         <div class="mode-dot"></div>
-        <span id="modeLabel">Escribe un producto para buscar</span>
+        <span id="modeLabel">Modo: producto preseleccionado</span>
       </div>
     </div>
 
     <div class="sidebar-section">
-
+      <div class="field-label">Producto / Marca</div>
+      <select id="select-producto">
+        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
+        <option value="aurakey_adobe">Adobe Creative Cloud</option>
+        <option value="aurakey_windows">Windows 10/11 Pro</option>
+        <option value="aurakey_office">Office Pro Plus 2024</option>
+      </select>
       <div class="field-label">Precio</div>
       <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
-        <span class="field-label" style="margin:0;">🎵 Música con IA</span>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
-          <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);" id="musicaLabel">OFF</span>
-          <div style="position:relative;width:36px;height:20px;" onclick="toggleMusica()">
-            <input type="checkbox" id="toggle-musica" style="opacity:0;width:0;height:0;position:absolute;">
-            <div id="toggle-track" style="position:absolute;inset:0;background:var(--border2);border-radius:10px;transition:background 0.2s;"></div>
-            <div id="toggle-thumb" style="position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform 0.2s;"></div>
-          </div>
-        </label>
-      </div>
-      <div id="musica-hint" style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;padding:5px 8px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);display:none;">
-        <span id="musica-hint-text">La IA elegirá la canción ideal para el contenido</span>
-      </div>
+
       <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
       <div class="btn-row">
         <button class="btn-sm" onclick="limpiarLogs()">🗑 Logs</button>
@@ -262,11 +255,13 @@ inputBusqueda.addEventListener('input', () => {
   if (val) {
     modeIndicator.className = 'mode-indicator libre';
     modeLabel.textContent = `Modo libre: "${val}"`;
-
+    selectProducto.style.opacity = '0.4';
+    selectProducto.style.pointerEvents = 'none';
   } else {
     modeIndicator.className = 'mode-indicator preset';
-    modeLabel.textContent = 'Escribe un producto para buscar';
-
+    modeLabel.textContent = 'Modo: producto preseleccionado';
+    selectProducto.style.opacity = '1';
+    selectProducto.style.pointerEvents = 'auto';
   }
 });
 
@@ -351,7 +346,6 @@ function renderCaptions() {
           ? `<img src="${c.imagen_url}" class="caption-image" alt="Post" onerror="this.outerHTML='<div class=\\'no-image\\'>⚠️ Imagen expirada</div>'">`
           : `<div class="no-image">🎨 Sin imagen generada</div>`}
         <div class="published-badge ${c.publicado ? 'yes' : 'no'}">${c.publicado ? '✅ Publicado en Instagram' : '⏳ Pendiente'}</div>
-        ${c.cancion ? `<div style="font-size:10px;color:var(--purple);font-family:'Space Mono',monospace;margin-bottom:8px;">🎵 ${c.cancion}</div>` : ''}
         <div class="caption-field-label">Caption</div>
         <textarea class="caption-ta" rows="4" id="caption_${i}">${c.caption}</textarea>
         <div class="caption-field-label">Prompt imagen</div>
@@ -370,43 +364,16 @@ function copiarCaption(i) { navigator.clipboard.writeText(document.getElementByI
 function copiarPrompt(i) { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value); agregarLog('Prompt copiado ✅', 'success'); }
 function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); renderCaptions(); agregarLog('Caption eliminado','warning'); } }
 function limpiarLogs() { document.getElementById('logBox').innerHTML=''; }
-function toggleMusica() {
-  const cb = document.getElementById('toggle-musica');
-  cb.checked = !cb.checked;
-  const track = document.getElementById('toggle-track');
-  const thumb = document.getElementById('toggle-thumb');
-  const label = document.getElementById('musicaLabel');
-  const hint  = document.getElementById('musica-hint');
-  if (cb.checked) {
-    track.style.background = 'var(--cyan)';
-    thumb.style.transform = 'translateX(16px)';
-    label.style.color = 'var(--cyan)';
-    label.textContent = 'ON';
-    hint.style.display = 'block';
-  } else {
-    track.style.background = 'var(--border2)';
-    thumb.style.transform = 'translateX(0)';
-    label.style.color = 'var(--text3)';
-    label.textContent = 'OFF';
-    hint.style.display = 'none';
-  }
-}
-
 function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
 
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
+  const producto = selectProducto.value;
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
   const cliente_id = document.getElementById('select-cliente').value;
-  const con_musica = document.getElementById('toggle-musica').checked;
-
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
 
-  if (!busqueda) {
-    agregarLog('⚠️ Escribe algo en el buscador libre para ejecutar el ciclo', 'warning');
-    return;
-  }
-  const body = { busqueda_libre: busqueda, precio, cliente_id, con_musica };
+  const body = { busqueda_libre: busqueda, precio, cliente_id };
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
   agregarLog(`Iniciando ciclo para ${nombreCliente}${busqueda ? ` — libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
