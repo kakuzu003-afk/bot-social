@@ -168,15 +168,6 @@ captions_guardados = []
 # PIXABAY — BÚSQUEDA DE MÚSICA POR MOOD
 # ============================================
 
-MOOD_QUERIES = {
-    "energico":    "upbeat electronic",
-    "motivador":   "motivational epic",
-    "relajado":    "calm ambient",
-    "corporativo": "corporate background",
-    "misterioso":  "dark cinematic",
-    "alegre":      "happy pop",
-}
-
 def buscar_musica_pixabay(mood="energico"):
     moods_disponibles = ["energico", "motivador", "relajado", "corporativo", "misterioso", "alegre"]
     mood_key = mood if mood in moods_disponibles else "energico"
