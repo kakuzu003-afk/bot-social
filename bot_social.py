@@ -185,21 +185,26 @@ def buscar_musica_pixabay(mood="energico"):
     query = MOOD_QUERIES.get(mood, mood)
     log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
     try:
-        url = "https://pixabay.com/api/"
-        params = {"key": pixabay_key.strip(), "q": query, "media_type": "music", "per_page": 5}
+        # Endpoint correcto para música
+        url = "https://pixabay.com/api/music/"
+        params = {
+            "key": pixabay_key.strip(),
+            "q": query,
+            "per_page": 5,
+        }
         res = req.get(url, params=params, timeout=10)
         if res.status_code != 200:
-            log(f"⚠️ Pixabay respondió con código {res.status_code}.", "warning")
+            log(f"⚠️ Pixabay respondió con código {res.status_code}: {res.text[:200]}", "warning")
             return None
         hits = res.json().get("hits", [])
+        if hits:
+            log(f"🔍 Hit ejemplo: {str(hits[0])[:400]}", "info")
         if not hits:
             log(f"⚠️ Sin resultados de música para '{query}'.", "warning")
             return None
         pista = None
         for hit in hits:
-            audio_url = hit.get("audio", {}).get("mp3", "") if isinstance(hit.get("audio"), dict) else hit.get("previewURL", "")
-            if not audio_url and "audio" in hit and isinstance(hit["audio"], str):
-                audio_url = hit["audio"]
+            audio_url = hit.get("audio", "")
             if audio_url:
                 pista = {"titulo": hit.get("tags", "pista"), "url": audio_url}
                 break
