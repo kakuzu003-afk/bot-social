@@ -253,7 +253,7 @@ def subir_imgbb(filepath):
         log(f"❌ Error subiendo a ImgBB: {e}", "error")
         return None
 
-def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica=""):
+def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
     """Publica en el Instagram del cliente especificado."""
     cliente = CLIENTES.get(cliente_id)
     if not cliente:
@@ -301,7 +301,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica="")
                     "access_token": meta_token
                 }
             ).json()
-            status = check.get("status_code", "")
+            status = check.get("status_code")
             log(f"📡 Estado contenedor ({intento+1}/{max_intentos}): {status}", "info")
             if status == "FINISHED":
                 listo = True
@@ -336,38 +336,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica="")
         return False
 
 
-def sugerir_cancion(prod_info, caption):
-    """Usa Groq para sugerir la canción más adecuada para el post."""
-    prompt = f"""
-    Eres un experto en marketing musical para Instagram.
-    Producto: {prod_info['detalle_producto']}
-    Nicho: {prod_info.get('nicho', '')}
-    Caption del post: {caption[:200]}
-    
-    Sugiere UNA sola canción real y popular que:
-    - Esté disponible en el catálogo de Instagram/Meta
-    - Sea perfecta para el ambiente del producto
-    - Sea reconocible y tenga buen engagement
-    
-    Responde SOLO con el nombre exacto de la canción y el artista, sin explicaciones.
-    Formato: Nombre de la canción - Artista
-    Ejemplo: Blinding Lights - The Weeknd
-    """
-    try:
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=50,
-            temperature=0.6
-        )
-        cancion = response.choices[0].message.content.strip()
-        log(f"🎵 Canción sugerida por IA: {cancion}", "success")
-        return cancion
-    except Exception as e:
-        log(f"⚠️ No se pudo sugerir canción: {e}", "warning")
-        return ""
-
-def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", con_musica=False):
+def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey"):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
@@ -403,16 +372,12 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
-        cancion = ""
-        if con_musica:
-            cancion = sugerir_cancion(prod_info, caption_completo)
 
         if imagen_filepath:
-            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id, cancion)
+            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
 
         entrada = {
             'cliente': f"{nombre_cliente} — {busqueda.upper()}",
-            'cancion': cancion,
             'cliente_id': cliente_id,
             'tendencia': gancho_usado,
             'caption': caption_completo,
@@ -432,7 +397,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
 
     socketio.emit('stats', stats_global)
 
-def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado", cliente_id="aurakey", con_musica=False):
+def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado", cliente_id="aurakey"):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
@@ -468,16 +433,12 @@ def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
-        cancion = ""
-        if con_musica:
-            cancion = sugerir_cancion(prod_info, caption_completo)
 
         if imagen_filepath:
-            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id, cancion)
+            publicado = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
 
         entrada = {
             'cliente': f"{nombre_cliente} - {id_producto.split('_')[1].upper()}",
-            'cancion': cancion,
             'cliente_id': cliente_id,
             'tendencia': gancho_usado,
             'caption': caption_completo,
@@ -526,12 +487,11 @@ def api_ciclo():
     precio = data.get('precio', 'Consultar por interno')
     busqueda_libre = data.get('busqueda_libre', '').strip()
     cliente_id = data.get('cliente_id', 'aurakey')
-    con_musica = data.get('con_musica', False)
 
     if busqueda_libre:
-        hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, con_musica))
+        hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id))
     else:
-        hilo = threading.Thread(target=ciclo_completo, args=(producto, precio, cliente_id, con_musica))
+        hilo = threading.Thread(target=ciclo_completo, args=(producto, precio, cliente_id))
     hilo.daemon = True
     hilo.start()
     return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre or producto}'})
