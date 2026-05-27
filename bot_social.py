@@ -289,6 +289,32 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey", musica="")
             log(f"❌ Error creando contenedor: {data}", "error")
             return False
 
+        # Polling: esperar hasta que Meta tenga el contenedor listo
+        log(f"⏳ Esperando que Meta procese la imagen...", "info")
+        max_intentos = 10
+        listo = False
+        for intento in range(max_intentos):
+            time.sleep(4)
+            check = req.get(
+                f"https://graph.facebook.com/v19.0/{container_id}",
+                params={
+                    "fields": "status_code",
+                    "access_token": meta_token
+                }
+            ).json()
+            status = check.get("status_code", "")
+            log(f"📡 Estado contenedor ({intento+1}/{max_intentos}): {status}", "info")
+            if status == "FINISHED":
+                listo = True
+                break
+            elif status == "ERROR":
+                log(f"❌ Meta rechazó la imagen: {check}", "error")
+                return False
+
+        if not listo:
+            log(f"❌ Timeout: Meta no procesó la imagen a tiempo.", "error")
+            return False
+
         log(f"🚀 Publicando en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
             f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
