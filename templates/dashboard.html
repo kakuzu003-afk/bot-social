@@ -184,18 +184,12 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
       </div>
       <div class="mode-indicator preset" id="modeIndicator">
         <div class="mode-dot"></div>
-        <span id="modeLabel">Modo: producto preseleccionado</span>
+        <span id="modeLabel">Escribe un producto para buscar</span>
       </div>
     </div>
 
     <div class="sidebar-section">
-      <div class="field-label">Producto / Marca</div>
-      <select id="select-producto">
-        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
-        <option value="aurakey_adobe">Adobe Creative Cloud</option>
-        <option value="aurakey_windows">Windows 10/11 Pro</option>
-        <option value="aurakey_office">Office Pro Plus 2024</option>
-      </select>
+
       <div class="field-label">Precio</div>
       <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:4px;">
@@ -268,13 +262,11 @@ inputBusqueda.addEventListener('input', () => {
   if (val) {
     modeIndicator.className = 'mode-indicator libre';
     modeLabel.textContent = `Modo libre: "${val}"`;
-    selectProducto.style.opacity = '0.4';
-    selectProducto.style.pointerEvents = 'none';
+
   } else {
     modeIndicator.className = 'mode-indicator preset';
-    modeLabel.textContent = 'Modo: producto preseleccionado';
-    selectProducto.style.opacity = '1';
-    selectProducto.style.pointerEvents = 'auto';
+    modeLabel.textContent = 'Escribe un producto para buscar';
+
   }
 });
 
@@ -404,16 +396,17 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
-  const producto = selectProducto.value;
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
   const cliente_id = document.getElementById('select-cliente').value;
   const con_musica = document.getElementById('toggle-musica').checked;
 
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
 
-  const body = busqueda
-    ? { busqueda_libre: busqueda, precio, cliente_id, con_musica }
-    : { producto, precio, cliente_id, con_musica };
+  if (!busqueda) {
+    agregarLog('⚠️ Escribe algo en el buscador libre para ejecutar el ciclo', 'warning');
+    return;
+  }
+  const body = { busqueda_libre: busqueda, precio, cliente_id, con_musica };
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
   agregarLog(`Iniciando ciclo para ${nombreCliente}${busqueda ? ` — libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
