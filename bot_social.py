@@ -251,10 +251,10 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
         audio_converted = f"static/audio_conv_{int(time.time())}.mp3"
         log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
 
-        # Paso 1: convertir audio a AAC limpio
+        # Paso 1: convertir audio a MP3 limpio
         conv = subprocess.run([
             "ffmpeg", "-y", "-i", audio_path,
-            "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+            "-c:a", "libmp3lame", "-b:a", "192k", "-ar", "44100", "-ac", "2",
             audio_converted
         ], capture_output=True, text=True, timeout=60)
 
