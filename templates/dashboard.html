@@ -170,13 +170,6 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
     </div>
 
     <div class="sidebar-section">
-      <div class="field-label">Producto / Marca</div>
-      <select id="select-producto">
-        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
-        <option value="aurakey_adobe">Adobe Creative Cloud</option>
-        <option value="aurakey_windows">Windows 10/11 Pro</option>
-        <option value="aurakey_office">Office Pro Plus 2024</option>
-      </select>
       <div class="field-label">Precio</div>
       <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
       <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
@@ -227,20 +220,15 @@ setInterval(() => {
 const inputBusqueda = document.getElementById('input-busqueda');
 const modeIndicator = document.getElementById('modeIndicator');
 const modeLabel = document.getElementById('modeLabel');
-const selectProducto = document.getElementById('select-producto');
 
 inputBusqueda.addEventListener('input', () => {
   const val = inputBusqueda.value.trim();
   if (val) {
     modeIndicator.className = 'mode-indicator libre';
-    modeLabel.textContent = `Modo libre: "${val}"`;
-    selectProducto.style.opacity = '0.4';
-    selectProducto.style.pointerEvents = 'none';
+    modeLabel.textContent = `Buscando: "${val}"`;
   } else {
     modeIndicator.className = 'mode-indicator preset';
-    modeLabel.textContent = 'Modo: producto preseleccionado';
-    selectProducto.style.opacity = '1';
-    selectProducto.style.pointerEvents = 'auto';
+    modeLabel.textContent = 'Escribe un producto para buscar';
   }
 });
 
@@ -313,16 +301,20 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
-  const producto = selectProducto.value;
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
-  const body = busqueda ? { busqueda_libre: busqueda, precio } : { producto, precio };
 
-  agregarLog(`Iniciando ciclo${busqueda ? ` libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
+  if (!busqueda) {
+    agregarLog('⚠️ Escribe un producto en el buscador primero', 'warning');
+    inputBusqueda.focus();
+    return;
+  }
+
+  agregarLog(`Iniciando ciclo libre: "${busqueda}"...`, 'info');
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading');
   btn.textContent = '⏳ Procesando...';
 
-  fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+  fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ busqueda_libre: busqueda, precio }) })
     .then(r => r.json())
     .then(d => agregarLog(d.msg, 'success'))
     .catch(() => { agregarLog('Error al lanzar ciclo','error'); btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo'; });
