@@ -99,15 +99,17 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     
     Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas dos reglas obligatorias:
     
-    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos y un llamado a la acción claro invitando a comprar al DM.
+    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos. 
+    
+    REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, debes incluir obligatoriamente un llamado a la acción para comprar que incluya exactamente esta línea:
+    📲 WhatsApp: +56946557876
     
     2. 5 HASHTAGS VIRALES (REGLA CRÍTICA): Agrega al final del post exactamente SOLO 5 hashtags separados por un espacio. Tienen que ser etiquetas reales, cortas y orgánicas que la gente de verdad use y busque en Instagram. No te limites a poner un '#' antes de los términos calientes que te pasé. Transfórmalos en conceptos de nicho reales.
     
-    Ejemplo de lo que NO debes hacer (Prohibido): #MicrosoftOfficeExcelCertification #MicrosoftOfficeExcelDownload #MicrosoftOfficeExcelOnline
-    Ejemplo de lo que SÍ debes hacer (Permitido): #excel #productividad #teletrabajo #aurakey #chile
-    
     Formato estricto de salida:
     [Aquí va el texto de tu caption con emojis...]
+    
+    📲 WhatsApp: +56946557876
     
     #Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5
     
@@ -120,7 +122,6 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
         temperature=0.7
     )
     return response.choices[0].message.content
-
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
     You are a world-class commercial 3D artist and creative director specializing in high-converting Instagram ads.
