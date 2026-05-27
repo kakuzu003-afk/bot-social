@@ -178,50 +178,26 @@ MOOD_QUERIES = {
 }
 
 def buscar_musica_pixabay(mood="energico"):
-    pixabay_key = os.environ.get("PIXABAY_API_KEY")
-    if not pixabay_key:
-        log("⚠️ PIXABAY_API_KEY no configurada. Saltando música.", "warning")
-        return None
-    query = MOOD_QUERIES.get(mood, mood)
-    log(f"🎵 Buscando música Pixabay — mood: {mood} → query: '{query}'", "info")
-    try:
-        # Endpoint correcto para música
-        url = "https://pixabay.com/api/music/"
-        params = {
-            "key": pixabay_key.strip(),
-            "q": query,
-            "per_page": 5,
-        }
-        res = req.get(url, params=params, timeout=10)
-        if res.status_code != 200:
-            log(f"⚠️ Pixabay respondió con código {res.status_code}: {res.text[:200]}", "warning")
-            return None
-        hits = res.json().get("hits", [])
-        if hits:
-            log(f"🔍 Hit ejemplo: {str(hits[0])[:400]}", "info")
-        if not hits:
-            log(f"⚠️ Sin resultados de música para '{query}'.", "warning")
-            return None
-        pista = None
-        for hit in hits:
-            audio_url = hit.get("audio", "")
-            if audio_url:
-                pista = {"titulo": hit.get("tags", "pista"), "url": audio_url}
-                break
-        if not pista:
-            log("⚠️ Ninguna pista con URL de audio encontrada.", "warning")
-            return None
-        log(f"🎶 Pista encontrada: {pista['titulo']}", "success")
-        os.makedirs("static", exist_ok=True)
-        audio_path = f"static/audio_{int(time.time())}.mp3"
-        r_audio = req.get(pista["url"], timeout=30)
-        with open(audio_path, "wb") as f:
-            f.write(r_audio.content)
-        log(f"⬇️ Audio descargado → {audio_path}", "success")
-        return audio_path
-    except Exception as e:
-        log(f"❌ Error buscando música en Pixabay: {e}", "error")
-        return None
+    moods_disponibles = ["energico", "motivador", "relajado", "corporativo", "misterioso", "alegre"]
+    mood_key = mood if mood in moods_disponibles else "energico"
+    
+    # Buscar todos los MP3s que coincidan con el mood
+    if os.path.exists("music"):
+        mp3s = [f for f in os.listdir("music") if f.endswith(".mp3") and f.startswith(mood_key)]
+        if mp3s:
+            elegido = random.choice(mp3s)
+            log(f"🎵 Música seleccionada → music/{elegido}", "success")
+            return f"music/{elegido}"
+        
+        # Fallback: cualquier MP3 disponible
+        todos = [f for f in os.listdir("music") if f.endswith(".mp3")]
+        if todos:
+            elegido = random.choice(todos)
+            log(f"🎵 Música fallback → music/{elegido}", "success")
+            return f"music/{elegido}"
+    
+    log("⚠️ No se encontró música local. Agrega MP3s a la carpeta /music/", "warning")
+    return None
 
 # ============================================
 # FFMPEG — COMBINAR IMAGEN + AUDIO → VIDEO
