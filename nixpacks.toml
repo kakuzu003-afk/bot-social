@@ -1,3 +1,5 @@
-[providers]
-# Le indica a Railway que mantenga el entorno de Python pero instale FFmpeg en el sistema operativo
-pkgs = ["python", "ffmpeg"]
+[phases.setup]
+aptPkgs = ["ffmpeg"]
+
+[phases.build]
+cmds = ["pip install -r requirements.txt"]
