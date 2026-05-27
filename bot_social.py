@@ -232,7 +232,6 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
             "ffmpeg", "-y",
             "-loop", "1",
             "-i", imagen_path,
-            "-stream_loop", "-1",
             "-i", audio_path,
             "-t", str(duracion),
             "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
@@ -244,8 +243,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
             "-ac", "2",
             "-pix_fmt", "yuv420p",
             "-movflags", "+faststart",
-            "-map", "0:v:0",
-            "-map", "1:a:0",
+            "-shortest",
             video_path
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
