@@ -121,36 +121,27 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     prompt = f"""
-    You are a world-class 3D motion graphics designer specializing in premium software box art for Instagram ads.
+    You are a world-class commercial designer specializing in digital subscription product ads for Instagram.
     
     The product is: "{prod_info['detalle_producto']}"
     
-    Create a prompt for a stunning 3D software box / product packaging design with these specifications:
+    Create a prompt for a stunning product box design. Guidelines:
     
-    DESIGN STYLE:
-    - A premium 3D software retail box, slightly tilted at a heroic angle (like a AAA video game box)
-    - Dark background with deep space or futuristic tech atmosphere
-    - Dramatic neon lighting: electric blue, cyan, or colors that match the product's brand identity
-    - Holographic glow effects, light particles, and subtle lens flares around the box
-    - The box should look premium, glossy, and physical — like a real product you can buy
-    
-    BOX DESIGN:
-    - Front face of the box shows abstract tech icons, shields, gears, or symbols related to "{prod_info['detalle_producto']}"
-    - Use geometric hexagon or badge shapes with glowing icons inside (no readable text needed)
-    - Bold color contrast between the box face and the dark background
-    - Subtle reflective surface beneath the box
+    DESIGN:
+    - A premium 3D retail software box with the exact product name "{prod_info['detalle_producto']}" clearly written on the front
+    - Dark futuristic background with neon lighting matching the brand colors
+    - Glossy premium finish, holographic effects, particles
+    - Icons and symbols related to the product on the box face
     
     COMPOSITION:
-    - Vertical 9:16 format, box centered and large, occupying 70% of frame
-    - Dramatic rim lighting from behind creating a halo effect
-    - Cinematic depth of field, sharp on the box, softly blurred background
+    - Vertical 9:16 format, box as hero occupying 70% of frame
+    - Dramatic rim lighting, cinematic depth of field
     
     PROHIBITIONS:
-    - NO readable text or words
-    - NO human faces
-    - NO flat or 2D designs
+    - NO distorted faces
+    - NO irrelevant objects
     
-    Style: Photorealistic 3D render, Unreal Engine 5 quality, premium dark tech aesthetic, commercial product photography.
+    Style: Photorealistic 3D render, premium commercial photography.
     
     Max 80 words. Output ONLY the English prompt. No introductions, no notes.
     """
@@ -158,7 +149,7 @@ def generar_prompt_imagen(prod_info, caption):
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.5
+        temperature=0.4
     )
     return response.choices[0].message.content
 
@@ -247,18 +238,15 @@ def generar_imagen_dalle(prompt_imagen):
     try:
         import replicate
         client = replicate.Client(api_token=replicate_token)
-        log(f"🖼️ Generando imagen con Flux 1.1 Pro...", "info")
+        log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
         output = client.run(
-            "black-forest-labs/flux-1.1-pro",
+            "ideogram-ai/ideogram-v3-turbo",
             input={
                 "prompt": prompt_imagen,
-                "width": 768,
-                "height": 1344,
                 "aspect_ratio": "9:16",
-                "output_format": "png",
-                "output_quality": 90,
-                "safety_tolerance": 2,
-                "prompt_upsampling": True
+                "resolution": "RESOLUTION_1024_1792",
+                "style_type": "REALISTIC",
+                "magic_prompt_option": "ON",
             }
         )
         image_url = str(output)
@@ -267,7 +255,7 @@ def generar_imagen_dalle(prompt_imagen):
         filepath = f"static/img_{int(time.time())}.png"
         with open(filepath, "wb") as f:
             f.write(img_bytes)
-        log(f"🖼️ Imagen generada con Flux 1.1 Pro ✅", "success")
+        log(f"🖼️ Imagen generada con Ideogram v3 ✅", "success")
         return filepath
     except Exception as e:
         log(f"❌ Error generando imagen: {e}", "error")
