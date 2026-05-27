@@ -242,7 +242,7 @@ def buscar_musica_pixabay(mood="energico"):
 # FFMPEG — COMBINAR IMAGEN + AUDIO → VIDEO
 # ============================================
 
-def generar_video_reel(imagen_path, audio_path, duracion=15):
+def generar_video_reel(imagen_path, audio_path, duracion=10):
     """Combina imagen + audio con ffmpeg para generar un Reel MP4 en formato 9:16."""
     import subprocess
     try:
@@ -287,12 +287,19 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
 # ============================================
 
 def subir_video_a_cdn(video_path):
-    cloudinary_url = os.environ.get("CLOUDINARY_URL")
-    if cloudinary_url:
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    api_key = os.environ.get("CLOUDINARY_API_KEY")
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET")
+
+    if cloud_name and api_key and api_secret:
         try:
             import cloudinary
             import cloudinary.uploader
-            cloudinary.config(cloudinary_url=cloudinary_url)
+            cloudinary.config(
+                cloud_name=cloud_name,
+                api_key=api_key,
+                api_secret=api_secret
+            )
             result = cloudinary.uploader.upload(
                 video_path,
                 resource_type="video",
@@ -305,7 +312,7 @@ def subir_video_a_cdn(video_path):
         except Exception as e:
             log(f"⚠️ Error subiendo a Cloudinary: {e}", "warning")
 
-    log("⚠️ Sin CDN de video configurado (CLOUDINARY_URL). El Reel requiere URL pública.", "warning")
+    log("⚠️ Sin CDN de video configurado. El Reel requiere URL pública.", "warning")
     return None
 
 
