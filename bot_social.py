@@ -248,21 +248,36 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
     try:
         os.makedirs("static", exist_ok=True)
         video_path = f"static/reel_{int(time.time())}.mp4"
+        audio_converted = f"static/audio_conv_{int(time.time())}.aac"
         log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
 
+        # Paso 1: convertir audio a AAC limpio
+        conv = subprocess.run([
+            "ffmpeg", "-y", "-i", audio_path,
+            "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+            audio_converted
+        ], capture_output=True, text=True, timeout=60)
+
+        if conv.returncode != 0:
+            log(f"⚠️ Error convirtiendo audio: {conv.stderr[-200:]}", "warning")
+            audio_converted = audio_path  # usar original si falla
+
+        # Paso 2: combinar imagen + audio convertido
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1",
             "-i", imagen_path,
-            "-i", audio_path,
+            "-i", audio_converted,
             "-t", str(duracion),
             "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
             "-c:v", "libx264",
             "-tune", "stillimage",
             "-c:a", "aac",
             "-b:a", "192k",
+            "-ar", "44100",
+            "-ac", "2",
             "-pix_fmt", "yuv420p",
-            "-shortest",
+            "-movflags", "+faststart",
             video_path
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -564,11 +579,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         if openai_api_key:
             imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
-        if imagen_filepath:
-            imagen_url_publica = subir_imgbb(imagen_filepath)
-            publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
-
-        # ── FLUJO REEL ──────────────────────────────────────────
+        # ── FLUJO REEL (solo Reel, sin post de imagen) ──────────
         if hacer_reel and imagen_filepath:
             audio_path = buscar_musica_pixabay(mood)
             if audio_path:
@@ -578,6 +589,11 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
                     publicado_reel = publicar_reel_instagram(video_path, caption_completo, cliente_id)
             else:
                 log("⚠️ Sin audio disponible, se omite el Reel.", "warning")
+
+        # ── FLUJO POST (solo si NO es reel) ─────────────────────
+        elif not hacer_reel and imagen_filepath:
+            imagen_url_publica = subir_imgbb(imagen_filepath)
+            publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
         # ────────────────────────────────────────────────────────
 
         publicado = publicado_post or publicado_reel
