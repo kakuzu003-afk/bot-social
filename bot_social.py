@@ -310,8 +310,8 @@ def generar_imagen_dalle(prompt_imagen):
             "black-forest-labs/flux-1.1-pro",
             input={
                 "prompt": prompt_imagen,
-                "width": 1024,
-                "height": 1792,
+                "width": 768,
+                "height": 1344,
                 "aspect_ratio": "9:16",
                 "output_format": "png",
                 "output_quality": 90,
