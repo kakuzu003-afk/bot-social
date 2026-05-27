@@ -1,332 +1,335 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Bot Manager</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f13; color: #e0e0e0; min-height: 100vh; }
-        
-        .header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 20px 30px; border-bottom: 1px solid #2a2a3e; display: flex; align-items: center; justify-content: space-between; }
-        .header h1 { font-size: 22px; font-weight: 600; color: #fff; }
-        .header h1 span { color: #7c6aff; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
-        .status-dot.off { background: #ef4444; animation: none; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        
-        .container { padding: 24px 30px; max-width: 1200px; margin: 0 auto; }
-        
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        
-        .card { background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 12px; padding: 20px; }
-        .card-title { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-        .card-value { font-size: 28px; font-weight: 700; color: #fff; }
-        .card-sub { font-size: 12px; color: #666; margin-top: 4px; }
-        
-        .stat-card { border-left: 3px solid #7c6aff; }
-        .stat-card.green { border-left-color: #22c55e; }
-        .stat-card.orange { border-left-color: #f59e0b; }
-        .stat-card.pink { border-left-color: #ec4899; }
-        
-        .section-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 14px; }
-        
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .btn-primary { background: #7c6aff; color: #fff; }
-        .btn-primary:hover { background: #6b59ee; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-danger:hover { background: #dc2626; }
-        .btn-success { background: #22c55e; color: #fff; }
-        .btn-success:hover { background: #16a34a; }
-        .btn-sm { padding: 6px 14px; font-size: 12px; }
-        
-        .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
-        
-        .config-row { display: flex; gap: 12px; margin-bottom: 16px; width: 100%; }
-        .config-field-main { flex: 2; display: flex; flex-direction: column; }
-        .config-field-side { flex: 1; display: flex; flex-direction: column; }
-        .config-label { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
-        
-        select, input[type="text"] { background: #0f0f1a; border: 1px solid #2a2a3e; border-radius: 8px; color: #e0e0e0; padding: 11px; font-size: 13px; width: 100%; transition: border-color 0.2s; }
-        select:focus, input[type="text"]:focus { outline: none; border-color: #7c6aff; }
-        
-        .log-box { background: #0a0a0f; border: 1px solid #2a2a3e; border-radius: 8px; padding: 16px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
-        .log-line { padding: 2px 0; color: #aaa; }
-        .log-line.success { color: #22c55e; }
-        .log-line.error { color: #ef4444; }
-        .log-line.info { color: #7c6aff; }
-        .log-line.warning { color: #f59e0b; }
-        
-        .caption-list { display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; }
-        .caption-card { background: #0f0f1a; border: 1px solid #2a2a3e; border-radius: 8px; padding: 14px; }
-        .caption-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .caption-cliente { font-size: 11px; font-weight: 600; color: #7c6aff; text-transform: uppercase; }
-        .caption-fecha { font-size: 11px; color: #666; }
-        .caption-text { font-size: 13px; color: #ccc; line-height: 1.5; white-space: pre-wrap; }
-        .caption-actions { display: flex; gap: 8px; margin-top: 10px; }
-        
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; }
-        .badge-purple { background: rgba(124,106,255,0.2); color: #7c6aff; }
-        .badge-green { background: rgba(34,197,94,0.2); color: #22c55e; }
-        
-        .client-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2a2a3e; }
-        .client-row:last-child { border-bottom: none; }
-        .client-name { font-size: 14px; font-weight: 500; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Bot Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+:root {
+  --bg: #080a0f;
+  --bg2: #0d1117;
+  --bg3: #111820;
+  --border: #1e2a38;
+  --border2: #243040;
+  --cyan: #00e5ff;
+  --green: #00ff88;
+  --amber: #ffb800;
+  --red: #ff4560;
+  --purple: #8b5cf6;
+  --text: #c8d8e8;
+  --text2: #6a8099;
+  --text3: #3a5068;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.012) 2px, rgba(0,229,255,0.012) 4px); pointer-events: none; z-index: 9999; }
 
-        textarea { background: #0f0f1a; border: 1px solid #2a2a3e; border-radius: 8px; color: #e0e0e0; padding: 10px; font-size: 13px; width: 100%; resize: vertical; font-family: inherit; }
-        textarea:focus { outline: none; border-color: #7c6aff; }
+.header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon { width: 36px; height: 36px; border: 1.5px solid var(--cyan); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 0 12px rgba(0,229,255,0.25); }
+.logo-text { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+.logo-text span { color: var(--cyan); }
+.header-right { display: flex; align-items: center; gap: 20px; }
+.status-pill { display: flex; align-items: center; gap: 6px; background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); border-radius: 99px; padding: 4px 12px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--green); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2s infinite; }
+.status-dot.off { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.clock { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text2); }
 
-        .empty-state { text-align: center; padding: 40px; color: #555; font-size: 13px; }
-    </style>
+.layout { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 64px); }
+
+.sidebar { background: var(--bg2); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+.sidebar-section { padding: 0 20px; margin-bottom: 24px; }
+.sidebar-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+
+.stat-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; background: var(--bg3); border: 1px solid var(--border); }
+.stat-label { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.stat-dot { width: 6px; height: 6px; border-radius: 50%; }
+.stat-value { font-family: 'Space Mono', monospace; font-size: 20px; font-weight: 700; color: #fff; }
+
+.search-wrapper { position: relative; }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--cyan); font-size: 13px; pointer-events: none; }
+.search-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: #fff; padding: 10px 12px 10px 32px; font-size: 13px; font-family: 'Syne', sans-serif; transition: all 0.2s; outline: none; }
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,229,255,0.1); }
+
+.mode-indicator { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; margin-top: 6px; padding: 5px 8px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); transition: all 0.2s; }
+.mode-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); transition: all 0.2s; }
+.mode-indicator.libre { color: var(--cyan); border-color: rgba(0,229,255,0.2); background: rgba(0,229,255,0.05); }
+.mode-indicator.libre .mode-dot { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.mode-indicator.preset { color: var(--purple); border-color: rgba(139,92,246,0.2); background: rgba(139,92,246,0.05); }
+.mode-indicator.preset .mode-dot { background: var(--purple); }
+
+.field-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; margin-top: 10px; }
+select, .price-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 12px; font-family: 'Syne', sans-serif; outline: none; transition: border-color 0.2s; }
+select:focus, .price-input:focus { border-color: var(--cyan); }
+select option { background: var(--bg2); }
+
+.btn-execute { width: 100%; background: linear-gradient(135deg, var(--cyan), #0099cc); border: none; border-radius: 8px; color: #000; padding: 12px; font-size: 13px; font-weight: 700; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 12px; }
+.btn-execute:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,229,255,0.4); }
+.btn-execute:active { transform: translateY(0); }
+.btn-execute.loading { background: var(--bg3); color: var(--cyan); border: 1px solid var(--cyan); }
+
+.btn-row { display: flex; gap: 6px; margin-top: 8px; }
+.btn-sm { flex: 1; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text2); padding: 7px; font-size: 11px; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.15s; }
+.btn-sm:hover { border-color: var(--red); color: var(--red); }
+
+.client-chip { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; }
+.client-name { font-size: 13px; font-weight: 600; }
+.badge-active { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--green); background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); border-radius: 99px; padding: 2px 8px; }
+
+.main { padding: 24px 28px; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.panel-title { font-size: 13px; font-weight: 700; color: #fff; }
+.panel-title .accent { color: var(--cyan); }
+.count-badge { font-family: 'Space Mono', monospace; font-size: 10px; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.2); color: var(--cyan); border-radius: 99px; padding: 1px 8px; }
+
+.log-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; height: 200px; overflow-y: auto; font-family: 'Space Mono', monospace; font-size: 11px; margin-bottom: 22px; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+.log-line { padding: 2px 0; line-height: 1.6; color: var(--text2); }
+.log-line.info { color: var(--cyan); }
+.log-line.success { color: var(--green); }
+.log-line.error { color: var(--red); }
+.log-line.warning { color: var(--amber); }
+
+.caption-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.caption-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s, transform 0.2s; }
+.caption-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.caption-card-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg3); }
+.caption-tag { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--cyan); font-weight: 700; }
+.caption-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); }
+.caption-body { padding: 12px 14px; }
+.caption-trend { font-size: 11px; color: var(--amber); margin-bottom: 10px; }
+.caption-image { width: 100%; border-radius: 8px; display: block; margin-bottom: 8px; border: 1px solid var(--border); }
+.published-badge { display: inline-flex; align-items: center; gap: 4px; font-family: 'Space Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 99px; margin-bottom: 10px; }
+.published-badge.yes { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.2); }
+.published-badge.no { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.2); }
+.caption-field-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; margin-top: 8px; }
+textarea.caption-ta { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-size: 12px; font-family: 'Syne', sans-serif; resize: vertical; outline: none; transition: border-color 0.2s; line-height: 1.5; }
+textarea.caption-ta:focus { border-color: var(--cyan); }
+textarea.prompt-ta { border-color: rgba(139,92,246,0.25); }
+textarea.prompt-ta:focus { border-color: var(--purple); }
+.caption-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+.action-btn { flex: 1; min-width: 60px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text2); padding: 6px 8px; font-size: 11px; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.15s; text-align: center; white-space: nowrap; }
+.action-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.action-btn.danger:hover { border-color: var(--red); color: var(--red); }
+.action-btn.view:hover { border-color: var(--green); color: var(--green); }
+.no-image { background: var(--bg3); border: 1px dashed var(--border2); border-radius: 8px; padding: 16px; text-align: center; color: var(--text3); font-size: 11px; font-family: 'Space Mono', monospace; margin-bottom: 8px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text3); font-family: 'Space Mono', monospace; font-size: 12px; border: 1px dashed var(--border); border-radius: 12px; }
+.empty-icon { font-size: 32px; margin-bottom: 12px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>🤖 Social Bot <span>Manager</span></h1>
-        <div style="display:flex;align-items:center;gap:16px;">
-            <span><span class="status-dot" id="statusDot"></span><span id="statusText" style="font-size:13px;">Activo</span></span>
-            <span style="font-size:12px;color:#666;" id="reloj"></span>
-        </div>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div class="logo-text">Social Bot <span>Manager</span></div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Sistema activo</span>
+    </div>
+    <div class="clock" id="reloj">--:--:--</div>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Métricas</div>
+      <div class="stat-item">
+        <div class="stat-label"><div class="stat-dot" style="background:var(--cyan)"></div>Posts generados</div>
+        <div class="stat-value" id="statPosts">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label"><div class="stat-dot" style="background:var(--green)"></div>Comentarios</div>
+        <div class="stat-value" id="statComentarios">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label"><div class="stat-dot" style="background:var(--amber)"></div>Likes dados</div>
+        <div class="stat-value" id="statLikes">0</div>
+      </div>
     </div>
 
-    <div class="container">
-        <div class="grid-3" id="statsGrid">
-            <div class="card stat-card">
-                <div class="card-title">Posts generados</div>
-                <div class="card-value" id="statPosts">0</div>
-                <div class="card-sub">Esta semana</div>
-            </div>
-            <div class="card stat-card green">
-                <div class="card-title">Comentarios respondidos</div>
-                <div class="card-value" id="statComentarios">0</div>
-                <div class="card-sub">Esta semana</div>
-            </div>
-            <div class="card stat-card orange">
-                <div class="card-title">Likes dados</div>
-                <div class="card-value" id="statLikes">0</div>
-                <div class="card-sub">Esta semana</div>
-            </div>
-        </div>
-
-        <div class="config-row">
-            <div class="config-field-main">
-                <label for="select-producto" class="config-label">Producto / Marca:</label>
-                <select id="select-producto">
-                    <option value="aurakey_autocad">Aurakey: AutoCAD 2027 por 3 años</option>
-                    <option value="aurakey_adobe">Aurakey: Adobe Creative Cloud</option>
-                    <option value="aurakey_windows">Aurakey: Windows 10/11 pro permanente</option>
-                    <option value="aurakey_office">Aurakey: Office pro plus 2024 permanente</option>
-                </select>
-            </div>
-            <div class="config-field-side">
-                <label for="input-precio" class="config-label">Precio Manual:</label>
-                <input type="text" id="input-precio" placeholder="Ej: $14.990">
-            </div>
-        </div>
-
-        <div class="controls">
-            <button class="btn btn-success" onclick="ejecutarCiclo()">▶ Ejecutar ciclo ahora</button>
-            <button class="btn btn-danger btn-sm" onclick="limpiarLogs()">🗑 Limpiar logs</button>
-            <button class="btn btn-sm" style="background: #2a2a3e; color: #aaa;" onclick="limpiarTodosLosCaptions()">🧼 Limpiar todos los captions</button>
-        </div>
-
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-title">📋 Logs en tiempo real</div>
-                <div class="log-box" id="logBox">
-                    <div class="log-line info">Panel iniciado correctamente ✅</div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-title">👥 Clientes activos</div>
-                <div id="clientesList"></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="section-title">✍️ Captions generados <span class="badge badge-purple" id="captionCount">0</span></div>
-            <div class="caption-list" id="captionList">
-                <div class="empty-state">No hay captions generados aún.<br>Ejecuta un ciclo para comenzar.</div>
-            </div>
-        </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">⚡ Búsqueda libre</div>
+      <div class="search-wrapper">
+        <span class="search-icon">⚡</span>
+        <input type="text" class="search-input" id="input-busqueda" placeholder="laptop gamer, curso inglés...">
+      </div>
+      <div class="mode-indicator preset" id="modeIndicator">
+        <div class="mode-dot"></div>
+        <span id="modeLabel">Modo: producto preseleccionado</span>
+      </div>
     </div>
 
-    <script>
-        const socket = io();
-        let captions = [];
+    <div class="sidebar-section">
+      <div class="field-label">Producto / Marca</div>
+      <select id="select-producto">
+        <option value="aurakey_autocad">AutoCAD 2027 — 3 años</option>
+        <option value="aurakey_adobe">Adobe Creative Cloud</option>
+        <option value="aurakey_windows">Windows 10/11 Pro</option>
+        <option value="aurakey_office">Office Pro Plus 2024</option>
+      </select>
+      <div class="field-label">Precio</div>
+      <input type="text" class="price-input" id="input-precio" placeholder="Ej: $27.000">
+      <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
+      <div class="btn-row">
+        <button class="btn-sm" onclick="limpiarLogs()">🗑 Logs</button>
+        <button class="btn-sm" onclick="limpiarTodosLosCaptions()">🧼 Captions</button>
+      </div>
+    </div>
 
-        setInterval(() => {
-            document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-CL');
-        }, 1000);
+    <div class="sidebar-section">
+      <div class="sidebar-label">Clientes activos</div>
+      <div class="client-chip">
+        <div class="client-name">Aurakey</div>
+        <div class="badge-active">ACTIVO</div>
+      </div>
+    </div>
+  </aside>
 
-        socket.on('log', (data) => agregarLog(data.msg, data.tipo));
-        socket.on('stats', (data) => actualizarStats(data));
-        socket.on('caption', (data) => agregarCaption(data));
-        socket.on('bot_status', (data) => {
-            const dot = document.getElementById('statusDot');
-            const txt = document.getElementById('statusText');
-            if (data.activo) {
-                dot.classList.remove('off');
-                txt.textContent = 'Activo';
-            } else {
-                dot.classList.add('off');
-                txt.textContent = 'Detenido';
-            }
-        });
+  <main class="main">
+    <div class="panel-header">
+      <div class="panel-title">📋 Logs en tiempo <span class="accent">real</span></div>
+    </div>
+    <div class="log-box" id="logBox">
+      <div class="log-line info">[SYSTEM] Panel iniciado correctamente ✅</div>
+    </div>
 
-        function agregarLog(msg, tipo = 'info') {
-            const box = document.getElementById('logBox');
-            const line = document.createElement('div');
-            line.className = `log-line ${tipo}`;
-            const hora = new Date().toLocaleTimeString('es-CL');
-            line.textContent = `[${hora}] ${msg}`;
-            box.appendChild(line);
-            box.scrollTop = box.scrollHeight;
-        }
+    <div class="panel-header">
+      <div class="panel-title">✍️ Captions <span class="accent">generados</span></div>
+      <span class="count-badge" id="captionCount">0</span>
+    </div>
+    <div id="captionList">
+      <div class="empty-state">
+        <div class="empty-icon">⚡</div>
+        Ejecuta un ciclo para comenzar.<br>Usa búsqueda libre o selecciona un producto.
+      </div>
+    </div>
+  </main>
+</div>
 
-        function actualizarStats(data) {
-            let posts = 0, comentarios = 0, likes = 0;
-            for (const cliente in data) {
-                posts += data[cliente].posts || 0;
-                comentarios += data[cliente].comentarios || 0;
-                likes += data[cliente].likes || 0;
-            }
-            document.getElementById('statPosts').textContent = posts;
-            document.getElementById('statComentarios').textContent = comentarios;
-            document.getElementById('statLikes').textContent = likes;
-        }
+<script>
+const socket = io();
+let captions = [];
 
-        function agregarCaption(data) {
-            captions.unshift(data);
-            renderCaptions();
-        }
+setInterval(() => {
+  document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-CL');
+}, 1000);
 
-        function renderCaptions() {
-            const list = document.getElementById('captionList');
-            document.getElementById('captionCount').textContent = captions.length;
-            if (captions.length === 0) {
-                list.innerHTML = '<div class="empty-state">No hay captions generados aún.</div>';
-                return;
-            }
-            list.innerHTML = captions.map((c, i) => {
-                return '<div class="caption-card">' +
-                    '<div class="caption-meta">' +
-                        '<span class="caption-cliente">' + c.cliente + '</span>' +
-                        '<span class="caption-fecha">' + c.fecha + '</span>' +
-                    '</div>' +
-                    '<div style="font-size:11px;color:#f59e0b;margin-bottom:6px;">🔍 ' + c.tendencia + '</div>' +
-                    '<div style="font-size:11px;color:#888;margin-bottom:4px;">📝 Caption:</div>' +
-                    '<textarea rows="4" id="caption_' + i + '">' + c.caption + '</textarea>' +
-                    '<div style="font-size:11px;color:#888;margin:8px 0 4px;">🎨 Prompt para imagen:</div>' +
-                    '<textarea rows="3" id="prompt_' + i + '" style="border-color:#7c6aff33;">' + (c.prompt_imagen || 'No generado aún') + '</textarea>' +
-                    (c.imagen_url ? (
-                        '<div style="font-size:11px;color:#22c55e;margin:10px 0 6px;">🖼️ Imagen generada por DALL-E 3:</div>' +
-                        '<div style="position:relative;">' +
-                            '<img src="' + c.imagen_url + '" alt="Imagen generada" style="width:100%;border-radius:8px;border:1px solid #2a2a3e;display:block;" onerror="this.parentElement.innerHTML=\'<div style=&quot;background:#1a1a2e;border:1px dashed #444;border-radius:8px;padding:20px;text-align:center;color:#666;font-size:12px;&quot;>⚠️ URL de imagen expirada (DALL-E URLs duran 1 hora).<br>El post ya fue publicado en Instagram.</div>\'">' +
-                            '<div style="position:absolute;top:8px;right:8px;">' +
-                                '<span style="background:rgba(34,197,94,0.9);color:#fff;font-size:10px;padding:3px 8px;border-radius:99px;font-weight:600;">' + (c.publicado ? '✅ Publicado en IG' : '⏳ No publicado') + '</span>' +
-                            '</div>' +
-                        '</div>'
-                    ) : (
-                        '<div style="background:#1a1a2e;border:1px dashed #2a2a3e;border-radius:8px;padding:16px;text-align:center;color:#555;font-size:12px;margin-top:8px;">' +
-                            (c.publicado === false && !c.imagen_url ? '⚠️ Sin OPENAI_API_KEY — imagen no generada. Configúrala en Railway.' : '🎨 Imagen no disponible') +
-                        '</div>'
-                    )) +
-                    '<div class="caption-actions" style="display: flex; justify-content: space-between; align-items: center; margin-top:10px;">' +
-                        '<div style="display: flex; gap: 8px;">' +
-                            '<button class="btn btn-primary btn-sm" onclick="copiarCaption(' + i + ')">📋 Copiar caption</button>' +
-                            '<button class="btn btn-sm" style="background:#7c6aff;color:#fff;" onclick="copiarPrompt(' + i + ')">🎨 Copiar prompt</button>' +
-                            (c.imagen_url ? '<button class="btn btn-sm" style="background:#16a34a;color:#fff;" onclick="abrirImagen(\'' + c.imagen_url + '\')">🔗 Ver imagen</button>' : '') +
-                        '</div>' +
-                        '<button class="btn btn-danger btn-sm" style="padding: 6px 10px;" onclick="borrarCaption(' + i + ')">🗑️ Borrar</button>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
-        }
+const inputBusqueda = document.getElementById('input-busqueda');
+const modeIndicator = document.getElementById('modeIndicator');
+const modeLabel = document.getElementById('modeLabel');
+const selectProducto = document.getElementById('select-producto');
 
-        function abrirImagen(url) {
-            window.open(url, '_blank');
-        }
+inputBusqueda.addEventListener('input', () => {
+  const val = inputBusqueda.value.trim();
+  if (val) {
+    modeIndicator.className = 'mode-indicator libre';
+    modeLabel.textContent = `Modo libre: "${val}"`;
+    selectProducto.style.opacity = '0.4';
+    selectProducto.style.pointerEvents = 'none';
+  } else {
+    modeIndicator.className = 'mode-indicator preset';
+    modeLabel.textContent = 'Modo: producto preseleccionado';
+    selectProducto.style.opacity = '1';
+    selectProducto.style.pointerEvents = 'auto';
+  }
+});
 
-        function copiarCaption(i) {
-            const ta = document.getElementById('caption_' + i);
-            navigator.clipboard.writeText(ta.value);
-            agregarLog('Caption copiado al portapapeles ✅', 'success');
-        }
+socket.on('log', d => agregarLog(d.msg, d.tipo));
+socket.on('stats', d => actualizarStats(d));
+socket.on('caption', d => { captions.unshift(d); renderCaptions(); });
+socket.on('bot_status', d => {
+  const btn = document.getElementById('btnExecute');
+  if (d.activo) {
+    btn.classList.remove('loading');
+    btn.textContent = '▶ Ejecutar ciclo';
+  }
+});
 
-        function copiarPrompt(i) {
-            const ta = document.getElementById('prompt_' + i);
-            navigator.clipboard.writeText(ta.value);
-            agregarLog('Prompt de imagen copiado ✅ Pégalo en Kling, Midjourney o DALL-E', 'success');
-        }
+function agregarLog(msg, tipo = 'default') {
+  const box = document.getElementById('logBox');
+  const line = document.createElement('div');
+  line.className = `log-line ${tipo || 'default'}`;
+  line.textContent = `[${new Date().toLocaleTimeString('es-CL')}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
 
-        function borrarCaption(i) {
-            if (confirm('¿Seguro que quieres borrar este caption?')) {
-                captions.splice(i, 1);
-                renderCaptions();
-                agregarLog('Caption eliminado de la lista 🗑️', 'warning');
-            }
-        }
+function actualizarStats(data) {
+  let p = 0, c = 0, l = 0;
+  for (const k in data) { p += data[k].posts||0; c += data[k].comentarios||0; l += data[k].likes||0; }
+  document.getElementById('statPosts').textContent = p;
+  document.getElementById('statComentarios').textContent = c;
+  document.getElementById('statLikes').textContent = l;
+}
 
-        function limpiarTodosLosCaptions() {
-            if (confirm('¿Quieres limpiar TODOS los captions de la pantalla?')) {
-                captions = [];
-                renderCaptions();
-                agregarLog('Lista de captions vaciada por completo 🧼', 'warning');
-            }
-        }
+function renderCaptions() {
+  const list = document.getElementById('captionList');
+  document.getElementById('captionCount').textContent = captions.length;
+  if (!captions.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div>Ejecuta un ciclo para comenzar.</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="caption-grid">${captions.map((c, i) => `
+    <div class="caption-card">
+      <div class="caption-card-header">
+        <span class="caption-tag">${c.cliente}</span>
+        <span class="caption-date">${c.fecha}</span>
+      </div>
+      <div class="caption-body">
+        <div class="caption-trend">🔥 ${c.tendencia}</div>
+        ${c.imagen_url
+          ? `<img src="${c.imagen_url}" class="caption-image" alt="Post" onerror="this.outerHTML='<div class=\\'no-image\\'>⚠️ Imagen expirada</div>'">`
+          : `<div class="no-image">🎨 Sin imagen generada</div>`}
+        <div class="published-badge ${c.publicado ? 'yes' : 'no'}">${c.publicado ? '✅ Publicado en Instagram' : '⏳ Pendiente'}</div>
+        <div class="caption-field-label">Caption</div>
+        <textarea class="caption-ta" rows="4" id="caption_${i}">${c.caption}</textarea>
+        <div class="caption-field-label">Prompt imagen</div>
+        <textarea class="caption-ta prompt-ta" rows="2" id="prompt_${i}">${c.prompt_imagen||'No generado'}</textarea>
+        <div class="caption-actions">
+          <button class="action-btn" onclick="copiarCaption(${i})">📋 Copiar</button>
+          <button class="action-btn" onclick="copiarPrompt(${i})">🎨 Prompt</button>
+          ${c.imagen_url ? `<button class="action-btn view" onclick="window.open('${c.imagen_url}','_blank')">🔗 Ver</button>` : ''}
+          <button class="action-btn danger" onclick="borrarCaption(${i})">🗑</button>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
+}
 
-        function limpiarLogs() {
-            document.getElementById('logBox').innerHTML = '';
-        }
+function copiarCaption(i) { navigator.clipboard.writeText(document.getElementById('caption_'+i).value); agregarLog('Caption copiado ✅', 'success'); }
+function copiarPrompt(i) { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value); agregarLog('Prompt copiado ✅', 'success'); }
+function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); renderCaptions(); agregarLog('Caption eliminado','warning'); } }
+function limpiarLogs() { document.getElementById('logBox').innerHTML=''; }
+function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
 
-        function ejecutarCiclo() {
-            const productoSeleccionado = document.getElementById('select-producto').value;
-            const precioIngresado = document.getElementById('input-precio').value || "No especificado";
-            
-            agregarLog(`Iniciando ciclo manual para: ${productoSeleccionado} con precio: ${precioIngresado}...`, 'info');
-            
-            fetch('/api/ciclo', { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    producto: productoSeleccionado,
-                    precio: precioIngresado
-                })
-            })
-            .then(r => r.json())
-            .then(d => agregarLog(d.msg, 'success'))
-            .catch(err => agregarLog('Error al lanzar el ciclo', 'error'));
-        }
+function ejecutarCiclo() {
+  const busqueda = inputBusqueda.value.trim();
+  const producto = selectProducto.value;
+  const precio = document.getElementById('input-precio').value || 'Consultar por DM';
+  const body = busqueda ? { busqueda_libre: busqueda, precio } : { producto, precio };
 
-        fetch('/api/clientes')
-            .then(r => r.json())
-            .then(data => {
-                const list = document.getElementById('clientesList');
-                list.innerHTML = data.map(c => `
-                    <div class="client-row">
-                        <div>
-                            <div class="client-name" style="font-size: 15px; font-weight: 600; color: #fff;">${c.nombre}</div>
-                        </div>
-                        <span class="badge badge-green">Activo</span>
-                    </div>
-                `).join('');
-            });
+  agregarLog(`Iniciando ciclo${busqueda ? ` libre: "${busqueda}"` : `: ${producto}`}...`, 'info');
+  const btn = document.getElementById('btnExecute');
+  btn.classList.add('loading');
+  btn.textContent = '⏳ Procesando...';
 
-        fetch('/api/stats')
-            .then(r => r.json())
-            .then(data => actualizarStats(data));
+  fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+    .then(r => r.json())
+    .then(d => agregarLog(d.msg, 'success'))
+    .catch(() => { agregarLog('Error al lanzar ciclo','error'); btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo'; });
+}
 
-        fetch('/api/captions')
-            .then(r => r.json())
-            .then(data => {
-                captions = data;
-                renderCaptions();
-            });
-    </script>
+fetch('/api/stats').then(r=>r.json()).then(actualizarStats);
+fetch('/api/captions').then(r=>r.json()).then(data=>{ captions=data; renderCaptions(); });
+</script>
 </body>
 </html>
