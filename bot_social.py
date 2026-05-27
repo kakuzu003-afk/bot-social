@@ -413,26 +413,35 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen):
-    if not openai_api_key:
-        log("⚠️ OPENAI_API_KEY no configurada. Saltando generación de imagen.", "warning")
+    replicate_token = os.environ.get("REPLICATE_API_TOKEN")
+    if not replicate_token:
+        log("⚠️ REPLICATE_API_TOKEN no configurada. Saltando generación de imagen.", "warning")
         return None
     try:
-        import base64
-        client = openai.OpenAI(api_key=openai_api_key)
-        response = client.images.generate(
-            model="gpt-image-1",
-            prompt=prompt_imagen,
-            size="1024x1024",
-            n=1
+        import replicate
+        client = replicate.Client(api_token=replicate_token)
+        log(f"🖼️ Generando imagen con Flux 1.1 Pro...", "info")
+        output = client.run(
+            "black-forest-labs/flux-1.1-pro",
+            input={
+                "prompt": prompt_imagen,
+                "width": 1024,
+                "height": 1792,
+                "aspect_ratio": "9:16",
+                "output_format": "png",
+                "output_quality": 90,
+                "safety_tolerance": 2,
+                "prompt_upsampling": True
+            }
         )
-        image_data = response.data[0].b64_json
-        img_bytes = base64.b64decode(image_data)
+        image_url = str(output)
+        img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
         filename = f"img_{int(time.time())}.png"
         filepath = f"static/{filename}"
         with open(filepath, "wb") as f:
             f.write(img_bytes)
-        log(f"🖼️ Imagen generada con gpt-image-1 ✅", "success")
+        log(f"🖼️ Imagen generada con Flux 1.1 Pro ✅", "success")
         return filepath
     except Exception as e:
         log(f"❌ Error generando imagen: {e}", "error")
