@@ -282,6 +282,67 @@ def publicar_en_instagram(imagen_path, caption):
         log(f"❌ Error en Graph API: {e}", "error")
         return False
 
+def ciclo_libre(busqueda, precio_manual="No especificado"):
+    """Ciclo con producto libre — el usuario escribe cualquier cosa."""
+    global bot_activo
+    bot_activo = True
+    socketio.emit('bot_status', {'activo': True})
+    log(f'🔍 Ciclo libre iniciado para: "{busqueda}"...', 'info')
+
+    # Crear prod_info dinámico desde la búsqueda
+    prod_info = {
+        "nombre": "Aurakey",
+        "detalle_producto": busqueda,
+        "keyword_busqueda": busqueda,
+        "nicho": busqueda,
+        "tono": "profesional, vendedor, directo y confiable"
+    }
+
+    try:
+        tendencias_reales = buscar_tendencias_reales_api(prod_info)
+        gancho_usado = f"Tendencias en vivo: {', '.join(tendencias_reales[:2])}"
+
+        log(f'✍️ Redactando post para "{busqueda}"...', 'info')
+        caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
+
+        log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
+        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
+
+        imagen_filepath = None
+        imagen_url_publica = None
+        publicado = False
+
+        if openai_api_key:
+            imagen_filepath = generar_imagen_dalle(prompt_imagen)
+
+        if imagen_filepath:
+            imagen_url_publica = subir_imgbb(imagen_filepath)
+
+        if imagen_filepath and meta_token and ig_user_id:
+            publicado = publicar_en_instagram(imagen_filepath, caption_completo)
+        elif not meta_token or not ig_user_id:
+            log("ℹ️ Sin credenciales Meta — guardado para publicación manual.", "warning")
+
+        entrada = {
+            'cliente': f"Búsqueda libre — {busqueda.upper()}",
+            'tendencia': gancho_usado,
+            'caption': caption_completo,
+            'prompt_imagen': prompt_imagen,
+            'imagen_url': imagen_url_publica or '',
+            'publicado': publicado,
+            'fecha': datetime.now().strftime('%d/%m %H:%M')
+        }
+        captions_guardados.insert(0, entrada)
+        socketio.emit('caption', entrada)
+        stats_global['Aurakey']['posts'] += 1
+        stats_global['Aurakey']['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        log(f'✅ Ciclo libre completo — Publicado: {"Sí ✅" if publicado else "No (manual)"}', 'success')
+
+    except Exception as e:
+        log(f'❌ Error en ciclo libre: {e}', 'error')
+
+    socketio.emit('stats', stats_global)
+
 def ciclo_completo(id_producto="aurakey_autocad", precio_manual="No especificado"):
     global bot_activo
     bot_activo = True
@@ -369,11 +430,15 @@ def api_ciclo():
     data = request.get_json() or {}
     producto = data.get('producto', 'aurakey_autocad')
     precio = data.get('precio', 'Consultar por interno')
+    busqueda_libre = data.get('busqueda_libre', '').strip()
 
-    hilo = threading.Thread(target=ciclo_completo, args=(producto, precio))
+    if busqueda_libre:
+        hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio))
+    else:
+        hilo = threading.Thread(target=ciclo_completo, args=(producto, precio))
     hilo.daemon = True
     hilo.start()
-    return jsonify({'msg': f'Ciclo en tiempo real iniciado para {producto}'})
+    return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre or producto}'})
 
 # ============================================
 # SCHEDULER
