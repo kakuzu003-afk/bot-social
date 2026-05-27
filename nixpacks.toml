@@ -1,0 +1,3 @@
+[providers]
+# Le indica a Railway que mantenga el entorno de Python pero instale FFmpeg en el sistema operativo
+pkgs = ["python", "ffmpeg"]
