@@ -234,10 +234,12 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
     4. Include beautiful graphic elements related to the product (e.g., sleek shapes, abstract details, or glowing branding icons).
     5. No cheap speed lines, no generic explosion backgrounds. Keep it premium.
     6. Vertical 9:16 format.
+    7. CRITICAL — LANGUAGE RULE: ALL text elements in the image MUST be in English or Spanish ONLY. Absolutely NO characters, symbols, glyphs, or decorative text in Chinese, Japanese, Korean, Arabic, Hindi, Cyrillic, or any other language. If background text or texture is needed, use only Latin alphabet characters. This rule overrides any stylistic decision.
     
     OUTPUT RULES:
     - Write ONLY the prompt in English, max 85 words
     - The product name "{nombre}" must appear in quotes in your output
+    - Explicitly include in your prompt: "all text in English only, no foreign characters or symbols"
     - No preamble, no notes, no explanations
     """
     
