@@ -131,14 +131,15 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
     if con_referencia:
-        # Optimizamos para inyectar detalles espectaculares y luces intensas basadas en la referencia
+        # INSTRUCCIONES MAESTRAS PARA LOGRAR EL 90% DE PARECIDO TRADICIONAL Y SUCIO
         estilo = f"""
-    - Masterpiece epic anime poster art style, high-end dark fantasy key visual advertisement.
-    - Deep dramatic pitch-black shadows blending seamlessly with explosive fiery orange and crimson red ink splashes.
-    - Enhanced with spectacular premium cinematic details: floating glowing embers, sparks, dynamic neon rim lighting, and subtle smoke effects.
-    - Main title "{nombre}" must be rendered as clean, thick, sharp metallic commercial typography, standing out vividly in the center foreground.
-    - High contrast, flawless rendering, vertical 9:16 format.
-    IMPORTANT: Absorb the dark, gritty anime aesthetic and color palette from the reference image, but enhance it with superior depth, glowing particles, and razor-sharp typographic legibility."""
+    - Exact layout replica of the reference image: characters composition, poses, and framing must match with 90% accuracy.
+    - Masterpiece gritty anime illustration, dark fantasy manga key visual.
+    - Intricate hand-drawn black ink lines with detailed cross-hatching shadows on characters faces and clothing.
+    - Highly textured background featuring rough organic paint splatters, dynamic distressed brush strokes, and charcoal textures.
+    - Dark atmospheric color palette: Deep solid black canvas, fiery glowing orange, and intense crimson red splatter accents.
+    - In the absolute foreground, the commercial typography "{nombre}" must be rendered in a bold, sharp, clean high-contrast style that stands out perfectly.
+    IMPORTANT: Emphasize the gritty, hand-inked, heavily detailed paint splatter and line-art texture from the reference image. Absolutely no smooth or flat digital gradients."""
     else:
         estilo = f"""
     - Clean, modern commercial advertisement banner style.
@@ -149,22 +150,22 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     - IMPORTANT: The typography must be beautiful, clean, legible, and integrated into the design."""
 
     prompt = f"""
-    You are an expert prompt engineer for Ideogram v3 image generation.
-    Product name (use VERBATIM, do not change): "{nombre}"
-    Write a detailed, high-impact Ideogram image generation prompt based on the requested style.
-    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently as the main title.
-    Also include:
+    You are an expert prompt engineer for structure-guided image generation models.
+    Product name (use VERBATIM): "{nombre}"
+    Write an advanced image generation prompt that respects the control image edges but applies new text and heavy traditional textures.
+    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently.
+    Style requirements to apply:
     {estilo}
     OUTPUT RULES:
-    - Write ONLY the prompt in English, max 85 words
+    - Write ONLY the prompt in English, max 90 words
     - The product name "{nombre}" must appear in quotes in your output
     - No preamble, no notes, no explanations
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=250,
-        temperature=0.3, 
+        max_tokens=300,
+        temperature=0.1, # Ultra bajo para máxima fidelidad estructural y cero improvisación
     )
     return response.choices[0].message.content
 
@@ -236,7 +237,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
         return None
 
 # ============================================
-# GENERACIÓN DE IMAGEN — IDEOGRAM v3 (OPTIMIZADO)
+# GENERACIÓN DE IMAGEN — DINÁMICA DE MODELOS
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
@@ -246,22 +247,25 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         return None
     try:
         import replicate
+        import io
         client = replicate.Client(api_token=replicate_token)
 
-        # Usamos Ideogram v3 para ambas opciones, evitando que Flux Canny Pro destruya el diseño con líneas
         if imagen_referencia_url:
-            log(f"🖼️ Generando con Ideogram v3 + Referencia de Estilo Visual...", "info")
+            # Activamos Flux Canny Pro para respetar al 90% la composición y esqueleto del póster
+            log(f"🖼️ Generando con Flux Canny Pro + Réplica de Estructura Compleja...", "info")
+            img_ref_bytes = req.get(imagen_referencia_url, timeout=30).content
             output = client.run(
-                "ideogram-ai/ideogram-v3-turbo",
+                "black-forest-labs/flux-canny-pro",
                 input={
                     "prompt": prompt_imagen,
-                    "resolution": "768x1344",
-                    "style_type": "Design",
-                    "magic_prompt_option": "Off",
-                    "image_request": imagen_referencia_url # Inyecta la referencia como guía de estilo sin calcar bordes molestos
+                    "control_image": io.BytesIO(img_ref_bytes),
+                    "steps": 35, # Subimos pasos para marcar más los detalles del entintado
+                    "guidance": 4.5,
+                    "output_format": "png",
                 }
             )
         else:
+            # Ideogram para el modo limpio y publicitario de Solo Texto
             log(f"🖼️ Generando con Ideogram v3 Turbo (Modo Solo Texto)...", "info")
             output = client.run(
                 "ideogram-ai/ideogram-v3-turbo",
