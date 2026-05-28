@@ -128,6 +128,14 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+.img-mode-row { display: flex; gap: 6px; margin-top: 4px; }
+.btn-img-mode { flex: 1; padding: 7px 6px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 11px; font-family: 'Syne', sans-serif; cursor: pointer; transition: all 0.2s; text-align: center; }
+.btn-img-mode.activo { background: rgba(0,229,255,0.1); color: var(--cyan); border-color: rgba(0,229,255,0.4); font-weight: 700; }
+.ref-section { margin-top: 8px; padding: 10px; background: var(--bg3); border: 1px dashed rgba(0,229,255,0.2); border-radius: 8px; }
+.ref-input { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 7px 10px; font-size: 11px; font-family: 'Syne', sans-serif; outline: none; cursor: pointer; transition: border-color 0.2s; }
+.ref-input:focus { border-color: var(--cyan); }
+.ref-status { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -211,6 +219,18 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
         </label>
       </div>
 
+      <div class="field-label" style="margin-top:12px;">🖼️ Modo de imagen</div>
+      <div class="img-mode-row">
+        <button class="btn-img-mode activo" id="btnModoTexto" onclick="setModoImagen('texto')">✏️ Solo texto</button>
+        <button class="btn-img-mode" id="btnModoRef" onclick="setModoImagen('referencia')">🖼️ Con referencia</button>
+      </div>
+      <div id="seccionReferencia" style="display:none;">
+        <div class="ref-section">
+          <input type="file" class="ref-input" id="inputReferencia" accept="image/*" onchange="subirReferencia(this)">
+          <div class="ref-status" id="estadoReferencia">Sin imagen cargada</div>
+        </div>
+      </div>
+
       <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
       <div class="btn-row">
         <button class="btn-sm" onclick="limpiarLogs()">🗑 Logs</button>
@@ -252,6 +272,8 @@ const socket = io();
 let captions = [];
 let statsData = {};
 let clientesData = [];
+let urlReferencia = null;
+let modoImagen = 'texto';
 
 setInterval(() => {
   document.getElementById('reloj').textContent = new Date().toLocaleTimeString('es-CL');
@@ -388,6 +410,41 @@ function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); rend
 function limpiarLogs() { document.getElementById('logBox').innerHTML=''; }
 function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
 
+function setModoImagen(modo) {
+  modoImagen = modo;
+  document.getElementById('seccionReferencia').style.display = modo === 'referencia' ? 'block' : 'none';
+  document.getElementById('btnModoTexto').classList.toggle('activo', modo === 'texto');
+  document.getElementById('btnModoRef').classList.toggle('activo', modo === 'referencia');
+  if (modo === 'texto') {
+    urlReferencia = null;
+    document.getElementById('estadoReferencia').textContent = 'Sin imagen cargada';
+    document.getElementById('inputReferencia').value = '';
+  }
+}
+
+async function subirReferencia(input) {
+  const archivo = input.files[0];
+  if (!archivo) return;
+  document.getElementById('estadoReferencia').textContent = '⏳ Subiendo imagen...';
+  const formData = new FormData();
+  formData.append('imagen', archivo);
+  try {
+    const res = await fetch('/api/subir_referencia', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.url) {
+      urlReferencia = data.url;
+      document.getElementById('estadoReferencia').textContent = '✅ Referencia lista';
+      agregarLog('🖼️ Imagen de referencia subida ✅', 'success');
+    } else {
+      document.getElementById('estadoReferencia').textContent = '❌ Error al subir';
+      agregarLog('❌ Error subiendo referencia', 'error');
+    }
+  } catch(e) {
+    document.getElementById('estadoReferencia').textContent = '❌ Error de conexión';
+    agregarLog('❌ Error de conexión al subir referencia', 'error');
+  }
+}
+
 function ejecutarCiclo() {
   const busqueda = inputBusqueda.value.trim();
   const precio = document.getElementById('input-precio').value || 'Consultar por DM';
@@ -398,7 +455,7 @@ function ejecutarCiclo() {
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
   if (!busqueda) { agregarLog('⚠️ Escribe algo en búsqueda libre para iniciar', 'warning'); return; }
 
-  const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel };
+  const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel, imagen_referencia_url: modoImagen === 'referencia' ? urlReferencia : null };
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
   agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel ? 'sí' : 'no'}`, 'info');
