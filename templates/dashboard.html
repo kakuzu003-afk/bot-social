@@ -463,10 +463,45 @@ function setModoImagen(modo) {
   }
 }
 
+async function convertirAJpeg(archivo) {
+  // Convierte cualquier formato (HEIC, JFIF, WEBP, etc.) a JPEG usando canvas
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(archivo);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        resolve(new File([blob], 'referencia.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.92);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(archivo); // Si falla la conversión, usar el original
+    };
+    img.src = url;
+  });
+}
+
 async function subirReferencia(input) {
-  const archivo = input.files[0];
-  if (!archivo) return;
-  // Mostrar preview local inmediatamente
+  const archivoOriginal = input.files[0];
+  if (!archivoOriginal) return;
+
+  document.getElementById('estadoReferencia').textContent = '⏳ Procesando imagen...';
+
+  // Convertir a JPEG antes de subir (soluciona HEIC, JFIF, WEBP en móvil)
+  let archivo;
+  try {
+    archivo = await convertirAJpeg(archivoOriginal);
+  } catch(e) {
+    archivo = archivoOriginal;
+  }
+
+  // Mostrar preview local
   const reader = new FileReader();
   reader.onload = e => {
     const prev = document.getElementById('refPreview');
@@ -474,6 +509,7 @@ async function subirReferencia(input) {
     prev.style.display = 'block';
   };
   reader.readAsDataURL(archivo);
+
   document.getElementById('estadoReferencia').textContent = '⏳ Subiendo imagen...';
   const formData = new FormData();
   formData.append('imagen', archivo);
@@ -487,7 +523,7 @@ async function subirReferencia(input) {
       agregarLog('🖼️ Imagen de referencia subida ✅', 'success');
     } else {
       document.getElementById('estadoReferencia').textContent = '❌ Error al subir';
-      agregarLog('❌ Error subiendo referencia', 'error');
+      agregarLog('❌ Error subiendo referencia: ' + (data.error || 'sin detalle'), 'error');
     }
   } catch(e) {
     document.getElementById('estadoReferencia').textContent = '❌ Error de conexión';
