@@ -185,12 +185,16 @@ def analizar_imagen_referencia(imagen_referencia_url):
                     {
                         "type": "text",
                         "text": (
-                            "Analyze this reference image for a commercial advertisement. "
-                            "Describe in detail: color palette (exact colors and tones), "
-                            "visual style (minimalist, 3D, neon, luxury, etc.), "
-                            "composition and layout, typography style if any, "
-                            "lighting and mood, and any distinctive graphic elements. "
-                            "Be specific and technical. Max 80 words. English only."
+                            "You are an expert art director analyzing a commercial advertisement image. "
+                            "Provide a HIGHLY DETAILED technical analysis covering: "
+                            "1) COLORS: exact color palette with hex-like descriptions (deep navy blue, electric cyan, etc.), gradients, and dominant tones. "
+                            "2) STYLE: design style (3D render, photorealistic, flat design, neon, luxury minimalist, tech futuristic, etc.). "
+                            "3) COMPOSITION: layout structure, element placement, focal point, use of space. "
+                            "4) TYPOGRAPHY: font style, weight, size hierarchy, color, placement. "
+                            "5) LIGHTING & MOOD: light sources, shadows, atmosphere, emotional tone. "
+                            "6) KEY GRAPHIC ELEMENTS: specific shapes, textures, effects, icons, or visual motifs. "
+                            "Be extremely specific and technical so a designer can perfectly replicate this style. "
+                            "Max 120 words. English only. No generic descriptions."
                         )
                     }
                 ]
@@ -222,25 +226,25 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
         contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
 
     prompt = f"""
-    You are an expert prompt engineer for Ideogram v3 graphic design.
+    You are a world-class prompt engineer specialized in Ideogram v3 Balanced — the most advanced AI image generation model for commercial advertising.
     Product to advertise: "{nombre}"
     
-    Write a high-end commercial advertisement prompt.
+    Your goal: write a MASTERCLASS-level prompt that pushes Ideogram v3 Balanced to its full potential.
     
-    CRITICAL RULES:
+    CRITICAL PRODUCT ACCURACY RULES:
     1. {contexto_estilo}
-    2. The output MUST include the text "{nombre}" perfectly spelled.
-    3. The typography must be elegant, proportional, and integrated into the design. DO NOT make the text so giant that it ruins the layout. Leave breathing room.
-    4. Include beautiful graphic elements related to the product (e.g., sleek shapes, abstract details, or glowing branding icons).
-    5. No cheap speed lines, no generic explosion backgrounds. Keep it premium.
-    6. Vertical 9:16 format.
-    7. CRITICAL — LANGUAGE RULE: ALL text elements in the image MUST be in English or Spanish ONLY. Absolutely NO characters, symbols, glyphs, or decorative text in Chinese, Japanese, Korean, Arabic, Hindi, Cyrillic, or any other language. If background text or texture is needed, use only Latin alphabet characters. This rule overrides any stylistic decision.
+    2. The product "{nombre}" must be the HERO of the image — visually dominant, accurate, and recognizable. Do NOT invent generic product visuals. Base the design on the REAL product identity.
+    3. Include REAL product-specific visual elements: if it's software, show UI screenshots or icons; if it's antivirus, show shields/protection; if it's CAD software, show 3D blueprints; if it's Office, show document/spreadsheet interfaces. Be specific.
+    4. Typography: include the product name "{nombre}" in clean, bold, perfectly spelled text. Elegant hierarchy. NO giant text that ruins composition.
+    5. CLEAN DESIGN: NO fake text, NO lorem ipsum, NO decorative gibberish text anywhere in the image — especially NO small print at the bottom. Every text element must be intentional and readable.
+    6. Vertical 9:16 format, premium commercial quality, photorealistic or high-end 3D render style.
+    7. LANGUAGE RULE: ALL text in the image in English or Spanish ONLY. Zero tolerance for Chinese, Japanese, Arabic, Cyrillic, or any non-Latin characters anywhere in the image including backgrounds and textures.
     
     OUTPUT RULES:
-    - Write ONLY the prompt in English, max 85 words
-    - The product name "{nombre}" must appear in quotes in your output
-    - Explicitly include in your prompt: "all text in English only, no foreign characters or symbols"
-    - No preamble, no notes, no explanations
+    - Write ONLY the Ideogram prompt in English, max 100 words
+    - Start directly with the visual description — no preamble
+    - Include: "clean design, no fake text, no gibberish, no small print, all text in English only"
+    - Make it cinematic, detailed, and specific to the real product
     """
     
     response = groq_client.chat.completions.create(
@@ -332,13 +336,17 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
         import io
         client = replicate.Client(api_token=replicate_token)
 
-        # Negative prompt: evita texto ilegible, caracteres extraños y diseño de baja calidad
+        # Negative prompt agresivo — elimina texto basura, caracteres raros y baja calidad
         negative_prompt = (
-            "blurry text, illegible text, garbled text, random letters, fake text, "
-            "gibberish, nonsense characters, foreign language characters, chinese characters, "
-            "japanese characters, arabic script, cyrillic text, korean characters, "
-            "watermark, ugly, low quality, deformed, distorted typography, "
-            "cluttered layout, messy design, overlapping text, unreadable fonts"
+            "blurry text, illegible text, garbled text, random letters, fake text, lorem ipsum, "
+            "gibberish, nonsense characters, small print, fine print, terms and conditions text, "
+            "footer text, disclaimer text, random background text, decorative fake text, "
+            "foreign language characters, chinese characters, japanese characters, arabic script, "
+            "cyrillic text, korean characters, hindi characters, thai characters, "
+            "watermark, logo watermark, ugly, low quality, deformed, distorted typography, "
+            "cluttered layout, messy design, overlapping text, unreadable fonts, "
+            "text artifacts, letter artifacts, symbol artifacts, glyph errors, "
+            "stock photo watermark, draft, sketch, amateur, pixelated, noisy"
         )
 
         parametros = {
@@ -365,7 +373,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
             except Exception as ref_err:
                 log(f"⚠️ Error al cargar referencia: {ref_err}. Continuando sin referencia.", "warning")
 
-        log(f"🖼️ Generando con Ideogram v3 Turbo{'  + referencia de estilo' if imagen_referencia_url else ' de forma estable'}...", "info")
+        log(f"🖼️ Generando con Ideogram v3 Balanced{'  + referencia de estilo' if imagen_referencia_url else ' — máxima calidad'}...", "info")
         output = client.run(
             "ideogram-ai/ideogram-v3-balanced",
             input=parametros
@@ -823,4 +831,4 @@ if __name__ == '__main__':
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
     puerto = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)e)
