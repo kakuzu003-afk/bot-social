@@ -130,7 +130,7 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
     nombre = prod_info['detalle_producto']
 
-    # Si hay imagen, le damos OJOS al motor de texto usando el modelo de VISIÓN de Groq
+    # Si hay imagen, le damos OJOS al motor de texto usando el modelo de VISIÓN de producción de Groq
     if imagen_referencia_url:
         log("👁️ Groq Vision escaneando la imagen de referencia...", "info")
         prompt_text = f"""
@@ -158,8 +158,8 @@ def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
                 ]
             }
         ]
-        # CORREGIDO: Modelo activo y soportado por Groq actualmente
-        modelo = "llama-3.2-11b-vision-preview" 
+        # CORREGIDO: Modelo definitivo de producción (instruct)
+        modelo = "llama-3.2-11b-vision-instruct" 
         
     else:
         # Si NO hay imagen, usamos el modelo rápido normal y le decimos qué imaginar
@@ -184,7 +184,7 @@ def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
         - No preamble, no notes, no explanations
         """
         mensajes = [{"role": "user", "content": prompt_text}]
-        modelo = "llama-3.3-70b-versatile" # Modelo de texto de Groq
+        modelo = "llama-3.3-70b-versatile" # Modelo de texto estable de Groq
         
     response = groq_client.chat.completions.create(
         model=modelo,
