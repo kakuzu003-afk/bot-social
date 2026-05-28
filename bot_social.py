@@ -120,36 +120,34 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 def generar_prompt_imagen(prod_info, caption):
+    nombre = prod_info['detalle_producto']
+    
     prompt = f"""
-    You are a world-class commercial designer specializing in digital subscription product ads for Instagram.
+    You are an expert at writing image generation prompts for Ideogram v3.
     
-    The product is: "{prod_info['detalle_producto']}"
+    Product name (copy this EXACTLY, do not paraphrase): "{nombre}"
     
-    Create a prompt for a stunning product box design. Guidelines:
+    Write a prompt for a premium 3D software box image. Requirements:
     
-    DESIGN:
-    - A premium 3D retail software box with the text "{prod_info['detalle_producto']}" written in large bold letters on the front of the box. The text must be clearly readable.
-    - Dark futuristic background with neon lighting matching the brand colors
-    - Glossy premium finish, holographic effects, particles
-    - Icons and symbols related to the product on the box face
+    MANDATORY: The prompt MUST include this exact phrase → the text "{nombre}" displayed in large bold white letters on the front of the box
     
-    COMPOSITION:
-    - Vertical 9:16 format, box as hero occupying 70% of frame
-    - Dramatic rim lighting, cinematic depth of field
+    Include:
+    - Dark background with neon blue/purple holographic lighting
+    - Glossy finish, floating light particles, cinematic lighting
+    - Box centered, vertical 9:16 composition
+    - No faces, no extra text, no logos
+    - Photorealistic commercial photography style
     
-    PROHIBITIONS:
-    - NO distorted faces
-    - NO irrelevant objects
-    
-    Style: Photorealistic 3D render, premium commercial photography.
-    
-    Max 80 words. Output ONLY the English prompt. No introductions, no notes.
+    CRITICAL RULES:
+    - Output ONLY the English prompt, max 70 words
+    - The product name "{nombre}" must appear verbatim inside quotes in your output
+    - No introductions, no notes, no explanations
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.4
+        temperature=0.2  # ← más bajo = más fiel a las instrucciones
     )
     return response.choices[0].message.content
 
@@ -238,8 +236,8 @@ def generar_imagen_dalle(prompt_imagen):
             input={
                 "prompt": prompt_imagen,
                 "resolution": "768x1344",
-                "style_type": "Realistic",
-                "magic_prompt_option": "On",
+                "style_type": "Design"
+                "magic_prompt_option": "Off",
             }
         )
         image_url = str(output)
