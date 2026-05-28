@@ -647,7 +647,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
         log(f'✅ Ciclo completo — Post: {"✅" if publicado_post else "—"} | Reel: {"✅" if publicado_reel else ("generado, sin CDN" if reel_generado else "—")}', 'success')
     except Exception as e:
-        log(f'❌ Error en ciclo libre: {e}', 'error')
+        clave_debug = os.environ.get("GROQ_API_KEY", "NO_ENCONTRADA")
+        log(f'❌ Error en ciclo libre: {e} | GROQ_KEY: {clave_debug[:6]}...{clave_debug[-4:]} | len:{len(clave_debug)}', 'error')
     finally:
         # 🔒 Liberar el lock de forma segura al terminar (o si hubo error)
         with _bot_lock:
