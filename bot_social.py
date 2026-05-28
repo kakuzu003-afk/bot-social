@@ -128,7 +128,7 @@ def generar_prompt_imagen(prod_info, caption):
     Create a prompt for a stunning product box design. Guidelines:
     
     DESIGN:
-    - A premium 3D retail software box with the exact product name "{prod_info['detalle_producto']}" clearly written on the front
+    - A premium 3D retail software box with the text "{prod_info['detalle_producto']}" written in large bold letters on the front of the box. The text must be clearly readable.
     - Dark futuristic background with neon lighting matching the brand colors
     - Glossy premium finish, holographic effects, particles
     - Icons and symbols related to the product on the box face
@@ -156,28 +156,26 @@ def generar_prompt_imagen(prod_info, caption):
 captions_guardados = []
 
 # ============================================
-# PIXABAY — BÚSQUEDA DE MÚSICA POR MOOD
+# MÚSICA LOCAL POR MOOD
 # ============================================
 
 def buscar_musica_pixabay(mood="energico"):
     moods_disponibles = ["energico", "motivador", "relajado", "corporativo", "misterioso", "alegre"]
     mood_key = mood if mood in moods_disponibles else "energico"
-    
-    # Buscar todos los MP3s que coincidan con el mood
+
     if os.path.exists("music"):
         mp3s = [f for f in os.listdir("music") if f.endswith(".mp3") and f.startswith(mood_key)]
         if mp3s:
             elegido = random.choice(mp3s)
             log(f"🎵 Música seleccionada → music/{elegido}", "success")
             return f"music/{elegido}"
-        
-        # Fallback: cualquier MP3 disponible
+
         todos = [f for f in os.listdir("music") if f.endswith(".mp3")]
         if todos:
             elegido = random.choice(todos)
             log(f"🎵 Música fallback → music/{elegido}", "success")
             return f"music/{elegido}"
-    
+
     log("⚠️ No se encontró música local. Agrega MP3s a la carpeta /music/", "warning")
     return None
 
@@ -190,11 +188,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
     try:
         os.makedirs("static", exist_ok=True)
         video_path = f"static/reel_{int(time.time())}.mp4"
-        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")# Diagnóstico audio
-        probe = subprocess.run([
-            "ffprobe", "-v", "error", "-show_streams", "-of", "json", audio_path
-        ], capture_output=True, text=True)
-        log(f"🔍 Audio info: {probe.stdout[:300]}", "info")
+        log(f"🎬 Generando video Reel con ffmpeg ({duracion}s)...", "info")
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1",
@@ -227,7 +221,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=10):
         return None
 
 # ============================================
-# FLUX 1.1 PRO — GENERACIÓN DE IMAGEN
+# IDEOGRAM v3 TURBO — GENERACIÓN DE IMAGEN
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen):
@@ -241,15 +235,13 @@ def generar_imagen_dalle(prompt_imagen):
         log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
         output = client.run(
             "ideogram-ai/ideogram-v3-turbo",
-            output = client.run(
-    "ideogram-ai/ideogram-v3-turbo",
-    input={
-        "prompt": prompt_imagen,
-        "resolution": "768x1344",
-        "style_type": "Realistic",
-        "magic_prompt_option": "On",
-    }
-)
+            input={
+                "prompt": prompt_imagen,
+                "resolution": "768x1344",
+                "style_type": "Realistic",
+                "magic_prompt_option": "On",
+            }
+        )
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
@@ -461,7 +453,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         reel_generado = False
         imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
-        # ── FLUJO REEL (solo Reel, sin post de imagen) ──────────
         if hacer_reel and imagen_filepath:
             audio_path = buscar_musica_pixabay(mood)
             if audio_path:
@@ -471,8 +462,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
                     publicado_reel = publicar_reel_instagram(video_path, caption_completo, cliente_id)
             else:
                 log("⚠️ Sin audio disponible, se omite el Reel.", "warning")
-
-        # ── FLUJO POST (solo si NO es reel) ─────────────────────
         elif not hacer_reel and imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
             publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
