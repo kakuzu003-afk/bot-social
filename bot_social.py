@@ -223,7 +223,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
 # IDEOGRAM v3 TURBO — GENERACIÓN DE IMAGEN
 # ============================================
 
-def generar_imagen_dalle(prompt_imagen):
+def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
     replicate_token = os.environ.get("REPLICATE_API_TOKEN")
     if not replicate_token:
         log("⚠️ REPLICATE_API_TOKEN no configurada. Saltando generación de imagen.", "warning")
@@ -231,16 +231,19 @@ def generar_imagen_dalle(prompt_imagen):
     try:
         import replicate
         client = replicate.Client(api_token=replicate_token)
-        log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
-        output = client.run(
-            "ideogram-ai/ideogram-v3-turbo",
-            input={
-                "prompt": prompt_imagen,
-                "resolution": "768x1344",
-                "style_type": "Design",         # ← coma corregida
-                "magic_prompt_option": "Off",   # ← Ideogram no reescribe el prompt
-            }
-        )
+        input_params = {
+            "prompt": prompt_imagen,
+            "resolution": "768x1344",
+            "style_type": "Design",
+            "magic_prompt_option": "Off",
+        }
+        if imagen_referencia_url:
+            input_params["image_request_reference_images"] = [imagen_referencia_url]
+            input_params["style_strength"] = 60
+            log(f"🖼️ Generando imagen con Ideogram v3 Turbo + referencia de estilo...", "info")
+        else:
+            log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
+        output = client.run("ideogram-ai/ideogram-v3-turbo", input=input_params)
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
@@ -424,7 +427,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 # CICLO PRINCIPAL
 # ============================================
 
-def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True):
+def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
@@ -450,7 +453,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         publicado_post = False
         publicado_reel = False
         reel_generado = False
-        imagen_filepath = generar_imagen_dalle(prompt_imagen)
+        imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
 
         # ← CAMBIO: siempre sube imagen para preview en dashboard
         if imagen_filepath:
@@ -510,6 +513,20 @@ def api_stats():
 def api_captions():
     return jsonify(captions_guardados)
 
+@app.route('/api/subir_referencia', methods=['POST'])
+def api_subir_referencia():
+    if 'imagen' not in request.files:
+        return jsonify({'error': 'No se envió imagen'}), 400
+    archivo = request.files['imagen']
+    os.makedirs("static", exist_ok=True)
+    filepath = f"static/ref_{int(time.time())}.png"
+    archivo.save(filepath)
+    url = subir_imgbb(filepath)
+    if url:
+        log(f"🖼️ Imagen de referencia subida ✅", "success")
+        return jsonify({'url': url})
+    return jsonify({'error': 'No se pudo subir la imagen a ImgBB'}), 500
+
 @app.route('/api/ciclo', methods=['POST'])
 def api_ciclo():
     data = request.get_json() or {}
@@ -518,12 +535,14 @@ def api_ciclo():
     cliente_id = data.get('cliente_id', 'aurakey')
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
+    imagen_referencia_url = data.get('imagen_referencia_url', None)
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
-    hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel))
+    modo_img = "con referencia" if imagen_referencia_url else "solo texto"
+    hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel, imagen_referencia_url))
     hilo.daemon = True
     hilo.start()
-    return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre} (mood: {mood}, reel: {hacer_reel})'})
+    return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre} (mood: {mood}, reel: {hacer_reel}, imagen: {modo_img})'})
 
 # ============================================
 # SCHEDULER
