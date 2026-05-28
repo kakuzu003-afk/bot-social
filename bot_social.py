@@ -127,34 +127,36 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 
-def generar_prompt_imagen(prod_info, caption, con_referencia=False):
+def def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
     if con_referencia:
+        # Forzamos un estilo anime premium, oscuro, con efectos visuales avanzados
         estilo = """
-    - Clean white and orange corporate background
-    - Bright, professional commercial ad style
-    - Product logo and app icons visible
-    - Modern flat design with bold typography
-    - Vertical 9:16 format, clean layout
-    - No dark backgrounds, no neon, no holographic effects
-    IMPORTANT: Match the style of a clean, bright, corporate software promotional banner."""
+    - Masterpiece epic anime poster art style, high-end dark fantasy key visual.
+    - Deep dramatic pitch-black shadows blending with explosive fiery orange and crimson red ink splashes.
+    - Enhance with cinematic visual details: floating glowing embers, sharp dynamic rim lighting, and subtle smoke effects.
+    - Title "{nombre}" must be integrated as a massive, ultra-clean, sharp metallic commercial typography in the center.
+    - High contrast, gritty texture, professional composition, vertical 9:16 aspect ratio.
+    IMPORTANT: Do not simplify. Absorb the anime art essence from the reference and enhance it with premium glowing lighting and spectacular visual depth."""
     else:
         estilo = """
-    - Dark background, neon blue and purple holographic lighting
-    - Glossy finish, floating light particles, cinematic rim lighting
-    - Box centered, vertical 9:16 composition
-    - No faces, no extra text, no logos"""
+    - Clean, modern commercial advertisement banner style.
+    - Flat design vector illustration mixed with 3D elements.
+    - Vibrant and eye-catching color palette matching the product vibe.
+    - Clear typography, sharp focus, professional branding.
+    - Vertical 9:16 format, perfectly composed for Instagram Reels.
+    - IMPORTANT: The typography must be beautiful, clean, legible, and integrated into the design."""
 
     prompt = f"""
     You are an expert prompt engineer for Ideogram v3 image generation.
     Product name (use VERBATIM, do not change): "{nombre}"
-    Write an Ideogram image generation prompt for a premium software product image.
-    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently.
+    Write a detailed, high-impact Ideogram image generation prompt based on the requested style.
+    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently as the main title.
     Also include:
     {estilo}
     OUTPUT RULES:
-    - Write ONLY the prompt in English, max 70 words
+    - Write ONLY the prompt in English, max 85 words
     - The product name "{nombre}" must appear in quotes in your output
     - No preamble, no notes, no explanations
     """
@@ -162,7 +164,7 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.2,
+        temperature=0.3, # Bajamos la temperatura para que sea más fiel y preciso a las instrucciones
     )
     return response.choices[0].message.content
 captions_guardados = []
