@@ -50,6 +50,8 @@ stats_global = {}
 logs_global = []
 bot_activo = False
 
+GRAPH_API_VERSION = "v21.0"  # Actualizar aquí en futuras migraciones de Meta
+
 CLIENTES = {
     "aurakey": {
         "nombre": "Aurakey",
@@ -413,7 +415,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
             return False
         log(f"📤 Creando contenedor Reel en Graph API para {cliente['nombre']}...", "info")
         res = req.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media",
             data={"media_type": "REELS", "video_url": video_url, "caption": caption, "access_token": meta_token}
         )
         container_id = res.json().get("id")
@@ -425,7 +427,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
         for intento in range(15):
             time.sleep(6)
             check = req.get(
-                f"https://graph.facebook.com/v19.0/{container_id}",
+                f"https://graph.facebook.com/{GRAPH_API_VERSION}/{container_id}",
                 params={"fields": "status_code", "access_token": meta_token}
             ).json()
             status = check.get("status_code")
@@ -441,7 +443,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
             return False
         log(f"🚀 Publicando Reel en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media_publish",
             data={"creation_id": container_id, "access_token": meta_token}
         )
         data2 = res2.json()
@@ -494,7 +496,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
             return False
         log(f"📤 Creando contenedor en Graph API para {cliente['nombre']}...", "info")
         res = req.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media",
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media",
             data={"image_url": imagen_url, "caption": caption, "access_token": meta_token}
         )
         container_id = res.json().get("id")
@@ -506,7 +508,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
         for intento in range(10):
             time.sleep(4)
             check = req.get(
-                f"https://graph.facebook.com/v19.0/{container_id}",
+                f"https://graph.facebook.com/{GRAPH_API_VERSION}/{container_id}",
                 params={"fields": "status_code", "access_token": meta_token}
             ).json()
             status = check.get("status_code")
@@ -522,7 +524,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
             return False
         log(f"🚀 Publicando en Instagram de {cliente['nombre']}...", "info")
         res2 = req.post(
-            f"https://graph.facebook.com/v19.0/{ig_user_id}/media_publish",
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media_publish",
             data={"creation_id": container_id, "access_token": meta_token}
         )
         data2 = res2.json()
