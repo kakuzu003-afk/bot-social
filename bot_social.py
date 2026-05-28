@@ -127,12 +127,68 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 
-def generar_prompt_imagen(prod_info, caption, con_referencia=False):
+def analizar_imagen_referencia(imagen_referencia_url):
+    """Usa Groq Vision para describir el estilo visual de la imagen de referencia."""
+    try:
+        import base64
+        log("🔍 Groq analizando imagen de referencia...", "info")
+        img_response = req.get(imagen_referencia_url, timeout=15)
+        if img_response.status_code != 200:
+            log(f"⚠️ No se pudo descargar imagen para análisis (HTTP {img_response.status_code}).", "warning")
+            return None
+        img_b64 = base64.b64encode(img_response.content).decode("utf-8")
+        # Detectar tipo de imagen
+        content_type = img_response.headers.get("Content-Type", "image/jpeg")
+        if "png" in content_type:
+            media_type = "image/png"
+        elif "webp" in content_type:
+            media_type = "image/webp"
+        else:
+            media_type = "image/jpeg"
+        response = groq_client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{media_type};base64,{img_b64}"}
+                    },
+                    {
+                        "type": "text",
+                        "text": (
+                            "Analyze this reference image for a commercial advertisement. "
+                            "Describe in detail: color palette (exact colors and tones), "
+                            "visual style (minimalist, 3D, neon, luxury, etc.), "
+                            "composition and layout, typography style if any, "
+                            "lighting and mood, and any distinctive graphic elements. "
+                            "Be specific and technical. Max 80 words. English only."
+                        )
+                    }
+                ]
+            }],
+            max_tokens=200,
+            temperature=0.2,
+        )
+        descripcion = response.choices[0].message.content.strip()
+        log(f"✅ Imagen analizada por Groq Vision: {descripcion[:80]}...", "success")
+        return descripcion
+    except Exception as e:
+        log(f"⚠️ Error en Groq Vision: {e}. Continuando con estilo genérico.", "warning")
+        return None
+
+
+def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_referencia=None):
     nombre = prod_info['detalle_producto']
 
-    # Estilo inteligente adaptado al plan free (Puro texto estable)
-    if con_referencia:
-        # Forzamos la estética explosiva, 3D líquida y de alta calidad inspirada en tus mejores referencias
+    if con_referencia and descripcion_referencia:
+        # Groq vio la imagen real — usamos su análisis para guiar a Ideogram
+        contexto_estilo = (
+            f"Replicate EXACTLY this visual style from the reference image: {descripcion_referencia}. "
+            f"Apply this style to create a premium commercial advertisement for '{nombre}'."
+        )
+    elif con_referencia:
+        # Fallback si la visión falló
         contexto_estilo = f"Create an intense, premium commercial advertisement banner with high-end fluid dynamics, detailed 3D liquid splashes, glowing neon accents, and a vibrant explosive color palette matching '{nombre}'. Highly detailed, cinematic layout."
     else:
         contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
@@ -158,7 +214,7 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     """
     
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile", # Usamos el modelo ultra estable de Groq para todo
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
         temperature=0.3,
@@ -260,10 +316,10 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
                 img_response = req.get(imagen_referencia_url, timeout=15)
                 if img_response.status_code == 200:
                     imagen_ref_bytes = io.BytesIO(img_response.content)
-                    parametros["style_reference_images"] = imagen_ref_bytes
+                    parametros["style_reference_images"] = [imagen_ref_bytes]  # ✅ FIX: debe ser array
                     parametros["style_type"] = "Auto"   # Auto: Ideogram detecta el estilo de la referencia
                     parametros["style_weight"] = style_weight  # 0.0 = ignorar ref | 1.0 = copiar al 100%
-                    log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight=0.5).", "success")
+                    log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight={style_weight}).", "success")
                 else:
                     log(f"⚠️ No se pudo descargar la imagen de referencia (HTTP {img_response.status_code}). Generando sin referencia.", "warning")
             except Exception as ref_err:
@@ -483,9 +539,18 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         log(f'✍️ Redactando post para "{busqueda}"...', 'info')
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
-        
-        # Le pasamos un booleano para avisarle a Groq que use el modo dinámico explosivo
-        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo, con_referencia=bool(imagen_referencia_url))
+
+        # Si hay imagen de referencia, Groq la analiza con visión primero
+        descripcion_referencia = None
+        if imagen_referencia_url:
+            descripcion_referencia = analizar_imagen_referencia(imagen_referencia_url)
+
+        prompt_imagen = generar_prompt_imagen(
+            prod_info,
+            caption_completo,
+            con_referencia=bool(imagen_referencia_url),
+            descripcion_referencia=descripcion_referencia
+        )
         
         imagen_filepath = None
         imagen_url_publica = None
