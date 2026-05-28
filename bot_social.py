@@ -182,7 +182,7 @@ def buscar_musica_pixabay(mood="energico"):
 # FFMPEG — COMBINAR IMAGEN + AUDIO → VIDEO
 # ============================================
 
-def generar_video_reel(imagen_path, audio_path, duracion=10):
+def generar_video_reel(imagen_path, audio_path, duracion=15):
     import subprocess
     try:
         os.makedirs("static", exist_ok=True)
