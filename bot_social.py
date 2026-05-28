@@ -93,21 +93,6 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     Precio actual de oferta: {precio}
     Términos calientes detectados hoy en la red: {', '.join(tendencias_reales)}
     
-    Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas dos reglas obligatorias:
-    
-    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos. 
-    
-    REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, debes incluir obligatoriamente un llamado a la acción para comprar que incluya exactamente esta línea:
-    📲 WhatsApp: +56946557876
-    
- def generar_post_estricto(prod_info, tendencias_reales, precio):
-    prompt = f"""
-    Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
-    Marca: {prod_info['nombre']}
-    Producto: {prod_info['detalle_producto']}
-    Precio actual de oferta: {precio}
-    Términos calientes detectados hoy en la red: {', '.join(tendencias_reales)}
-    
     Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas reglas:
     
     1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos.
@@ -141,31 +126,25 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     )
     return response.choices[0].message.content
 
+
 def generar_prompt_imagen(prod_info, caption):
     nombre = prod_info['detalle_producto']
-
     prompt = f"""
     You are an expert prompt engineer for Ideogram v3 image generation.
-
     Product name (use VERBATIM, do not change): "{nombre}"
-
     Write an Ideogram image generation prompt for a premium 3D software box.
-
     MANDATORY: Your output MUST contain this exact phrase:
     the text "{nombre}" in large bold white letters on the front of the box
-
     Also include:
     - Dark background, neon blue and purple holographic lighting
     - Glossy finish, floating light particles, cinematic rim lighting
     - Box centered, vertical 9:16 composition
     - No faces, no extra text, no logos
-
     OUTPUT RULES:
     - Write ONLY the prompt in English, max 70 words
     - The product name "{nombre}" must appear in quotes in your output
     - No preamble, no notes, no explanations
     """
-
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
@@ -173,7 +152,6 @@ def generar_prompt_imagen(prod_info, caption):
         temperature=0.2,
     )
     return response.choices[0].message.content
-
 captions_guardados = []
 
 # ============================================
