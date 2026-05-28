@@ -652,13 +652,81 @@ def api_ciclo():
     return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre} (mood: {mood}, reel: {hacer_reel}, imagen: {modo_img})'})
 
 # ============================================
-# SCHEDULER
+# SCHEDULER CONFIGURABLE
 # ============================================
+
+scheduler_config = {
+    "activo": False,
+    "intervalo_horas": 2,
+    "busqueda": "",
+    "precio": "Consultar por DM",
+    "cliente_id": "aurakey",
+    "mood": "energico",
+    "hacer_reel": True,
+    "imagen_referencia_url": None,
+    "style_weight": 0.5,
+    "proximo_ciclo": None,
+    "ciclos_ejecutados": 0,
+}
+
+def _ejecutar_ciclo_scheduler():
+    if not scheduler_config["activo"]:
+        return
+    log("⏰ Scheduler: disparando ciclo automático...", "info")
+    scheduler_config["ciclos_ejecutados"] += 1
+    # Calcular próximo ciclo
+    from datetime import timedelta
+    proximo = datetime.now() + timedelta(hours=scheduler_config["intervalo_horas"])
+    scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
+    socketio.emit("scheduler_status", scheduler_config)
+    ciclo_libre(
+        busqueda=scheduler_config["busqueda"],
+        precio_manual=scheduler_config["precio"],
+        cliente_id=scheduler_config["cliente_id"],
+        mood=scheduler_config["mood"],
+        hacer_reel=scheduler_config["hacer_reel"],
+        imagen_referencia_url=scheduler_config["imagen_referencia_url"],
+        style_weight=scheduler_config["style_weight"],
+    )
+
+def _aplicar_schedule():
+    schedule.clear("auto")
+    if scheduler_config["activo"] and scheduler_config["busqueda"]:
+        horas = scheduler_config["intervalo_horas"]
+        schedule.every(horas).hours.do(_ejecutar_ciclo_scheduler).tag("auto")
+        from datetime import timedelta
+        proximo = datetime.now() + timedelta(hours=horas)
+        scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
+        log(f"⏰ Scheduler activado — cada {horas}h | próximo: {scheduler_config['proximo_ciclo']}", "success")
+    else:
+        scheduler_config["proximo_ciclo"] = None
+        log("⏹ Scheduler detenido.", "warning")
+    socketio.emit("scheduler_status", scheduler_config)
 
 def run_scheduler():
     while True:
         schedule.run_pending()
-        time.sleep(60)
+        time.sleep(30)
+
+
+@app.route("/api/scheduler", methods=["GET"])
+def api_scheduler_get():
+    return jsonify(scheduler_config)
+
+@app.route("/api/scheduler", methods=["POST"])
+def api_scheduler_set():
+    data = request.get_json() or {}
+    scheduler_config["activo"] = bool(data.get("activo", False))
+    scheduler_config["intervalo_horas"] = int(data.get("intervalo_horas", 2))
+    scheduler_config["busqueda"] = data.get("busqueda", "").strip()
+    scheduler_config["precio"] = data.get("precio", "Consultar por DM")
+    scheduler_config["cliente_id"] = data.get("cliente_id", "aurakey")
+    scheduler_config["mood"] = data.get("mood", "energico")
+    scheduler_config["hacer_reel"] = bool(data.get("hacer_reel", True))
+    scheduler_config["imagen_referencia_url"] = data.get("imagen_referencia_url", None)
+    scheduler_config["style_weight"] = float(data.get("style_weight", 0.5) or 0.5)
+    _aplicar_schedule()
+    return jsonify({"ok": True, "config": scheduler_config})
 
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")
