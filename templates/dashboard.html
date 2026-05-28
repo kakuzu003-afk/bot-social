@@ -143,6 +143,31 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
 input[type=range].weight-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 99px; background: var(--border2); outline: none; cursor: pointer; }
 input[type=range].weight-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px rgba(0,229,255,0.5); cursor: pointer; }
 .ref-badge { display: inline-flex; align-items: center; gap: 4px; font-family: 'Space Mono', monospace; font-size: 9px; padding: 2px 7px; border-radius: 99px; background: rgba(0,229,255,0.08); color: var(--cyan); border: 1px solid rgba(0,229,255,0.25); margin-left: 4px; }
+
+/* SCHEDULER */
+.scheduler-panel { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 4px; }
+.scheduler-panel.activo { border-color: rgba(255,184,0,0.4); background: rgba(255,184,0,0.04); }
+.scheduler-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.scheduler-title { font-size: 11px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.scheduler-toggle-wrap { display: flex; align-items: center; gap: 6px; }
+.scheduler-toggle-label { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text3); }
+.toggle-sched { position: relative; display: inline-block; width: 36px; height: 20px; cursor: pointer; }
+.toggle-sched input { opacity: 0; width: 0; height: 0; }
+.toggle-sched-track { position: absolute; inset: 0; background: var(--border2); border-radius: 99px; transition: background 0.2s; }
+.toggle-sched-track.on { background: var(--amber); }
+.toggle-sched-thumb { position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #000; border-radius: 50%; transition: transform 0.2s; }
+.toggle-sched-thumb.on { transform: translateX(16px); }
+.sched-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.sched-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); white-space: nowrap; }
+.sched-interval-btns { display: flex; gap: 4px; }
+.sched-interval-btn { padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border2); background: var(--bg); color: var(--text3); font-size: 10px; font-family: 'Space Mono', monospace; cursor: pointer; transition: all 0.15s; }
+.sched-interval-btn.sel { background: rgba(255,184,0,0.15); border-color: var(--amber); color: var(--amber); font-weight: 700; }
+.sched-status { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); }
+.sched-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+.sched-status-dot.on { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: blink 2s infinite; }
+.sched-status-text { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); }
+.sched-status-text.on { color: var(--amber); }
+.sched-counter { font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text3); margin-left: auto; }
 </style>
 </head>
 <body>
