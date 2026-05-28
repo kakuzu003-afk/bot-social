@@ -332,8 +332,18 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
         import io
         client = replicate.Client(api_token=replicate_token)
 
+        # Negative prompt: evita texto ilegible, caracteres extraños y diseño de baja calidad
+        negative_prompt = (
+            "blurry text, illegible text, garbled text, random letters, fake text, "
+            "gibberish, nonsense characters, foreign language characters, chinese characters, "
+            "japanese characters, arabic script, cyrillic text, korean characters, "
+            "watermark, ugly, low quality, deformed, distorted typography, "
+            "cluttered layout, messy design, overlapping text, unreadable fonts"
+        )
+
         parametros = {
             "prompt": prompt_imagen,
+            "negative_prompt": negative_prompt,
             "resolution": "768x1344",
             "style_type": "Design",
             "magic_prompt_option": "Off",
@@ -346,9 +356,9 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
                 img_response = req.get(imagen_referencia_url, timeout=15)
                 if img_response.status_code == 200:
                     imagen_ref_bytes = io.BytesIO(img_response.content)
-                    parametros["style_reference_images"] = [imagen_ref_bytes]  # ✅ FIX: debe ser array
-                    parametros["style_type"] = "Auto"   # Auto: Ideogram detecta el estilo de la referencia
-                    parametros["style_weight"] = style_weight  # 0.0 = ignorar ref | 1.0 = copiar al 100%
+                    parametros["style_reference_images"] = [imagen_ref_bytes]
+                    parametros["style_type"] = "Auto"
+                    parametros["style_weight"] = style_weight
                     log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight={style_weight}).", "success")
                 else:
                     log(f"⚠️ No se pudo descargar la imagen de referencia (HTTP {img_response.status_code}). Generando sin referencia.", "warning")
