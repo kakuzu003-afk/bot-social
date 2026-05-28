@@ -1,6 +1,3 @@
-from gevent import monkey
-monkey.patch_all()
-
 from flask import Flask, render_template, jsonify, request, Response
 from flask_socketio import SocketIO, emit
 import json
@@ -16,7 +13,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", os.urandom(24))
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ============================================
 # AUTENTICACIÓN BÁSICA
@@ -156,6 +153,10 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def analizar_imagen_referencia(imagen_referencia_url):
     """Usa Groq Vision para describir el estilo visual de la imagen de referencia."""
+    # Validar que la URL sea válida antes de intentar cualquier cosa
+    if not imagen_referencia_url or not isinstance(imagen_referencia_url, str) or not imagen_referencia_url.startswith("http"):
+        log("⚠️ URL de referencia inválida o vacía. Saltando análisis de visión.", "warning")
+        return None
     try:
         import base64
         log("🔍 Groq analizando imagen de referencia...", "info")
@@ -574,10 +575,15 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
 
-        # Si hay imagen de referencia, Groq la analiza con visión primero
+        # Si hay imagen de referencia válida, Groq la analiza con visión primero
         descripcion_referencia = None
-        if imagen_referencia_url:
-            descripcion_referencia = analizar_imagen_referencia(imagen_referencia_url)
+        if imagen_referencia_url and isinstance(imagen_referencia_url, str) and imagen_referencia_url.startswith("http"):
+            try:
+                descripcion_referencia = analizar_imagen_referencia(imagen_referencia_url)
+            except Exception as e_vision:
+                log(f"⚠️ Groq Vision falló ({e_vision}). Continuando sin referencia.", "warning")
+                descripcion_referencia = None
+                imagen_referencia_url = None  # Evitar que se intente usar más adelante
 
         prompt_imagen = generar_prompt_imagen(
             prod_info,
@@ -804,4 +810,4 @@ if __name__ == '__main__':
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
     puerto = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=puerto, debug=False)
+    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
