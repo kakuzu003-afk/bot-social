@@ -1,9 +1,11 @@
-groq
-schedule
-requests
 flask
 flask-socketio
+gevent
+gevent-websocket
+gunicorn
+groq
+requests
+schedule
 replicate
 cloudinary
-python-dotenv
-eventlet
+ 
