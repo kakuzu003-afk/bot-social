@@ -130,7 +130,7 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
     nombre = prod_info['detalle_producto']
 
-    # Si hay imagen, le damos OJOS al motor de texto usando el modelo de VISIÓN de producción de Groq
+    # Si hay imagen, le damos OJOS al motor de texto usando el modelo de VISIÓN estable de Groq
     if imagen_referencia_url:
         log("👁️ Groq Vision escaneando la imagen de referencia...", "info")
         prompt_text = f"""
@@ -158,8 +158,8 @@ def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
                 ]
             }
         ]
-        # CORREGIDO: Modelo definitivo de producción (instruct)
-        modelo = "llama-3.2-11b-vision-instruct" 
+        # CORREGIDO: Modelo de visión masivo, estable y garantizado en el plan free de Groq
+        modelo = "llama-3.1-8b-instant" 
         
     else:
         # Si NO hay imagen, usamos el modelo rápido normal y le decimos qué imaginar
