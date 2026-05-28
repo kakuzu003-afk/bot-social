@@ -51,67 +51,6 @@ logs_global = []
 bot_activo = False
 _bot_lock = threading.Lock()  # 🔒 Protege bot_activo contra race conditions
 
-# ============================================
-# PERSISTENCIA EN DISCO
-# ============================================
-
-DATA_DIR = "data"
-STATS_FILE = os.path.join(DATA_DIR, "stats.json")
-CAPTIONS_FILE = os.path.join(DATA_DIR, "captions.json")
-LOGS_FILE = os.path.join(DATA_DIR, "logs.json")
-_persist_lock = threading.Lock()
-
-def _asegurar_data_dir():
-    os.makedirs(DATA_DIR, exist_ok=True)
-
-def _guardar_json(path, data):
-    """Guarda datos en JSON de forma segura (write-then-rename)."""
-    _asegurar_data_dir()
-    tmp = path + ".tmp"
-    try:
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, path)
-    except Exception as e:
-        print(f"[WARN] No se pudo guardar {path}: {e}")
-
-def _cargar_json(path, default):
-    """Carga datos desde JSON. Retorna `default` si no existe o está corrupto."""
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return default
-
-def guardar_stats():
-    with _persist_lock:
-        _guardar_json(STATS_FILE, stats_global)
-
-def guardar_captions():
-    with _persist_lock:
-        _guardar_json(CAPTIONS_FILE, captions_guardados)
-
-def guardar_logs():
-    with _persist_lock:
-        # Guardamos solo un histórico razonable en disco para no saturar
-        _guardar_json(LOGS_FILE, logs_global[-100:])
-
-def cargar_datos_persistidos():
-    """Carga stats, captions y logs desde disco al iniciar."""
-    global stats_global, captions_guardados, logs_global
-    stats_guardados = _cargar_json(STATS_FILE, {})
-    captions_guardados_disco = _cargar_json(CAPTIONS_FILE, [])
-    logs_guardados = _cargar_json(LOGS_FILE, [])
-    
-    # Mergeamos stats guardados sobre la estructura base
-    for clave, datos in stats_guardados.items():
-        if clave in stats_global:
-            stats_global[clave].update(datos)
-            
-    captions_guardados.extend(captions_guardados_disco)
-    logs_global.extend(logs_guardados)
-    print(f"[INFO] Persistencia cargada: {len(stats_guardados)} clientes, {len(captions_guardados_disco)} captions, {len(logs_guardados)} logs.")
-
 GRAPH_API_VERSION = "v21.0"  # Actualizar aquí en futuras migraciones de Meta
 
 CLIENTES = {
@@ -122,7 +61,6 @@ CLIENTES = {
     },
 }
 
-# Inicialización base de la estructura de estadísticas
 for clave, cliente in CLIENTES.items():
     stats_global[clave] = {
         'nombre': cliente['nombre'],
@@ -144,8 +82,6 @@ def log(msg, tipo='info'):
         logs_global.pop(0)
     socketio.emit('log', entrada)
     print(f"[{tipo.upper()}] {msg}")
-    # Parche 3: Guardar log en disco de forma asíncrona para no frenar la ejecución principal
-    threading.Thread(target=guardar_logs, daemon=True).start()
 
 # ============================================
 # TENDENCIAS
@@ -175,7 +111,7 @@ def buscar_tendencias_reales_api(prod_info):
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
     prompt = f"""
-    Eres un expert en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
+    Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
     Marca: {prod_info['nombre']}
     Producto: {prod_info['detalle_producto']}
     Precio actual de oferta: {precio}
@@ -225,6 +161,7 @@ def analizar_imagen_referencia(imagen_referencia_url):
             log(f"⚠️ No se pudo descargar imagen para análisis (HTTP {img_response.status_code}).", "warning")
             return None
         img_b64 = base64.b64encode(img_response.content).decode("utf-8")
+        # Detectar tipo de imagen
         content_type = img_response.headers.get("Content-Type", "image/jpeg")
         if "png" in content_type:
             media_type = "image/png"
@@ -261,7 +198,7 @@ def analizar_imagen_referencia(imagen_referencia_url):
         log(f"✅ Imagen analizada por Groq Vision: {descripcion[:80]}...", "success")
         return descripcion
     except Exception as e:
-        log(f"⚠️ Error en Groq Vision: {e}. Continuing with generic style.", "warning")
+        log(f"⚠️ Error en Groq Vision: {e}. Continuando con estilo genérico.", "warning")
         return None
 
 
@@ -269,11 +206,13 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
     nombre = prod_info['detalle_producto']
 
     if con_referencia and descripcion_referencia:
+        # Groq vio la imagen real — usamos su análisis para guiar a Ideogram
         contexto_estilo = (
             f"Replicate EXACTLY this visual style from the reference image: {descripcion_referencia}. "
             f"Apply this style to create a premium commercial advertisement for '{nombre}'."
         )
     elif con_referencia:
+        # Fallback si la visión falló
         contexto_estilo = f"Create an intense, premium commercial advertisement banner with high-end fluid dynamics, detailed 3D liquid splashes, glowing neon accents, and a vibrant explosive color palette matching '{nombre}'. Highly detailed, cinematic layout."
     else:
         contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
@@ -394,15 +333,16 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
             "magic_prompt_option": "Off",
         }
 
+        # ✅ FIX: Inyectar imagen de referencia real en Ideogram
         if imagen_referencia_url:
             log(f"🖼️ Descargando imagen de referencia de estilo...", "info")
             try:
                 img_response = req.get(imagen_referencia_url, timeout=15)
                 if img_response.status_code == 200:
                     imagen_ref_bytes = io.BytesIO(img_response.content)
-                    parametros["style_reference_images"] = [imagen_ref_bytes]
-                    parametros["style_type"] = "Auto"
-                    parametros["style_weight"] = style_weight
+                    parametros["style_reference_images"] = [imagen_ref_bytes]  # ✅ FIX: debe ser array
+                    parametros["style_type"] = "Auto"   # Auto: Ideogram detecta el estilo de la referencia
+                    parametros["style_weight"] = style_weight  # 0.0 = ignorar ref | 1.0 = copiar al 100%
                     log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight={style_weight}).", "success")
                 else:
                     log(f"⚠️ No se pudo descargar la imagen de referencia (HTTP {img_response.status_code}). Generando sin referencia.", "warning")
@@ -606,6 +546,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None, style_weight=0.5):
     global bot_activo
 
+    # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
     with _bot_lock:
         if bot_activo:
             log("⚠️ Ciclo rechazado: ya hay un ciclo activo. Esperá que termine.", "warning")
@@ -630,6 +571,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
 
+        # Si hay imagen de referencia, Groq la analiza con visión primero
         descripcion_referencia = None
         if imagen_referencia_url:
             descripcion_referencia = analizar_imagen_referencia(imagen_referencia_url)
@@ -647,6 +589,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         publicado_reel = False
         reel_generado = False
         
+        # Generación directa con Ideogram Turbo
         imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
 
         if imagen_filepath:
@@ -681,15 +624,11 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         socketio.emit('caption', entrada)
         stats_global[cliente_id]['posts'] += 1
         stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
-        
-        # Parche 2: Forzar guardado a disco JSON inmediatamente al completar con éxito
-        guardar_captions()
-        guardar_stats()
-        
         log(f'✅ Ciclo completo — Post: {"✅" if publicado_post else "—"} | Reel: {"✅" if publicado_reel else ("generado, sin CDN" if reel_generado else "—")}', 'success')
     except Exception as e:
         log(f'❌ Error en ciclo libre: {e}', 'error')
     finally:
+        # 🔒 Liberar el lock de forma segura al terminar (o si hubo error)
         with _bot_lock:
             bot_activo = False
         socketio.emit('bot_status', {'activo': False})
@@ -748,7 +687,7 @@ def api_ciclo():
     style_weight = float(data.get('style_weight', 0.5) or 0.5)
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
-    
+    # 🔒 Verificar antes de lanzar el thread (doble guardia junto al Lock en ciclo_libre)
     with _bot_lock:
         if bot_activo:
             return jsonify({'msg': '⚠️ Ya hay un ciclo corriendo. Esperá que termine antes de iniciar otro.'})
@@ -779,17 +718,19 @@ scheduler_config = {
 def _ejecutar_ciclo_scheduler():
     if not scheduler_config["activo"]:
         return
+    # 🔒 Verificar que no haya un ciclo ya corriendo antes de disparar
     with _bot_lock:
         if bot_activo:
             log("⏰ Scheduler: ciclo anterior aún activo, se omite esta ejecución.", "warning")
             return
     log("⏰ Scheduler: disparando ciclo automático...", "info")
     scheduler_config["ciclos_ejecutados"] += 1
+    # Calcular próximo ciclo
     from datetime import timedelta
     proximo = datetime.now() + timedelta(hours=scheduler_config["intervalo_horas"])
     scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
     socketio.emit("scheduler_status", scheduler_config)
-    
+    # 🔧 Lanzar en thread separado — no bloquear el loop del scheduler
     hilo = threading.Thread(
         target=ciclo_libre,
         kwargs={
@@ -833,6 +774,7 @@ def api_scheduler_get():
 @app.route("/api/estado", methods=["GET"])
 @requiere_auth
 def api_estado():
+    """Estado actual del bot — el dashboard lo consulta para habilitar/deshabilitar botones."""
     with _bot_lock:
         ocupado = bot_activo
     return jsonify({"bot_activo": ocupado})
@@ -854,12 +796,10 @@ def api_scheduler_set():
     return jsonify({"ok": True, "config": scheduler_config})
 
 if __name__ == '__main__':
-    # Parche 1: Gatillar la carga de datos persistidos ANTES de que el bot empiece a escuchar peticiones
-    cargar_datos_persistidos()
-    
     print("🤖 Social Bot Manager - Activado")
     hilo_scheduler = threading.Thread(target=run_scheduler)
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
     puerto = int(os.environ.get("PORT", 5000))
     socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
+e)
