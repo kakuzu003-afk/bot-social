@@ -351,7 +351,7 @@ socket.on('stats', d => { statsData = d; actualizarStats(d); renderClientesList(
 socket.on('caption', d => { captions.unshift(d); renderCaptions(); });
 socket.on('bot_status', d => {
   const btn = document.getElementById('btnExecute');
-  if (d.activo) {
+  if (!d.activo) {
     btn.classList.remove('loading');
     btn.textContent = '▶ Ejecutar ciclo';
   }
@@ -518,7 +518,15 @@ function ejecutarCiclo() {
 
   fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
     .then(r => r.json())
-    .then(d => agregarLog(d.msg, 'success'))
+    .then(d => {
+      agregarLog(d.msg, 'success');
+      // Si el servidor rechazó el ciclo (bot ocupado u otro error), liberar el botón de inmediato
+      if (d.msg && (d.msg.includes('⚠️') || d.msg.includes('Error'))) {
+        btn.classList.remove('loading');
+        btn.textContent = '▶ Ejecutar ciclo';
+      }
+      // Si fue aceptado, el botón se libera cuando llegue bot_status {activo: false}
+    })
     .catch(() => { agregarLog('Error al lanzar ciclo','error'); btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo'; });
 }
 
