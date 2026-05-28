@@ -100,7 +100,29 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, debes incluir obligatoriamente un llamado a la acción para comprar que incluya exactamente esta línea:
     📲 WhatsApp: +56946557876
     
-    2. 5 HASHTAGS VIRALES (REGLA CRÍTICA): Agrega al final del post exactamente SOLO 5 hashtags separados por un espacio. Tienen que ser etiquetas reales, cortas y orgánicas que la gente de verdad use y busque en Instagram.
+ def generar_post_estricto(prod_info, tendencias_reales, precio):
+    prompt = f"""
+    Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
+    Marca: {prod_info['nombre']}
+    Producto: {prod_info['detalle_producto']}
+    Precio actual de oferta: {precio}
+    Términos calientes detectados hoy en la red: {', '.join(tendencias_reales)}
+    
+    Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas reglas:
+    
+    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos.
+    
+    REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, incluye exactamente:
+    📲 WhatsApp: +56946557876
+    
+    2. HASHTAGS (REGLA CRÍTICA):
+    - Exactamente 5 hashtags
+    - DEBEN ser MUY CORTOS: máximo 2 palabras cada uno
+    - Ejemplos del estilo correcto: #Office2024 #Software #Productividad #Oferta #Chile
+    - PROHIBIDO: hashtags largos como #LicenciaPermanenteOffice o #SoftwareOriginalChile
+    - Usa palabras que la gente escribe rápido y busca masivamente
+    - Basados en el producto: {prod_info['detalle_producto']} y tendencias: {', '.join(tendencias_reales)}
+    - Mezcla: 2 del producto + 2 tendencia + 1 acción corta (#Oferta #Compra #Deal)
     
     Formato estricto de salida:
     [Aquí va el texto de tu caption con emojis...]
@@ -452,6 +474,10 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         reel_generado = False
         imagen_filepath = generar_imagen_dalle(prompt_imagen)
 
+        # ← CAMBIO: siempre sube imagen para preview en dashboard
+        if imagen_filepath:
+            imagen_url_publica = subir_imgbb(imagen_filepath)
+
         if hacer_reel and imagen_filepath:
             audio_path = buscar_musica_pixabay(mood)
             if audio_path:
@@ -462,7 +488,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             else:
                 log("⚠️ Sin audio disponible, se omite el Reel.", "warning")
         elif not hacer_reel and imagen_filepath:
-            imagen_url_publica = subir_imgbb(imagen_filepath)
             publicado_post = publicar_en_instagram(imagen_filepath, caption_completo, cliente_id)
 
         publicado = publicado_post or publicado_reel
