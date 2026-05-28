@@ -127,19 +127,32 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 
-def generar_prompt_imagen(prod_info, caption):
+def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
-    prompt = f"""
-    You are an expert prompt engineer for Ideogram v3 image generation.
-    Product name (use VERBATIM, do not change): "{nombre}"
-    Write an Ideogram image generation prompt for a premium 3D software box.
-    MANDATORY: Your output MUST contain this exact phrase:
-    the text "{nombre}" in large bold white letters on the front of the box
-    Also include:
+
+    if con_referencia:
+        estilo = """
+    - Clean white and orange corporate background
+    - Bright, professional commercial ad style
+    - Product logo and app icons visible
+    - Modern flat design with bold typography
+    - Vertical 9:16 format, clean layout
+    - No dark backgrounds, no neon, no holographic effects
+    IMPORTANT: Match the style of a clean, bright, corporate software promotional banner."""
+    else:
+        estilo = """
     - Dark background, neon blue and purple holographic lighting
     - Glossy finish, floating light particles, cinematic rim lighting
     - Box centered, vertical 9:16 composition
-    - No faces, no extra text, no logos
+    - No faces, no extra text, no logos"""
+
+    prompt = f"""
+    You are an expert prompt engineer for Ideogram v3 image generation.
+    Product name (use VERBATIM, do not change): "{nombre}"
+    Write an Ideogram image generation prompt for a premium software product image.
+    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently.
+    Also include:
+    {estilo}
     OUTPUT RULES:
     - Write ONLY the prompt in English, max 70 words
     - The product name "{nombre}" must appear in quotes in your output
@@ -239,8 +252,9 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         }
         if imagen_referencia_url:
             input_params["image_request_reference_images"] = [imagen_referencia_url]
-            input_params["style_strength"] = 60
-            log(f"🖼️ Generando imagen con Ideogram v3 Turbo + referencia de estilo...", "info")
+            input_params["style_strength"] = 85
+            input_params["style_type"] = "Design"
+            log(f"🖼️ Generando imagen con Ideogram v3 Turbo + referencia de estilo (85%)...", "info")
         else:
             log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
         output = client.run("ideogram-ai/ideogram-v3-turbo", input=input_params)
@@ -447,7 +461,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         log(f'✍️ Redactando post para "{busqueda}"...', 'info')
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
-        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo)
+        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo, con_referencia=bool(imagen_referencia_url))
         imagen_filepath = None
         imagen_url_publica = None
         publicado_post = False
