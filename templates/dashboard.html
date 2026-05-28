@@ -136,6 +136,13 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
 .ref-input { width: 100%; background: var(--bg); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); padding: 7px 10px; font-size: 11px; font-family: 'Syne', sans-serif; outline: none; cursor: pointer; transition: border-color 0.2s; }
 .ref-input:focus { border-color: var(--cyan); }
 .ref-status { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); margin-top: 5px; }
+.ref-preview { width: 100%; border-radius: 6px; margin-top: 8px; border: 1px solid rgba(0,229,255,0.3); display: none; object-fit: cover; max-height: 120px; }
+.ref-weight-row { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 8px; }
+.ref-weight-label { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text3); white-space: nowrap; }
+.ref-weight-val { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--cyan); font-weight: 700; min-width: 26px; text-align: right; }
+input[type=range].weight-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 99px; background: var(--border2); outline: none; cursor: pointer; }
+input[type=range].weight-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 6px rgba(0,229,255,0.5); cursor: pointer; }
+.ref-badge { display: inline-flex; align-items: center; gap: 4px; font-family: 'Space Mono', monospace; font-size: 9px; padding: 2px 7px; border-radius: 99px; background: rgba(0,229,255,0.08); color: var(--cyan); border: 1px solid rgba(0,229,255,0.25); margin-left: 4px; }
 </style>
 </head>
 <body>
@@ -228,6 +235,12 @@ textarea.prompt-ta:focus { border-color: var(--purple); }
         <div class="ref-section">
           <input type="file" class="ref-input" id="inputReferencia" accept="image/*" onchange="subirReferencia(this)">
           <div class="ref-status" id="estadoReferencia">Sin imagen cargada</div>
+          <img id="refPreview" class="ref-preview" alt="Referencia de estilo">
+          <div class="ref-weight-row" id="weightRow" style="display:none;">
+            <span class="ref-weight-label">Influencia estilo</span>
+            <input type="range" class="weight-slider" id="styleWeight" min="0.1" max="1.0" step="0.1" value="0.5" oninput="document.getElementById('weightVal').textContent=parseFloat(this.value).toFixed(1)">
+            <span class="ref-weight-val" id="weightVal">0.5</span>
+          </div>
         </div>
       </div>
 
@@ -419,12 +432,23 @@ function setModoImagen(modo) {
     urlReferencia = null;
     document.getElementById('estadoReferencia').textContent = 'Sin imagen cargada';
     document.getElementById('inputReferencia').value = '';
+    const prev = document.getElementById('refPreview');
+    prev.style.display = 'none'; prev.src = '';
+    document.getElementById('weightRow').style.display = 'none';
   }
 }
 
 async function subirReferencia(input) {
   const archivo = input.files[0];
   if (!archivo) return;
+  // Mostrar preview local inmediatamente
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prev = document.getElementById('refPreview');
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(archivo);
   document.getElementById('estadoReferencia').textContent = '⏳ Subiendo imagen...';
   const formData = new FormData();
   formData.append('imagen', archivo);
@@ -433,7 +457,8 @@ async function subirReferencia(input) {
     const data = await res.json();
     if (data.url) {
       urlReferencia = data.url;
-      document.getElementById('estadoReferencia').textContent = '✅ Referencia lista';
+      document.getElementById('estadoReferencia').textContent = '✅ Referencia lista — ajusta la influencia abajo';
+      document.getElementById('weightRow').style.display = 'flex';
       agregarLog('🖼️ Imagen de referencia subida ✅', 'success');
     } else {
       document.getElementById('estadoReferencia').textContent = '❌ Error al subir';
@@ -455,10 +480,12 @@ function ejecutarCiclo() {
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
   if (!busqueda) { agregarLog('⚠️ Escribe algo en búsqueda libre para iniciar', 'warning'); return; }
 
-  const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel, imagen_referencia_url: modoImagen === 'referencia' ? urlReferencia : null };
+  const styleWeight = parseFloat(document.getElementById('styleWeight').value) || 0.5;
+  const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel, imagen_referencia_url: modoImagen === 'referencia' ? urlReferencia : null, style_weight: modoImagen === 'referencia' ? styleWeight : null };
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
-  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel ? 'sí' : 'no'}`, 'info');
+  const refInfo = modoImagen === 'referencia' && urlReferencia ? ` | ref: ✅ peso ${styleWeight}` : '';
+  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel ? 'sí' : 'no'}${refInfo}`, 'info');
 
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading');
