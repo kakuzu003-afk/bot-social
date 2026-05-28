@@ -567,7 +567,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         if hacer_reel and imagen_filepath:
             audio_path = buscar_musica_pixabay(mood)
             if audio_path:
-                video_path = generar_video_reel(imagen_filepath, audio_path, duracion=10)
+                video_path = generar_video_reel(imagen_filepath, audio_path, duracion=15)
                 if video_path:
                     reel_generado = True
                     publicado_reel = publicar_reel_instagram(video_path, caption_completo, cliente_id)
