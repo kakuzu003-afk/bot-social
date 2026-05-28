@@ -241,14 +241,15 @@ def generar_imagen_dalle(prompt_imagen):
         log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
         output = client.run(
             "ideogram-ai/ideogram-v3-turbo",
-            input={
-                "prompt": prompt_imagen,
-                "aspect_ratio": "9:16",
-                "resolution": "RESOLUTION_1024_1792",
-                "style_type": "REALISTIC",
-                "magic_prompt_option": "ON",
-            }
-        )
+            output = client.run(
+    "ideogram-ai/ideogram-v3-turbo",
+    input={
+        "prompt": prompt_imagen,
+        "resolution": "768x1344",
+        "style_type": "Realistic",
+        "magic_prompt_option": "On",
+    }
+)
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
