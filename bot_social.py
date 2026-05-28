@@ -158,7 +158,8 @@ def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
                 ]
             }
         ]
-        modelo = "llama-3.2-90b-vision-preview" # Modelo visual de Groq
+        # CORREGIDO: Modelo activo y soportado por Groq actualmente
+        modelo = "llama-3.2-11b-vision-preview" 
         
     else:
         # Si NO hay imagen, usamos el modelo rápido normal y le decimos qué imaginar
