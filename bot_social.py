@@ -121,33 +121,34 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 
 def generar_prompt_imagen(prod_info, caption):
     nombre = prod_info['detalle_producto']
-    
+
     prompt = f"""
-    You are an expert at writing image generation prompts for Ideogram v3.
-    
-    Product name (copy this EXACTLY, do not paraphrase): "{nombre}"
-    
-    Write a prompt for a premium 3D software box image. Requirements:
-    
-    MANDATORY: The prompt MUST include this exact phrase → the text "{nombre}" displayed in large bold white letters on the front of the box
-    
-    Include:
-    - Dark background with neon blue/purple holographic lighting
-    - Glossy finish, floating light particles, cinematic lighting
+    You are an expert prompt engineer for Ideogram v3 image generation.
+
+    Product name (use VERBATIM, do not change): "{nombre}"
+
+    Write an Ideogram image generation prompt for a premium 3D software box.
+
+    MANDATORY: Your output MUST contain this exact phrase:
+    the text "{nombre}" in large bold white letters on the front of the box
+
+    Also include:
+    - Dark background, neon blue and purple holographic lighting
+    - Glossy finish, floating light particles, cinematic rim lighting
     - Box centered, vertical 9:16 composition
     - No faces, no extra text, no logos
-    - Photorealistic commercial photography style
-    
-    CRITICAL RULES:
-    - Output ONLY the English prompt, max 70 words
-    - The product name "{nombre}" must appear verbatim inside quotes in your output
-    - No introductions, no notes, no explanations
+
+    OUTPUT RULES:
+    - Write ONLY the prompt in English, max 70 words
+    - The product name "{nombre}" must appear in quotes in your output
+    - No preamble, no notes, no explanations
     """
+
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.2  # ← más bajo = más fiel a las instrucciones
+        temperature=0.2,
     )
     return response.choices[0].message.content
 
