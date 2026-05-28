@@ -233,7 +233,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
         return None
 
 # ============================================
-# IDEOGRAM v3 TURBO — GENERACIÓN DE IMAGEN
+# GENERACIÓN DE IMAGEN — IDEOGRAM v3 / FLUX CANNY PRO
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
@@ -243,31 +243,50 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         return None
     try:
         import replicate
+        import io
         client = replicate.Client(api_token=replicate_token)
-        input_params = {
-            "prompt": prompt_imagen,
-            "resolution": "768x1344",
-            "style_type": "Design",
-            "magic_prompt_option": "Off",
-        }
+
         if imagen_referencia_url:
-            input_params["image_request_reference_images"] = [imagen_referencia_url]
-            input_params["style_strength"] = 85
-            input_params["style_type"] = "Design"
-            log(f"🖼️ Generando imagen con Ideogram v3 Turbo + referencia de estilo (85%)...", "info")
+            # Flux Canny Pro — respeta estructura/layout de la imagen de referencia
+            log(f"🖼️ Generando con Flux Canny Pro + referencia de estilo...", "info")
+            img_ref_bytes = req.get(imagen_referencia_url, timeout=30).content
+            output = client.run(
+                "black-forest-labs/flux-canny-pro",
+                input={
+                    "prompt": prompt_imagen,
+                    "control_image": io.BytesIO(img_ref_bytes),
+                    "steps": 28,
+                    "guidance": 4,
+                    "output_format": "png",
+                }
+            )
         else:
-            log(f"🖼️ Generando imagen con Ideogram v3 Turbo...", "info")
-        output = client.run("ideogram-ai/ideogram-v3-turbo", input=input_params)
+            # Ideogram v3 Turbo — genera desde cero con texto preciso
+            log(f"🖼️ Generando con Ideogram v3 Turbo...", "info")
+            output = client.run(
+                "ideogram-ai/ideogram-v3-turbo",
+                input={
+                    "prompt": prompt_imagen,
+                    "resolution": "768x1344",
+                    "style_type": "Design",
+                    "magic_prompt_option": "Off",
+                }
+            )
+
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
         os.makedirs("static", exist_ok=True)
         filepath = f"static/img_{int(time.time())}.png"
         with open(filepath, "wb") as f:
             f.write(img_bytes)
-        log(f"🖼️ Imagen generada con Ideogram v3 ✅", "success")
+        log(f"🖼️ Imagen generada ✅", "success")
         return filepath
     except Exception as e:
-        log(f"❌ Error generando imagen: {e}", "error")
+        error_str = str(e)
+        if "402" in error_str or "Insufficient credit" in error_str:
+            log(f"💳 Sin créditos en Replicate. Recarga en: https://replicate.com/account/billing", "warning")
+        else:
+            log(f"❌ Error generando imagen: {e}", "error")
         return None
 
 # ============================================
