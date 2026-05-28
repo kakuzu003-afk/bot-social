@@ -127,20 +127,20 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 
-def def generar_prompt_imagen(prod_info, caption, con_referencia=False):
+def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
     if con_referencia:
-        # Forzamos un estilo anime premium, oscuro, con efectos visuales avanzados
-        estilo = """
-    - Masterpiece epic anime poster art style, high-end dark fantasy key visual.
-    - Deep dramatic pitch-black shadows blending with explosive fiery orange and crimson red ink splashes.
-    - Enhance with cinematic visual details: floating glowing embers, sharp dynamic rim lighting, and subtle smoke effects.
-    - Title "{nombre}" must be integrated as a massive, ultra-clean, sharp metallic commercial typography in the center.
-    - High contrast, gritty texture, professional composition, vertical 9:16 aspect ratio.
-    IMPORTANT: Do not simplify. Absorb the anime art essence from the reference and enhance it with premium glowing lighting and spectacular visual depth."""
+        # Optimizamos para inyectar detalles espectaculares y luces intensas basadas en la referencia
+        estilo = f"""
+    - Masterpiece epic anime poster art style, high-end dark fantasy key visual advertisement.
+    - Deep dramatic pitch-black shadows blending seamlessly with explosive fiery orange and crimson red ink splashes.
+    - Enhanced with spectacular premium cinematic details: floating glowing embers, sparks, dynamic neon rim lighting, and subtle smoke effects.
+    - Main title "{nombre}" must be rendered as clean, thick, sharp metallic commercial typography, standing out vividly in the center foreground.
+    - High contrast, flawless rendering, vertical 9:16 format.
+    IMPORTANT: Absorb the dark, gritty anime aesthetic and color palette from the reference image, but enhance it with superior depth, glowing particles, and razor-sharp typographic legibility."""
     else:
-        estilo = """
+        estilo = f"""
     - Clean, modern commercial advertisement banner style.
     - Flat design vector illustration mixed with 3D elements.
     - Vibrant and eye-catching color palette matching the product vibe.
@@ -164,9 +164,10 @@ def def generar_prompt_imagen(prod_info, caption, con_referencia=False):
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.3, # Bajamos la temperatura para que sea más fiel y preciso a las instrucciones
+        temperature=0.3, 
     )
     return response.choices[0].message.content
+
 captions_guardados = []
 
 # ============================================
@@ -235,7 +236,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
         return None
 
 # ============================================
-# GENERACIÓN DE IMAGEN — IDEOGRAM v3 / FLUX CANNY PRO
+# GENERACIÓN DE IMAGEN — IDEOGRAM v3 (OPTIMIZADO)
 # ============================================
 
 def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
@@ -245,26 +246,23 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         return None
     try:
         import replicate
-        import io
         client = replicate.Client(api_token=replicate_token)
 
+        # Usamos Ideogram v3 para ambas opciones, evitando que Flux Canny Pro destruya el diseño con líneas
         if imagen_referencia_url:
-            # Flux Canny Pro — respeta estructura/layout de la imagen de referencia
-            log(f"🖼️ Generando con Flux Canny Pro + referencia de estilo...", "info")
-            img_ref_bytes = req.get(imagen_referencia_url, timeout=30).content
+            log(f"🖼️ Generando con Ideogram v3 + Referencia de Estilo Visual...", "info")
             output = client.run(
-                "black-forest-labs/flux-canny-pro",
+                "ideogram-ai/ideogram-v3-turbo",
                 input={
                     "prompt": prompt_imagen,
-                    "control_image": io.BytesIO(img_ref_bytes),
-                    "steps": 28,
-                    "guidance": 4,
-                    "output_format": "png",
+                    "resolution": "768x1344",
+                    "style_type": "Design",
+                    "magic_prompt_option": "Off",
+                    "image_request": imagen_referencia_url # Inyecta la referencia como guía de estilo sin calcar bordes molestos
                 }
             )
         else:
-            # Ideogram v3 Turbo — genera desde cero con texto preciso
-            log(f"🖼️ Generando con Ideogram v3 Turbo...", "info")
+            log(f"🖼️ Generando con Ideogram v3 Turbo (Modo Solo Texto)...", "info")
             output = client.run(
                 "ideogram-ai/ideogram-v3-turbo",
                 input={
@@ -490,7 +488,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         reel_generado = False
         imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
 
-        # ← CAMBIO: siempre sube imagen para preview en dashboard
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
