@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask, render_template, jsonify, request, Response
 from flask_socketio import SocketIO, emit
 import json
@@ -13,7 +16,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", os.urandom(24))
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 # ============================================
 # AUTENTICACIÓN BÁSICA
@@ -801,4 +804,4 @@ if __name__ == '__main__':
     hilo_scheduler.daemon = True
     hilo_scheduler.start()
     puerto = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host='0.0.0.0', port=puerto, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=puerto, debug=False)
