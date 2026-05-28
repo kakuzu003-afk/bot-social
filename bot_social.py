@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
 from flask_socketio import SocketIO, emit
 import json
 import os
@@ -9,10 +9,31 @@ import time
 import random
 from groq import Groq
 import requests as req
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", os.urandom(24))
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# ============================================
+# AUTENTICACIÓN BÁSICA
+# ============================================
+
+DASHBOARD_USER = os.environ.get("DASHBOARD_USER", "admin")
+DASHBOARD_PASS = os.environ.get("DASHBOARD_PASS", "changeme")
+
+def requiere_auth(f):
+    @wraps(f)
+    def decorado(*args, **kwargs):
+        auth = request.authorization
+        if not auth or auth.username != DASHBOARD_USER or auth.password != DASHBOARD_PASS:
+            return Response(
+                "Acceso denegado. Ingresa tus credenciales.",
+                401,
+                {"WWW-Authenticate": 'Basic realm="Social Bot Manager"'}
+            )
+        return f(*args, **kwargs)
+    return decorado
 
 # ============================================
 # CONFIGURACIÓN GLOBAL E INICIALIZACIÓN
@@ -606,23 +627,28 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
 # ============================================
 
 @app.route('/')
+@requiere_auth
 def index():
     return render_template('dashboard.html')
 
 @app.route('/api/clientes')
+@requiere_auth
 def api_clientes():
     lista = [{"id": k, "nombre": v["nombre"]} for k, v in CLIENTES.items()]
     return jsonify(lista)
 
 @app.route('/api/stats')
+@requiere_auth
 def api_stats():
     return jsonify(stats_global)
 
 @app.route('/api/captions')
+@requiere_auth
 def api_captions():
     return jsonify(captions_guardados)
 
 @app.route('/api/subir_referencia', methods=['POST'])
+@requiere_auth
 def api_subir_referencia():
     if 'imagen' not in request.files:
         return jsonify({'error': 'No se envió imagen'}), 400
@@ -637,6 +663,7 @@ def api_subir_referencia():
     return jsonify({'error': 'No se pudo subir la imagen a ImgBB'}), 500
 
 @app.route('/api/ciclo', methods=['POST'])
+@requiere_auth
 def api_ciclo():
     data = request.get_json() or {}
     precio = data.get('precio', 'Consultar por interno')
@@ -713,10 +740,12 @@ def run_scheduler():
 
 
 @app.route("/api/scheduler", methods=["GET"])
+@requiere_auth
 def api_scheduler_get():
     return jsonify(scheduler_config)
 
 @app.route("/api/scheduler", methods=["POST"])
+@requiere_auth
 def api_scheduler_set():
     data = request.get_json() or {}
     scheduler_config["activo"] = bool(data.get("activo", False))
