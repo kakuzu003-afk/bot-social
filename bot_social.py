@@ -236,8 +236,8 @@ def generar_imagen_dalle(prompt_imagen):
             input={
                 "prompt": prompt_imagen,
                 "resolution": "768x1344",
-                "style_type": "Design"
-                "magic_prompt_option": "Off",
+                "style_type": "Design",         # ← coma corregida
+                "magic_prompt_option": "Off",   # ← Ideogram no reescribe el prompt
             }
         )
         image_url = str(output)
