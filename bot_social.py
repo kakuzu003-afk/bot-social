@@ -131,15 +131,13 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
     if con_referencia:
-        # INSTRUCCIONES MAESTRAS PARA LOGRAR EL 90% DE PARECIDO TRADICIONAL Y SUCIO
+        # Estilo enfocado en maquetación publicitaria premium con la paleta de la referencia
         estilo = f"""
-    - Exact layout replica of the reference image: characters composition, poses, and framing must match with 90% accuracy.
-    - Masterpiece gritty anime illustration, dark fantasy manga key visual.
-    - Intricate hand-drawn black ink lines with detailed cross-hatching shadows on characters faces and clothing.
-    - Highly textured background featuring rough organic paint splatters, dynamic distressed brush strokes, and charcoal textures.
-    - Dark atmospheric color palette: Deep solid black canvas, fiery glowing orange, and intense crimson red splatter accents.
-    - In the absolute foreground, the commercial typography "{nombre}" must be rendered in a bold, sharp, clean high-contrast style that stands out perfectly.
-    IMPORTANT: Emphasize the gritty, hand-inked, heavily detailed paint splatter and line-art texture from the reference image. Absolutely no smooth or flat digital gradients."""
+    - Premium dark anime dynamic advertisement poster style.
+    - Deep solid pitch-black background with clean, high-contrast explosive burning orange and crimson red light effects.
+    - The commercial title "{nombre}" must be displayed as giant, ultra-sharp, bold, and perfectly legible typography in the center foreground.
+    - Professional layout design, high contrast, cinematic anime lighting, vertical 9:16 format.
+    IMPORTANT: Do not generate messy lines. Focus on clean typography layered over a stunning dark anime visual impact inspired by the reference colors."""
     else:
         estilo = f"""
     - Clean, modern commercial advertisement banner style.
@@ -150,22 +148,22 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     - IMPORTANT: The typography must be beautiful, clean, legible, and integrated into the design."""
 
     prompt = f"""
-    You are an expert prompt engineer for structure-guided image generation models.
+    You are an expert prompt engineer for Ideogram v3 graphic design generation.
     Product name (use VERBATIM): "{nombre}"
-    Write an advanced image generation prompt that respects the control image edges but applies new text and heavy traditional textures.
-    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently.
+    Write a descriptive image generation prompt in English.
+    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently as the main title.
     Style requirements to apply:
     {estilo}
     OUTPUT RULES:
-    - Write ONLY the prompt in English, max 90 words
+    - Write ONLY the prompt in English, max 80 words
     - The product name "{nombre}" must appear in quotes in your output
     - No preamble, no notes, no explanations
     """
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=300,
-        temperature=0.1, # Ultra bajo para máxima fidelidad estructural y cero improvisación
+        max_tokens=250,
+        temperature=0.2, # Baja temperatura para máxima obediencia al diseño
     )
     return response.choices[0].message.content
 
@@ -247,35 +245,30 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         return None
     try:
         import replicate
-        import io
         client = replicate.Client(api_token=replicate_token)
 
+        # Configuración maestra obligatoria para Ideogram v3 Turbo
+        parametros = {
+            "prompt": prompt_imagen,
+            "resolution": "768x1344",
+            "style_type": "Design",
+            "magic_prompt_option": "Off",
+        }
+
         if imagen_referencia_url:
-            # Activamos Flux Canny Pro para respetar al 90% la composición y esqueleto del póster
-            log(f"🖼️ Generando con Flux Canny Pro + Réplica de Estructura Compleja...", "info")
-            img_ref_bytes = req.get(imagen_referencia_url, timeout=30).content
-            output = client.run(
-                "black-forest-labs/flux-canny-pro",
-                input={
-                    "prompt": prompt_imagen,
-                    "control_image": io.BytesIO(img_ref_bytes),
-                    "steps": 35, # Subimos pasos para marcar más los detalles del entintado
-                    "guidance": 4.5,
-                    "output_format": "png",
-                }
-            )
+            # Mandamos la referencia como Style Image en Ideogram. 
+            # Copia la paleta oscura/naranja/roja pero SIN calcar las líneas feas de Canny.
+            log(f"🖼️ Generando con Ideogram v3 Turbo + Referencia de Estilo...", "info")
+            parametros["image_prompt"] = imagen_referencia_url
+            parametros["image_prompt_weight"] = 0.35  # Peso ajustado para heredar la vibra sin romper el texto
         else:
-            # Ideogram para el modo limpio y publicitario de Solo Texto
             log(f"🖼️ Generando con Ideogram v3 Turbo (Modo Solo Texto)...", "info")
-            output = client.run(
-                "ideogram-ai/ideogram-v3-turbo",
-                input={
-                    "prompt": prompt_imagen,
-                    "resolution": "768x1344",
-                    "style_type": "Design",
-                    "magic_prompt_option": "Off",
-                }
-            )
+
+        # Ejecutamos Ideogram de forma única y segura
+        output = client.run(
+            "ideogram-ai/ideogram-v3-turbo",
+            input=parametros
+        )
 
         image_url = str(output)
         img_bytes = req.get(image_url, timeout=30).content
@@ -283,8 +276,9 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         filepath = f"static/img_{int(time.time())}.png"
         with open(filepath, "wb") as f:
             f.write(img_bytes)
-        log(f"🖼️ Imagen generada ✅", "success")
+        log(f"🖼️ Imagen generada con Ideogram ✅", "success")
         return filepath
+
     except Exception as e:
         error_str = str(e)
         if "402" in error_str or "Insufficient credit" in error_str:
