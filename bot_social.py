@@ -130,40 +130,37 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
 def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
+    # Hacemos que el estilo sea inteligente y se adapte al producto real
     if con_referencia:
-        # Estilo enfocado en maquetación publicitaria premium con la paleta de la referencia
-        estilo = f"""
-    - Premium dark anime dynamic advertisement poster style.
-    - Deep solid pitch-black background with clean, high-contrast explosive burning orange and crimson red light effects.
-    - The commercial title "{nombre}" must be displayed as giant, ultra-sharp, bold, and perfectly legible typography in the center foreground.
-    - Professional layout design, high contrast, cinematic anime lighting, vertical 9:16 format.
-    IMPORTANT: Do not generate messy lines. Focus on clean typography layered over a stunning dark anime visual impact inspired by the reference colors."""
+        contexto_estilo = "Absorb and perfectly mimic the exact color palette, aesthetic, and artistic mood of the provided reference image."
     else:
-        estilo = f"""
-    - Clean, modern commercial advertisement banner style.
-    - Flat design vector illustration mixed with 3D elements.
-    - Vibrant and eye-catching color palette matching the product vibe.
-    - Clear typography, sharp focus, professional branding.
-    - Vertical 9:16 format, perfectly composed for Instagram Reels.
-    - IMPORTANT: The typography must be beautiful, clean, legible, and integrated into the design."""
+        contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
 
     prompt = f"""
-    You are an expert prompt engineer for Ideogram v3 graphic design generation.
-    Product name (use VERBATIM): "{nombre}"
-    Write a descriptive image generation prompt in English.
-    MANDATORY: Your output MUST include the text "{nombre}" displayed prominently as the main title.
-    Style requirements to apply:
-    {estilo}
+    You are an expert prompt engineer for Ideogram v3 graphic design.
+    Product to advertise: "{nombre}"
+    
+    Write a high-end commercial advertisement prompt.
+    
+    CRITICAL RULES:
+    1. {contexto_estilo}
+    2. The output MUST include the text "{nombre}" perfectly spelled.
+    3. The typography must be elegant, proportional, and integrated into the design. DO NOT make the text so giant that it ruins the layout. Leave breathing room.
+    4. Include beautiful graphic elements related to the product (e.g., sleek abstract shapes, glassmorphism UI, or glowing accents).
+    5. No cheap speed lines, no generic explosion backgrounds. Keep it premium.
+    6. Vertical 9:16 format.
+    
     OUTPUT RULES:
-    - Write ONLY the prompt in English, max 80 words
+    - Write ONLY the prompt in English, max 85 words
     - The product name "{nombre}" must appear in quotes in your output
     - No preamble, no notes, no explanations
     """
+    
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
-        temperature=0.2, # Baja temperatura para máxima obediencia al diseño
+        temperature=0.3, # Temperatura baja para máxima obediencia al diseño
     )
     return response.choices[0].message.content
 
