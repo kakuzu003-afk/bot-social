@@ -11,7 +11,7 @@ from groq import Groq
 import requests as req
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sushiloveaurakey2025'
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", os.urandom(24))
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ============================================
@@ -596,6 +596,9 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         log(f'✅ Ciclo completo — Post: {"✅" if publicado_post else "—"} | Reel: {"✅" if publicado_reel else ("generado, sin CDN" if reel_generado else "—")}', 'success')
     except Exception as e:
         log(f'❌ Error en ciclo libre: {e}', 'error')
+    finally:
+        bot_activo = False
+        socketio.emit('bot_status', {'activo': False})
     socketio.emit('stats', stats_global)
 
 # ============================================
