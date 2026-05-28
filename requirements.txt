@@ -1,8 +1,9 @@
 groq
-instagrapi
 schedule
 requests
 flask
 flask-socketio
 replicate
 cloudinary
+python-dotenv
+eventlet
