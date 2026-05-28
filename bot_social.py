@@ -127,68 +127,39 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     return response.choices[0].message.content
 
 
-def generar_prompt_imagen(prod_info, caption, imagen_referencia_url=None):
+def generar_prompt_imagen(prod_info, caption, con_referencia=False):
     nombre = prod_info['detalle_producto']
 
-    # Si hay imagen, le damos OJOS al motor de texto usando el modelo de VISIÓN estable de Groq
-    if imagen_referencia_url:
-        log("👁️ Groq Vision escaneando la imagen de referencia...", "info")
-        prompt_text = f"""
-        You are an expert prompt engineer for Ideogram v3 graphic design.
-        Product to advertise: "{nombre}"
-        
-        I have attached a reference image. CRITICAL INSTRUCTION: Analyze the provided image thoroughly. 
-        Extract its exact color palette, 3D elements, textures, fluid dynamics, lighting, and artistic mood.
-        Write a high-end commercial advertisement prompt that faithfully replicates this EXACT visual energy and style, but adapts it to feature the product name.
-        
-        MANDATORY RULES:
-        1. The output MUST include the text "{nombre}" perfectly spelled.
-        2. Do not simplify the style. Keep the intense, vibrant, and highly detailed aesthetic of the reference.
-        3. Vertical 9:16 format.
-        4. Write ONLY the prompt in English, max 85 words.
-        5. The product name "{nombre}" must appear in quotes.
-        """
-        
-        mensajes = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt_text},
-                    {"type": "image_url", "image_url": {"url": imagen_referencia_url}}
-                ]
-            }
-        ]
-        # CORREGIDO: Modelo de visión masivo, estable y garantizado en el plan free de Groq
-        modelo = "llama-3.1-8b-instant" 
-        
+    # Estilo inteligente adaptado al plan free (Puro texto estable)
+    if con_referencia:
+        # Forzamos la estética explosiva, 3D líquida y de alta calidad inspirada en tus mejores referencias
+        contexto_estilo = f"Create an intense, premium commercial advertisement banner with high-end fluid dynamics, detailed 3D liquid splashes, glowing neon accents, and a vibrant explosive color palette matching '{nombre}'. Highly detailed, cinematic layout."
     else:
-        # Si NO hay imagen, usamos el modelo rápido normal y le decimos qué imaginar
-        prompt_text = f"""
-        You are an expert prompt engineer for Ideogram v3 graphic design.
-        Product to advertise: "{nombre}"
-        
-        Create a visual style that perfectly matches the official brand identity of '{nombre}'. 
-        If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. 
-        If it is gaming or anime, use epic, high-tech, or cinematic styles.
-        
-        CRITICAL RULES:
-        1. The output MUST include the text "{nombre}" perfectly spelled.
-        2. The typography must be elegant, proportional, and integrated into the design. DO NOT make the text so giant that it ruins the layout. Leave breathing room.
-        3. Include beautiful graphic elements related to the product (e.g., sleek abstract shapes, glassmorphism UI, or glowing accents).
-        4. No cheap speed lines, no generic explosion backgrounds. Keep it premium.
-        5. Vertical 9:16 format.
-        
-        OUTPUT RULES:
-        - Write ONLY the prompt in English, max 85 words
-        - The product name "{nombre}" must appear in quotes in your output
-        - No preamble, no notes, no explanations
-        """
-        mensajes = [{"role": "user", "content": prompt_text}]
-        modelo = "llama-3.3-70b-versatile" # Modelo de texto estable de Groq
-        
+        contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
+
+    prompt = f"""
+    You are an expert prompt engineer for Ideogram v3 graphic design.
+    Product to advertise: "{nombre}"
+    
+    Write a high-end commercial advertisement prompt.
+    
+    CRITICAL RULES:
+    1. {contexto_estilo}
+    2. The output MUST include the text "{nombre}" perfectly spelled.
+    3. The typography must be elegant, proportional, and integrated into the design. DO NOT make the text so giant that it ruins the layout. Leave breathing room.
+    4. Include beautiful graphic elements related to the product (e.g., sleek shapes, abstract details, or glowing branding icons).
+    5. No cheap speed lines, no generic explosion backgrounds. Keep it premium.
+    6. Vertical 9:16 format.
+    
+    OUTPUT RULES:
+    - Write ONLY the prompt in English, max 85 words
+    - The product name "{nombre}" must appear in quotes in your output
+    - No preamble, no notes, no explanations
+    """
+    
     response = groq_client.chat.completions.create(
-        model=modelo,
-        messages=mensajes,
+        model="llama-3.3-70b-versatile", # Usamos el modelo ultra estable de Groq para todo
+        messages=[{"role": "user", "content": prompt}],
         max_tokens=250,
         temperature=0.3,
     )
@@ -274,7 +245,6 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         import replicate
         client = replicate.Client(api_token=replicate_token)
 
-        # Como usamos Turbo, toda la magia recae en el prompt ultra detallado que redactó Groq Vision
         parametros = {
             "prompt": prompt_imagen,
             "resolution": "768x1344",
@@ -282,12 +252,8 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
             "magic_prompt_option": "Off",
         }
 
-        if imagen_referencia_url:
-            log(f"🖼️ Generando con Ideogram v3 Turbo (Con diseño guiado por visión)...", "info")
-        else:
-            log(f"🖼️ Generando con Ideogram v3 Turbo (Modo Solo Texto)...", "info")
-
-        # Ejecutamos Ideogram de forma única y veloz
+        # Ejecutamos Ideogram Turbo de forma rápida y limpia usando el prompt optimizado de Groq
+        log(f"🖼️ Generando con Ideogram v3 Turbo de forma estable...", "info")
         output = client.run(
             "ideogram-ai/ideogram-v3-turbo",
             input=parametros
@@ -502,8 +468,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
         
-        # Pasa el URL aquí para que Groq lo vea si existe
-        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo, imagen_referencia_url)
+        # Le pasamos un booleano para avisarle a Groq que use el modo dinámico explosivo
+        prompt_imagen = generar_prompt_imagen(prod_info, caption_completo, con_referencia=bool(imagen_referencia_url))
         
         imagen_filepath = None
         imagen_url_publica = None
@@ -511,7 +477,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         publicado_reel = False
         reel_generado = False
         
-        # Llama a Ideogram con el texto ultra descriptivo
+        # Generación directa con Ideogram Turbo
         imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
 
         if imagen_filepath:
