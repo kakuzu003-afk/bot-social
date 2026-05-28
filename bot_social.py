@@ -367,7 +367,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
 
         log(f"🖼️ Generando con Ideogram v3 Turbo{'  + referencia de estilo' if imagen_referencia_url else ' de forma estable'}...", "info")
         output = client.run(
-            "ideogram-ai/ideogram-v3-turbo",
+            "ideogram-ai/ideogram-v3-balanced",
             input=parametros
         )
 
