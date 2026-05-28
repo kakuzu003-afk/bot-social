@@ -49,6 +49,7 @@ sesiones = {}
 stats_global = {}
 logs_global = []
 bot_activo = False
+_bot_lock = threading.Lock()  # 🔒 Protege bot_activo contra race conditions
 
 GRAPH_API_VERSION = "v21.0"  # Actualizar aquí en futuras migraciones de Meta
 
@@ -544,7 +545,14 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None, style_weight=0.5):
     global bot_activo
-    bot_activo = True
+
+    # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
+    with _bot_lock:
+        if bot_activo:
+            log("⚠️ Ciclo rechazado: ya hay un ciclo activo. Esperá que termine.", "warning")
+            return
+        bot_activo = True
+
     socketio.emit('bot_status', {'activo': True})
     cliente = CLIENTES.get(cliente_id, CLIENTES["aurakey"])
     nombre_cliente = cliente["nombre"]
@@ -620,7 +628,9 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
     except Exception as e:
         log(f'❌ Error en ciclo libre: {e}', 'error')
     finally:
-        bot_activo = False
+        # 🔒 Liberar el lock de forma segura al terminar (o si hubo error)
+        with _bot_lock:
+            bot_activo = False
         socketio.emit('bot_status', {'activo': False})
     socketio.emit('stats', stats_global)
 
@@ -677,6 +687,10 @@ def api_ciclo():
     style_weight = float(data.get('style_weight', 0.5) or 0.5)
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
+    # 🔒 Verificar antes de lanzar el thread (doble guardia junto al Lock en ciclo_libre)
+    with _bot_lock:
+        if bot_activo:
+            return jsonify({'msg': '⚠️ Ya hay un ciclo corriendo. Esperá que termine antes de iniciar otro.'})
     modo_img = "con referencia" if imagen_referencia_url else "solo texto"
     hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel, imagen_referencia_url, style_weight))
     hilo.daemon = True
@@ -704,6 +718,11 @@ scheduler_config = {
 def _ejecutar_ciclo_scheduler():
     if not scheduler_config["activo"]:
         return
+    # 🔒 Verificar que no haya un ciclo ya corriendo antes de disparar
+    with _bot_lock:
+        if bot_activo:
+            log("⏰ Scheduler: ciclo anterior aún activo, se omite esta ejecución.", "warning")
+            return
     log("⏰ Scheduler: disparando ciclo automático...", "info")
     scheduler_config["ciclos_ejecutados"] += 1
     # Calcular próximo ciclo
