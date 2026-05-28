@@ -730,15 +730,21 @@ def _ejecutar_ciclo_scheduler():
     proximo = datetime.now() + timedelta(hours=scheduler_config["intervalo_horas"])
     scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
     socketio.emit("scheduler_status", scheduler_config)
-    ciclo_libre(
-        busqueda=scheduler_config["busqueda"],
-        precio_manual=scheduler_config["precio"],
-        cliente_id=scheduler_config["cliente_id"],
-        mood=scheduler_config["mood"],
-        hacer_reel=scheduler_config["hacer_reel"],
-        imagen_referencia_url=scheduler_config["imagen_referencia_url"],
-        style_weight=scheduler_config["style_weight"],
+    # 🔧 Lanzar en thread separado — no bloquear el loop del scheduler
+    hilo = threading.Thread(
+        target=ciclo_libre,
+        kwargs={
+            "busqueda": scheduler_config["busqueda"],
+            "precio_manual": scheduler_config["precio"],
+            "cliente_id": scheduler_config["cliente_id"],
+            "mood": scheduler_config["mood"],
+            "hacer_reel": scheduler_config["hacer_reel"],
+            "imagen_referencia_url": scheduler_config["imagen_referencia_url"],
+            "style_weight": scheduler_config["style_weight"],
+        },
+        daemon=True
     )
+    hilo.start()
 
 def _aplicar_schedule():
     schedule.clear("auto")
@@ -764,6 +770,14 @@ def run_scheduler():
 @requiere_auth
 def api_scheduler_get():
     return jsonify(scheduler_config)
+
+@app.route("/api/estado", methods=["GET"])
+@requiere_auth
+def api_estado():
+    """Estado actual del bot — el dashboard lo consulta para habilitar/deshabilitar botones."""
+    with _bot_lock:
+        ocupado = bot_activo
+    return jsonify({"bot_activo": ocupado})
 
 @app.route("/api/scheduler", methods=["POST"])
 @requiere_auth
