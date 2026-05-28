@@ -236,7 +236,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15):
 # GENERACIÓN DE IMAGEN — DINÁMICA DE MODELOS
 # ============================================
 
-def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
+def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight=0.5):
     replicate_token = os.environ.get("REPLICATE_API_TOKEN")
     if not replicate_token:
         log("⚠️ REPLICATE_API_TOKEN no configurada. Saltando generación de imagen.", "warning")
@@ -262,7 +262,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
                     imagen_ref_bytes = io.BytesIO(img_response.content)
                     parametros["style_reference_images"] = imagen_ref_bytes
                     parametros["style_type"] = "Auto"   # Auto: Ideogram detecta el estilo de la referencia
-                    parametros["style_weight"] = 0.5    # 0.0 = ignorar ref | 1.0 = copiar al 100%
+                    parametros["style_weight"] = style_weight  # 0.0 = ignorar ref | 1.0 = copiar al 100%
                     log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight=0.5).", "success")
                 else:
                     log(f"⚠️ No se pudo descargar la imagen de referencia (HTTP {img_response.status_code}). Generando sin referencia.", "warning")
@@ -463,7 +463,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 # CICLO PRINCIPAL
 # ============================================
 
-def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None):
+def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None, style_weight=0.5):
     global bot_activo
     bot_activo = True
     socketio.emit('bot_status', {'activo': True})
@@ -494,7 +494,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         reel_generado = False
         
         # Generación directa con Ideogram Turbo
-        imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
+        imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
 
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
@@ -521,6 +521,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'imagen_url': imagen_url_publica or '',
             'publicado': publicado,
             'reel_generado': reel_generado,
+            'con_referencia': bool(imagen_referencia_url),
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
         captions_guardados.insert(0, entrada)
@@ -576,10 +577,11 @@ def api_ciclo():
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
     imagen_referencia_url = data.get('imagen_referencia_url', None)
+    style_weight = float(data.get('style_weight', 0.5) or 0.5)
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     modo_img = "con referencia" if imagen_referencia_url else "solo texto"
-    hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel, imagen_referencia_url))
+    hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel, imagen_referencia_url, style_weight))
     hilo.daemon = True
     hilo.start()
     return jsonify({'msg': f'Ciclo iniciado para: {busqueda_libre} (mood: {mood}, reel: {hacer_reel}, imagen: {modo_img})'})
