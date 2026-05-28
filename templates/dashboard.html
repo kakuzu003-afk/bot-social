@@ -540,6 +540,11 @@ function ejecutarCiclo() {
 
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero', 'warning'); return; }
   if (!busqueda) { agregarLog('⚠️ Escribe algo en búsqueda libre para iniciar', 'warning'); return; }
+  // Si está en modo referencia pero no se subió imagen, cambiar a modo texto automáticamente
+  if (modoImagen === 'referencia' && !urlReferencia) {
+    agregarLog('⚠️ No hay imagen de referencia cargada. Continuando en modo solo texto...', 'warning');
+    setModoImagen('texto');
+  }
 
   const styleWeight = parseFloat(document.getElementById('styleWeight').value) || 0.5;
   const body = { busqueda_libre: busqueda, precio, cliente_id, mood, hacer_reel, imagen_referencia_url: modoImagen === 'referencia' ? urlReferencia : null, style_weight: modoImagen === 'referencia' ? styleWeight : null };
