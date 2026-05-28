@@ -243,6 +243,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
         return None
     try:
         import replicate
+        import io
         client = replicate.Client(api_token=replicate_token)
 
         parametros = {
@@ -252,8 +253,23 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None):
             "magic_prompt_option": "Off",
         }
 
-        # Ejecutamos Ideogram Turbo de forma rápida y limpia usando el prompt optimizado de Groq
-        log(f"🖼️ Generando con Ideogram v3 Turbo de forma estable...", "info")
+        # ✅ FIX: Inyectar imagen de referencia real en Ideogram
+        if imagen_referencia_url:
+            log(f"🖼️ Descargando imagen de referencia de estilo...", "info")
+            try:
+                img_response = req.get(imagen_referencia_url, timeout=15)
+                if img_response.status_code == 200:
+                    imagen_ref_bytes = io.BytesIO(img_response.content)
+                    parametros["style_reference_images"] = imagen_ref_bytes
+                    parametros["style_type"] = "Auto"   # Auto: Ideogram detecta el estilo de la referencia
+                    parametros["style_weight"] = 0.5    # 0.0 = ignorar ref | 1.0 = copiar al 100%
+                    log(f"✅ Referencia de estilo inyectada en Ideogram (style_weight=0.5).", "success")
+                else:
+                    log(f"⚠️ No se pudo descargar la imagen de referencia (HTTP {img_response.status_code}). Generando sin referencia.", "warning")
+            except Exception as ref_err:
+                log(f"⚠️ Error al cargar referencia: {ref_err}. Continuando sin referencia.", "warning")
+
+        log(f"🖼️ Generando con Ideogram v3 Turbo{'  + referencia de estilo' if imagen_referencia_url else ' de forma estable'}...", "info")
         output = client.run(
             "ideogram-ai/ideogram-v3-turbo",
             input=parametros
