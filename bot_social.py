@@ -510,6 +510,130 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
         return False
 
 # ============================================
+# OVERLAY DE TEXTO CON GLOW NEÓN — PILLOW
+# ============================================
+
+def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00e5ff'):
+    """Dibuja texto con efecto glow neón sobre la imagen. Devuelve la ruta del nuevo archivo."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont, ImageFilter
+        import textwrap
+
+        img = Image.open(imagen_path).convert("RGBA")
+        w, h = img.size
+
+        # Tamaño de fuente proporcional al ancho de la imagen
+        font_size = max(40, int(w * 0.08))
+        font = None
+        # Intentar cargar fuentes del sistema en orden de preferencia
+        font_candidates = [
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+            "/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf",
+        ]
+        for fp in font_candidates:
+            if os.path.exists(fp):
+                try:
+                    font = ImageFont.truetype(fp, font_size)
+                    break
+                except Exception:
+                    continue
+        if font is None:
+            font = ImageFont.load_default()
+
+        # Parsear color glow hex → RGB
+        glow_color = glow_color.lstrip('#')
+        glow_rgb = tuple(int(glow_color[i:i+2], 16) for i in (0, 2, 4))
+
+        # Wrap de texto según ancho
+        max_chars = max(10, int(w / (font_size * 0.55)))
+        lines = textwrap.wrap(texto.upper(), width=max_chars)
+        if not lines:
+            return imagen_path
+
+        # Medir bloque de texto
+        dummy_draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+        line_heights = []
+        line_widths = []
+        for line in lines:
+            bbox = dummy_draw.textbbox((0, 0), line, font=font)
+            line_widths.append(bbox[2] - bbox[0])
+            line_heights.append(bbox[3] - bbox[1])
+        line_spacing = int(font_size * 0.25)
+        block_h = sum(line_heights) + line_spacing * (len(lines) - 1)
+        max_line_w = max(line_widths)
+
+        # Calcular Y según posición
+        padding = int(h * 0.06)
+        if posicion == 'top':
+            block_y = padding
+        elif posicion == 'bottom':
+            block_y = h - block_h - padding
+        else:  # center
+            block_y = (h - block_h) // 2
+
+        # ── Capa de glow: texto desenfocado en color neón ──
+        glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        glow_draw = ImageDraw.Draw(glow_layer)
+        cur_y = block_y
+        for i, line in enumerate(lines):
+            x = (w - line_widths[i]) // 2
+            # Dibujar varias capas de glow con distintos radios
+            for offset in range(1, 5):
+                glow_draw.text((x, cur_y), line, font=font,
+                               fill=(*glow_rgb, int(80 - offset * 15)))
+            glow_draw.text((x, cur_y), line, font=font,
+                           fill=(*glow_rgb, 200))
+            cur_y += line_heights[i] + line_spacing
+
+        # Desenfoque para efecto glow suave
+        glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=font_size // 6))
+
+        # Segunda pasada de glow más difuso
+        glow_layer2 = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        glow_draw2 = ImageDraw.Draw(glow_layer2)
+        cur_y = block_y
+        for i, line in enumerate(lines):
+            x = (w - line_widths[i]) // 2
+            glow_draw2.text((x, cur_y), line, font=font, fill=(*glow_rgb, 100))
+            cur_y += line_heights[i] + line_spacing
+        glow_layer2 = glow_layer2.filter(ImageFilter.GaussianBlur(radius=font_size // 3))
+
+        # ── Capa de texto blanco nítido encima ──
+        text_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        text_draw = ImageDraw.Draw(text_layer)
+        cur_y = block_y
+        for i, line in enumerate(lines):
+            x = (w - line_widths[i]) // 2
+            # Sombra sutil para legibilidad
+            text_draw.text((x + 2, cur_y + 2), line, font=font, fill=(0, 0, 0, 160))
+            # Texto blanco
+            text_draw.text((x, cur_y), line, font=font, fill=(255, 255, 255, 255))
+            cur_y += line_heights[i] + line_spacing
+
+        # Combinar capas: imagen base → glow difuso → glow → texto
+        resultado = img.copy()
+        resultado = Image.alpha_composite(resultado, glow_layer2)
+        resultado = Image.alpha_composite(resultado, glow_layer)
+        resultado = Image.alpha_composite(resultado, text_layer)
+
+        # Guardar como JPEG
+        resultado_rgb = resultado.convert("RGB")
+        out_path = imagen_path.replace(".jpg", "_overlay.jpg").replace(".png", "_overlay.jpg")
+        resultado_rgb.save(out_path, "JPEG", quality=92)
+        log(f"✍️ Overlay de texto aplicado ✅ — '{texto}' ({posicion}, glow #{glow_color})", "success")
+        return out_path
+
+    except ImportError:
+        log("⚠️ Pillow no está instalado. Ejecuta: pip install Pillow", "error")
+        return imagen_path
+    except Exception as e:
+        log(f"⚠️ Error aplicando overlay: {e}. Continuando sin texto.", "warning")
+        return imagen_path
+
+
+# ============================================
 # GRAPH API — PUBLICAR POST
 # ============================================
 
@@ -730,6 +854,176 @@ def api_subir_referencia():
         log(f"🖼️ Imagen de referencia subida ✅", "success")
         return jsonify({'url': url})
     return jsonify({'error': 'No se pudo subir la imagen a ImgBB'}), 500
+
+@app.route('/api/subir_imagen_propia', methods=['POST'])
+@requiere_auth
+def api_subir_imagen_propia():
+    if 'imagen' not in request.files:
+        return jsonify({'error': 'No se envió imagen'}), 400
+    archivo = request.files['imagen']
+    os.makedirs("static", exist_ok=True)
+    filepath = f"static/propia_{int(time.time())}.jpg"
+    archivo.save(filepath)
+    url = subir_imgbb(filepath)
+    if url:
+        log("🖼️ Imagen propia subida ✅", "success")
+        return jsonify({'url': url})
+    return jsonify({'error': 'No se pudo subir la imagen a ImgBB'}), 500
+
+
+def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay):
+    """Analiza imagen con visión, aplica overlay opcional, genera caption y publica."""
+    global bot_activo
+    with _bot_lock:
+        if bot_activo:
+            log("⚠️ Ya hay un ciclo corriendo.", "warning")
+            return
+        bot_activo = True
+    socketio.emit('bot_status', {'activo': True})
+
+    try:
+        cliente = CLIENTES.get(cliente_id)
+        if not cliente:
+            log(f"❌ Cliente '{cliente_id}' no encontrado.", "error")
+            return
+
+        # 1. Descargar imagen localmente para procesarla
+        img_bytes = req.get(imagen_url, timeout=30).content
+        os.makedirs("static", exist_ok=True)
+        img_path = f"static/propia_work_{int(time.time())}.jpg"
+        with open(img_path, "wb") as f:
+            f.write(img_bytes)
+
+        # 2. Aplicar overlay de texto si el usuario lo configuró
+        if overlay and overlay.get('texto'):
+            log(f"✍️ Aplicando texto '{overlay['texto']}' en posición {overlay['posicion']}...", "info")
+            img_path = aplicar_overlay_texto(
+                img_path,
+                texto=overlay['texto'],
+                posicion=overlay.get('posicion', 'center'),
+                glow_color=overlay.get('glow_color', '#00e5ff')
+            )
+
+        # 3. Subir imagen procesada (con o sin overlay) a ImgBB
+        imagen_url_final = subir_imgbb(img_path)
+        if not imagen_url_final:
+            log("⚠️ No se pudo subir imagen procesada. Usando original.", "warning")
+            imagen_url_final = imagen_url
+
+        # 4. Analizar imagen con Groq Vision para detectar el producto
+        log("🔍 Detectando producto en la imagen...", "info")
+        import base64
+        img_response = req.get(imagen_url_final, timeout=15)
+        img_b64 = base64.b64encode(img_response.content).decode("utf-8")
+        content_type = img_response.headers.get("Content-Type", "image/jpeg")
+        media_type = "image/png" if "png" in content_type else "image/jpeg"
+
+        vision_response = groq_client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{"role": "user", "content": [
+                {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{img_b64}"}},
+                {"type": "text", "text": (
+                    "You are a product analyst. Identify: "
+                    "1) Exact product or service shown. "
+                    "2) Category (software, game account, subscription, physical product, etc.). "
+                    "3) Any visible brand names or product names. "
+                    "Max 60 words. English only."
+                )}
+            ]}],
+            max_tokens=120,
+            temperature=0.1,
+        )
+        descripcion_producto = vision_response.choices[0].message.content.strip()
+        log(f"✅ Producto detectado: {descripcion_producto[:80]}...", "success")
+
+        # 5. Generar caption con copywriter experto
+        prod_info = {
+            'nombre': cliente['nombre'],
+            'detalle_producto': descripcion_producto,
+            'keyword_busqueda': descripcion_producto.split()[0] if descripcion_producto else 'producto digital'
+        }
+        tendencias = buscar_tendencias_reales_api(prod_info)
+        caption = generar_post_estricto(prod_info, tendencias, precio)
+        log("✍️ Caption generado ✅", "success")
+
+        meta_token = cliente['meta_token']
+        ig_user_id = cliente['ig_user_id']
+        publicado = False
+        reel_generado = False
+
+        if modo == 'reel':
+            audio_path = buscar_musica_pixabay(mood or "energico")
+            video_path = None
+            if audio_path:
+                video_path = generar_video_reel(img_path, audio_path)
+                reel_generado = bool(video_path)
+            if video_path and meta_token and ig_user_id:
+                cdn_url = subir_video_cloudinary(video_path)
+                if cdn_url:
+                    publicado = publicar_reel_instagram(cdn_url, caption, meta_token, ig_user_id)
+        else:
+            if meta_token and ig_user_id:
+                publicado = publicar_en_instagram(imagen_url_final, caption, cliente_id)
+
+        if publicado:
+            log(f"✅ {'Reel' if modo == 'reel' else 'Post'} publicado en Instagram ✅", "success")
+        else:
+            log(f"⚠️ Generado pero no publicado en Instagram.", "warning")
+
+        # Guardar en historial del dashboard
+        entrada = {
+            'cliente': cliente['nombre'],
+            'cliente_id': cliente_id,
+            'tendencia': tendencias[0] if tendencias else '—',
+            'caption': caption,
+            'prompt_imagen': f"[Imagen propia{' + overlay: ' + overlay['texto'] if overlay and overlay.get('texto') else ''}]",
+            'imagen_url': imagen_url_final,
+            'publicado': publicado,
+            'reel_generado': reel_generado,
+            'con_referencia': False,
+            'fecha': datetime.now().strftime('%d/%m %H:%M')
+        }
+        captions_guardados.insert(0, entrada)
+        socketio.emit('caption', entrada)
+        stats_global[cliente_id]['posts'] += 1
+        stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        socketio.emit('stats', stats_global)
+
+    except Exception as e:
+        log(f"❌ Error en publicar imagen propia: {e}", "error")
+    finally:
+        with _bot_lock:
+            bot_activo = False
+        socketio.emit('bot_status', {'activo': False})
+
+
+@app.route('/api/publicar_imagen_propia', methods=['POST'])
+@requiere_auth
+def api_publicar_imagen_propia():
+    data = request.get_json() or {}
+    imagen_url = data.get('imagen_url', '').strip()
+    cliente_id = data.get('cliente_id', 'aurakey')
+    precio = data.get('precio', 'Consultar por DM')
+    modo = data.get('modo', 'post')
+    mood = data.get('mood', 'energico')
+    overlay = data.get('overlay', None)  # {'texto': '...', 'posicion': 'center', 'glow_color': '#00e5ff'}
+
+    if not imagen_url:
+        return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
+    with _bot_lock:
+        if bot_activo:
+            return jsonify({'ok': False, 'msg': '⚠️ Ya hay un ciclo corriendo. Esperá que termine.'})
+
+    hilo = threading.Thread(
+        target=publicar_imagen_propia_task,
+        args=(imagen_url, cliente_id, precio, modo, mood, overlay),
+        daemon=True
+    )
+    hilo.start()
+    tipo = "Reel" if modo == "reel" else "Post"
+    overlay_info = f" + texto '{overlay['texto']}'" if overlay and overlay.get('texto') else ""
+    return jsonify({'ok': True, 'msg': f'✅ Procesando imagen propia como {tipo}{overlay_info}...'})
+
 
 @app.route('/api/ciclo', methods=['POST'])
 @requiere_auth
