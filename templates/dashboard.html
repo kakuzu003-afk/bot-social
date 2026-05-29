@@ -726,7 +726,14 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
             <div class="upload-drop-icon">📤</div>
             <div class="upload-drop-text">Arrastra o <strong>selecciona imagen</strong><br>El bot detecta el producto y escribe el caption</div>
           </div>
-          <img id="uploadPreview" class="upload-preview" alt="Vista previa">
+          <!-- Vista previa con canvas para overlay en tiempo real -->
+          <div id="previewContainer" style="display:none; margin-top:7px; position:relative;">
+            <div id="previewScroll" style="max-height:200px; overflow-y:auto; border-radius:7px; border:1px solid rgba(157,111,255,0.3); scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:var(--border2) transparent;">
+              <canvas id="overlayCanvas" style="width:100%; display:block; border-radius:7px;"></canvas>
+            </div>
+            <div id="scrollHint" style="display:none; position:absolute; bottom:6px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:var(--text2); font-family:'Space Mono',monospace; font-size:9px; padding:3px 8px; border-radius:99px; pointer-events:none; white-space:nowrap;">↕ Desliza para ver la imagen</div>
+          </div>
+          <img id="uploadPreview" style="display:none;" alt="Vista previa">
           <div class="upload-status" id="uploadStatus"></div>
 
           <!-- OVERLAY DE TEXTO -->
@@ -989,18 +996,77 @@ dropZone.addEventListener('drop', e => {
   }
 });
 
+// ── Canvas overlay preview ───────────────────────────────
+let overlayImageObj = null; // HTMLImageElement guardada para redibujar
+
+function renderOverlayCanvas() {
+  if (!overlayImageObj) return;
+  const canvas = document.getElementById('overlayCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = overlayImageObj;
+
+  // Ajustar canvas al tamaño natural de la imagen
+  canvas.width  = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  ctx.drawImage(img, 0, 0);
+
+  const textoActivo  = document.getElementById('toggleOverlay').checked;
+  const texto        = document.getElementById('overlayTexto').value.trim();
+
+  if (textoActivo && texto) {
+    const w = canvas.width;
+    const h = canvas.height;
+    const fontSize = Math.max(40, Math.floor(w * 0.075));
+
+    // Fondo semitransparente según posición
+    let yBand;
+    if (overlayPosicion === 'top')    yBand = 0;
+    else if (overlayPosicion === 'bottom') yBand = h - fontSize * 2.5;
+    else yBand = (h - fontSize * 2.5) / 2;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0, yBand, w, fontSize * 2.5);
+
+    // Glow
+    ctx.shadowColor = overlayGlowColor;
+    ctx.shadowBlur  = fontSize * 0.4;
+
+    // Texto
+    ctx.font      = `bold ${fontSize}px "DM Sans", sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, w / 2, yBand + fontSize * 1.25, w * 0.9);
+
+    ctx.shadowBlur = 0;
+  }
+
+  // Mostrar hint de scroll si la imagen es alta
+  const container = document.getElementById('previewScroll');
+  const hint = document.getElementById('scrollHint');
+  setTimeout(() => {
+    hint.style.display = canvas.offsetHeight > 200 ? 'block' : 'none';
+    setTimeout(() => { hint.style.display = 'none'; }, 2500);
+  }, 100);
+}
+
 function toggleOverlayControls(checked) {
   document.getElementById('overlayControls').style.display = checked ? 'block' : 'none';
+  renderOverlayCanvas();
 }
 function setPosicion(pos) {
   overlayPosicion = pos;
   ['top','center','bottom'].forEach(p => document.getElementById('pos-'+p).classList.toggle('sel', p===pos));
+  renderOverlayCanvas();
 }
 function setGlow(key, hex) {
   overlayGlowKey = key; overlayGlowColor = hex;
   document.querySelectorAll('.glow-swatch').forEach(s => s.classList.remove('sel'));
   document.getElementById('glow-'+key).classList.add('sel');
+  renderOverlayCanvas();
 }
+
+
 function setModoPublicacion(modo) {
   modoPublicacion = modo;
   document.getElementById('btnPublicPost').classList.toggle('activo', modo==='post');
@@ -1056,7 +1122,15 @@ async function cargarImagenPropia(input) {
   document.getElementById('uploadStatus').textContent = '⏳ Procesando imagen…';
   let archivo; try { archivo = await convertirAJpeg(archivoOriginal); } catch(e) { archivo = archivoOriginal; }
   const reader = new FileReader();
-  reader.onload = e => { const prev=document.getElementById('uploadPreview'); prev.src=e.target.result; prev.style.display='block'; };
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      overlayImageObj = img;
+      document.getElementById('previewContainer').style.display = 'block';
+      renderOverlayCanvas();
+    };
+    img.src = e.target.result;
+  };
   reader.readAsDataURL(archivo);
   document.getElementById('uploadStatus').textContent = '⏳ Subiendo imagen…';
   const formData = new FormData(); formData.append('imagen', archivo);
@@ -1201,6 +1275,9 @@ fetch('/api/clientes').then(r=>r.json()).then(data => {
 });
 fetch('/api/stats').then(r=>r.json()).then(d => { statsData=d; actualizarStats(d); renderClientesList(); });
 fetch('/api/captions').then(r=>r.json()).then(data => { captions=data; renderCaptions(); });
+
+// Listener para texto overlay en tiempo real
+document.getElementById('overlayTexto').addEventListener('input', renderOverlayCanvas);
 </script>
 </body>
 </html>
