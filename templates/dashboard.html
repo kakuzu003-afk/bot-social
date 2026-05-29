@@ -1016,29 +1016,42 @@ function renderOverlayCanvas() {
   if (textoActivo && texto) {
     const w = canvas.width;
     const h = canvas.height;
-    const fontSize = Math.max(40, Math.floor(w * 0.075));
+    const padding = w * 0.06;
 
-    // Fondo semitransparente según posición
+    // Auto-fit: reducir fontSize hasta que el texto quepa
+    let fontSize = Math.max(32, Math.floor(w * 0.075));
+    const maxTextWidth = w - padding * 2;
+    ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
+    while (fontSize > 20 && ctx.measureText(texto).width > maxTextWidth) {
+      fontSize -= 2;
+      ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
+    }
+
+    const bandH = fontSize * 2.6;
     let yBand;
-    if (overlayPosicion === 'top')    yBand = 0;
-    else if (overlayPosicion === 'bottom') yBand = h - fontSize * 2.5;
-    else yBand = (h - fontSize * 2.5) / 2;
+    if (overlayPosicion === 'top')         yBand = 0;
+    else if (overlayPosicion === 'bottom') yBand = h - bandH;
+    else                                   yBand = (h - bandH) / 2;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.fillRect(0, yBand, w, fontSize * 2.5);
+    // Fondo oscuro semitransparente
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, yBand, w, bandH);
 
-    // Glow
-    ctx.shadowColor = overlayGlowColor;
-    ctx.shadowBlur  = fontSize * 0.4;
+    // Clip a la banda — el glow NO se derrama fuera
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, yBand, w, bandH);
+    ctx.clip();
 
-    // Texto
-    ctx.font      = `bold ${fontSize}px "DM Sans", sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
+    ctx.shadowColor  = overlayGlowColor;
+    ctx.shadowBlur   = fontSize * 0.35;
+    ctx.font         = `bold ${fontSize}px "DM Sans", sans-serif`;
+    ctx.fillStyle    = '#ffffff';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(texto, w / 2, yBand + fontSize * 1.25, w * 0.9);
+    ctx.fillText(texto, w / 2, yBand + bandH / 2);
 
-    ctx.shadowBlur = 0;
+    ctx.restore(); // libera clip y shadow
   }
 
   // Mostrar hint de scroll si la imagen es alta
