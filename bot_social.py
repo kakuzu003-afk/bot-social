@@ -11,6 +11,15 @@ from groq import Groq
 import requests as req
 from functools import wraps
 
+# Auto-instalar Pillow si no está disponible (necesario para overlay de texto en imágenes)
+try:
+    from PIL import Image
+except ImportError:
+    import subprocess, sys
+    print("📦 Instalando Pillow...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow", "--quiet"])
+    print("✅ Pillow instalado correctamente.")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", os.urandom(24))
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -958,9 +967,7 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
                 video_path = generar_video_reel(img_path, audio_path)
                 reel_generado = bool(video_path)
             if video_path and meta_token and ig_user_id:
-                cdn_url = subir_video_cloudinary(video_path)
-                if cdn_url:
-                    publicado = publicar_reel_instagram(cdn_url, caption, meta_token, ig_user_id)
+                publicado = publicar_reel_instagram(video_path, caption, cliente_id)
         else:
             if meta_token and ig_user_id:
                 publicado = publicar_en_instagram(imagen_url_final, caption, cliente_id)
