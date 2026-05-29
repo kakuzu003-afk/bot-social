@@ -8,4 +8,4 @@ requests
 schedule
 replicate
 cloudinary
- 
+Pillow>=10.0.0 
