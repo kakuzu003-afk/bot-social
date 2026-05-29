@@ -111,37 +111,49 @@ def buscar_tendencias_reales_api(prod_info):
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
     prompt = f"""
-    Eres un experto en crecimiento orgánico de Instagram, copywriting y SEO estratégico en redes sociales.
-    Marca: {prod_info['nombre']}
-    Producto: {prod_info['detalle_producto']}
-    Precio actual de oferta: {precio}
-    Términos calientes detectados hoy en la red: {', '.join(tendencias_reales)}
-    
-    Genera un post comercial para Instagram en español chileno neutro. Sigue estrictamente estas reglas:
-    
-    1. CAPTION: Redacta un copy persuasivo, vendedor y directo al grano (máximo 130 palabras). Debes incluir el precio de {precio} de forma muy atractiva e integrada en el texto. Agrega emojis modernos.
-    
-    REGLA OBLIGATORIA DE CONTACTO: Al final del texto, justo antes de los hashtags, incluye exactamente:
-    📲 WhatsApp: +56946557876
-    
-    2. HASHTAGS (REGLA CRÍTICA):
-    - Exactamente 5 hashtags
-    - DEBEN ser MUY CORTOS: máximo 2 palabras cada uno
-    - Ejemplos del estilo correcto: #Office2024 #Software #Productividad #Oferta #Chile
-    - PROHIBIDO: hashtags largos como #LicenciaPermanenteOffice o #SoftwareOriginalChile
-    - Usa palabras que la gente escribe rápido y busca masivamente
-    - Basados en el producto: {prod_info['detalle_producto']} y tendencias: {', '.join(tendencias_reales)}
-    - Mezcla: 2 del producto + 2 tendencia + 1 acción corta (#Oferta #Compra #Deal)
-    
-    Formato estricto de salida:
-    [Aquí va el texto de tu caption con emojis...]
-    
-    📲 WhatsApp: +56946557876
-    
-    #Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5
-    
-    Ve directo al contenido del post. No metas notas del sistema, saludos ni introducciones.
-    """
+Eres un copywriter especialista en ventas digitales para el mercado chileno. Llevas 10 años vendiendo software, licencias, cuentas de juegos y servicios digitales en redes sociales. Conoces exactamente qué palabras hacen que la gente chilena detenga el scroll y compre.
+
+CONTEXTO DEL PRODUCTO:
+- Producto: {prod_info['detalle_producto']}
+- Precio: {precio}
+- Tendencias detectadas hoy: {', '.join(tendencias_reales)}
+
+TU TAREA: Escribir un caption de Instagram que venda de verdad. No un texto genérico — uno que suene humano, que conecte con el chileno promedio, y que genere acción inmediata.
+
+ESTRATEGIA SEGÚN EL PRODUCTO:
+- Si es software/licencia → énfasis en AHORRO vs precio oficial + beneficio concreto inmediato ("actívalo hoy mismo")
+- Si es cuenta de juego → emoción, exclusividad, comunidad gamer ("ya está disponible", "no te quedes sin el tuyo")
+- Si es suscripción/servicio → valor por tiempo ("por solo X al mes"), lo que pierden si no lo tienen
+- Si hay tendencia relevante → conéctala de forma natural al producto, no forzada
+
+REGLAS DE ESCRITURA:
+1. Primera línea = GANCHO que detiene el scroll. Opciones según el producto:
+   - Pregunta que duele ("¿Todavía pagando el precio completo de {prod_info['detalle_producto'].split()[0]}?")
+   - Dato impactante ("El 80% de la gente en Chile lo consigue por menos de la mitad")
+   - Afirmación bold ("Esto cambia cómo trabajas desde hoy")
+2. Desarrolla el beneficio CENTRAL en 2-3 líneas máximo. Concreto, no poético. Qué gana exactamente el que compra.
+3. El precio {precio} debe aparecer como si fuera una revelación, no solo un número. Ejemplo: "y lo mejor: te sale en {precio} — sí, en serio."
+4. Cierre con llamada a la acción directa y urgente. Sin "¡no lo pierdas!" genérico — algo específico al producto.
+5. Tono: chileno natural, directo, con personalidad. Nada de "¡Hola a todos!" ni frases corporativas. Puede tener humor sutil si el producto lo permite.
+6. Emojis: usarlos con intención, no como decoración. Máximo 6-8 en todo el texto.
+7. Largo: 80-120 palabras. Ni más ni menos.
+
+REGLA OBLIGATORIA DE CONTACTO: Justo antes de los hashtags, incluye exactamente esta línea:
+📲 WhatsApp: +56946557876
+
+HASHTAGS (exactamente 5, máximo 2 palabras cada uno):
+- 2 del producto (ej: #Office365 #Software)
+- 2 de tendencia o público (ej: #TrabajoRemoto #Chile)
+- 1 de acción comercial (#Oferta #Deal #Descuento)
+- PROHIBIDO hashtags de más de 2 palabras juntas
+
+FORMATO DE SALIDA — solo esto, sin comentarios ni explicaciones:
+[caption aquí]
+
+📲 WhatsApp: +56946557876
+
+#tag1 #tag2 #tag3 #tag4 #tag5
+"""
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
@@ -235,15 +247,21 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
     1. {contexto_estilo}
     2. The product "{nombre}" must be the HERO of the image — visually dominant, accurate, and recognizable. Do NOT invent generic product visuals. Base the design on the REAL product identity.
     3. Include REAL product-specific visual elements: if it's software, show UI screenshots or icons; if it's antivirus, show shields/protection; if it's CAD software, show 3D blueprints; if it's Office, show document/spreadsheet interfaces. Be specific.
-    4. Typography: include the product name "{nombre}" in clean, bold, perfectly spelled text. Elegant hierarchy. NO giant text that ruins composition.
-    5. CLEAN DESIGN: NO fake text, NO lorem ipsum, NO decorative gibberish text anywhere in the image — especially NO small print at the bottom. Every text element must be intentional and readable.
+    4. Typography: include ONLY the product name "{nombre}" as a single bold headline. NO other text, NO taglines, NO subtext, NO descriptions, NO numbers except the product name.
+    5. ABSOLUTE TEXT RULE — THIS IS THE MOST IMPORTANT RULE:
+       - ZERO background text patterns, ZERO decorative letters, ZERO texture made of characters
+       - ZERO small text blocks anywhere — not at bottom, not at sides, not in background
+       - ZERO paragraph text, body copy, or simulated print text
+       - ZERO text that looks like a magazine bottom bar or disclaimer
+       - The background must be CLEAN graphic elements only: gradients, light effects, geometric shapes, bokeh, particles — NEVER letters or words used as texture
+       - If in doubt, use NO text at all — better a clean image than one with fake text
     6. Vertical 9:16 format, premium commercial quality, photorealistic or high-end 3D render style.
-    7. LANGUAGE RULE: ALL text in the image in English or Spanish ONLY. Zero tolerance for Chinese, Japanese, Arabic, Cyrillic, or any non-Latin characters anywhere in the image including backgrounds and textures.
+    7. LANGUAGE RULE: The ONLY allowed text is the product name in English or Spanish. NOTHING ELSE.
     
     OUTPUT RULES:
     - Write ONLY the Ideogram prompt in English, max 100 words
     - Start directly with the visual description — no preamble
-    - Include: "clean design, no fake text, no gibberish, no small print, all text in English only"
+    - END the prompt with this exact phrase: "Absolutely no background text, no decorative text patterns, no small print, no fake paragraph text anywhere in the image. Clean design only."
     - Make it cinematic, detailed, and specific to the real product
     """
     
@@ -338,19 +356,28 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
 
         # Negative prompt agresivo — elimina texto basura, caracteres raros y baja calidad
         negative_prompt = (
-            "blurry text, illegible text, garbled text, random letters, fake text, lorem ipsum, "
-            "gibberish, nonsense characters, small print, fine print, terms and conditions text, "
-            "footer text, disclaimer text, random background text, decorative fake text, "
-            "foreign language characters, chinese characters, japanese characters, arabic script, "
-            "cyrillic text, korean characters, hindi characters, thai characters, "
-            "watermark, logo watermark, ugly, low quality, deformed, distorted typography, "
-            "cluttered layout, messy design, overlapping text, unreadable fonts, "
-            "text artifacts, letter artifacts, symbol artifacts, glyph errors, "
-            "stock photo watermark, draft, sketch, amateur, pixelated, noisy"
+            # Texto ilegible y falso
+            "illegible text, blurry text, garbled text, scrambled letters, random letters, "
+            "fake text, lorem ipsum, gibberish words, nonsense text, decorative fake words, "
+            "misspelled words, corrupted text, distorted letters, abstract letterforms, "
+            "typographic noise, pseudo-text, simulated text, placeholder text, "
+            # Texto pequeño y de fondo
+            "small print, fine print, body copy text, paragraph text, running text, "
+            "background text, texture text, pattern made of letters, text wallpaper, "
+            "footer text, header text, disclaimer text, terms and conditions, legal text, "
+            "caption text, subtitle text, watermark text, stamp text, "
+            # Caracteres no latinos
+            "chinese characters, japanese characters, arabic script, cyrillic text, "
+            "korean characters, hindi characters, thai script, hebrew letters, "
+            "greek letters used decoratively, runes, symbols as text, "
+            # Problemas de diseño
+            "cluttered layout, busy background, overlapping elements, messy composition, "
+            "stock photo watermark, draft quality, low resolution, pixelated, noisy image, "
+            "amateur design, ugly fonts, deformed letters, broken typography"
         )
 
         parametros = {
-            "prompt": prompt_imagen,
+            "prompt": prompt_imagen + " NO background text patterns. NO decorative letters as texture. NO small print. NO paragraph text blocks. NO fake words anywhere. Clean graphic design only.",
             "negative_prompt": negative_prompt,
             "resolution": "768x1344",
             "style_type": "Design",
