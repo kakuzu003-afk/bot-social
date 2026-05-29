@@ -523,7 +523,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
 # ============================================
 
 def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00e5ff'):
-    """Dibuja texto con efecto glow neón sobre la imagen. Devuelve la ruta del nuevo archivo."""
+    """Dibuja texto con banda oscura + glow neón. Visible sobre cualquier fondo."""
     try:
         from PIL import Image, ImageDraw, ImageFont, ImageFilter
         import textwrap
@@ -531,10 +531,9 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         img = Image.open(imagen_path).convert("RGBA")
         w, h = img.size
 
-        # Tamaño de fuente proporcional al ancho de la imagen
-        font_size = max(40, int(w * 0.08))
+        # Fuente más grande para que sea bien visible
+        font_size = max(52, int(w * 0.10))
         font = None
-        # Intentar cargar fuentes del sistema en orden de preferencia
         font_candidates = [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
@@ -552,77 +551,99 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
             font = ImageFont.load_default()
 
         # Parsear color glow hex → RGB
-        glow_color = glow_color.lstrip('#')
-        glow_rgb = tuple(int(glow_color[i:i+2], 16) for i in (0, 2, 4))
+        glow_hex = glow_color.lstrip('#')
+        glow_rgb = tuple(int(glow_hex[i:i+2], 16) for i in (0, 2, 4))
 
-        # Wrap de texto según ancho
-        max_chars = max(10, int(w / (font_size * 0.55)))
+        # Wrap de texto — líneas más cortas para que quepan mejor
+        max_chars = max(8, int(w / (font_size * 0.62)))
         lines = textwrap.wrap(texto.upper(), width=max_chars)
         if not lines:
             return imagen_path
 
         # Medir bloque de texto
         dummy_draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
-        line_heights = []
-        line_widths = []
+        line_heights, line_widths = [], []
         for line in lines:
             bbox = dummy_draw.textbbox((0, 0), line, font=font)
             line_widths.append(bbox[2] - bbox[0])
             line_heights.append(bbox[3] - bbox[1])
-        line_spacing = int(font_size * 0.25)
+        line_spacing = int(font_size * 0.30)
         block_h = sum(line_heights) + line_spacing * (len(lines) - 1)
         max_line_w = max(line_widths)
 
+        # Padding interno de la banda
+        band_pad_v = int(font_size * 0.55)
+        band_pad_h = int(font_size * 0.70)
+        band_h = block_h + band_pad_v * 2
+        band_w = min(w, max_line_w + band_pad_h * 2)
+
         # Calcular Y según posición
-        padding = int(h * 0.06)
+        padding = int(h * 0.07)
         if posicion == 'top':
-            block_y = padding
+            band_y = padding
         elif posicion == 'bottom':
-            block_y = h - block_h - padding
+            band_y = h - band_h - padding
         else:  # center
-            block_y = (h - block_h) // 2
+            band_y = (h - band_h) // 2
 
-        # ── Capa de glow: texto desenfocado en color neón ──
+        block_y = band_y + band_pad_v
+        band_x = (w - band_w) // 2
+
+        # ── Capa 1: banda oscura semitransparente detrás del texto ──
+        band_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        band_draw  = ImageDraw.Draw(band_layer)
+        # Rectángulo negro 78% opaco — contraste garantizado sobre cualquier fondo
+        band_draw.rectangle(
+            [band_x, band_y, band_x + band_w, band_y + band_h],
+            fill=(0, 0, 0, 200)
+        )
+        # Borde de color neón en la banda
+        band_draw.rectangle(
+            [band_x, band_y, band_x + band_w, band_y + band_h],
+            outline=(*glow_rgb, 220),
+            width=max(3, font_size // 18)
+        )
+        # Suavizar bordes de la banda ligeramente
+        band_layer = band_layer.filter(ImageFilter.GaussianBlur(radius=2))
+
+        # ── Capa 2: glow difuso del texto en color neón ──
         glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        glow_draw = ImageDraw.Draw(glow_layer)
+        glow_draw  = ImageDraw.Draw(glow_layer)
         cur_y = block_y
         for i, line in enumerate(lines):
             x = (w - line_widths[i]) // 2
-            # Dibujar varias capas de glow con distintos radios
-            for offset in range(1, 5):
-                glow_draw.text((x, cur_y), line, font=font,
-                               fill=(*glow_rgb, int(80 - offset * 15)))
-            glow_draw.text((x, cur_y), line, font=font,
-                           fill=(*glow_rgb, 200))
+            # Múltiples pasadas de glow con opacidad decreciente
+            for radius_extra, alpha in [(0, 180), (0, 140), (0, 100)]:
+                glow_draw.text((x, cur_y), line, font=font, fill=(*glow_rgb, alpha))
             cur_y += line_heights[i] + line_spacing
+        glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=font_size // 5))
 
-        # Desenfoque para efecto glow suave
-        glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=font_size // 6))
-
-        # Segunda pasada de glow más difuso
+        # Segunda pasada de glow más amplia
         glow_layer2 = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        glow_draw2 = ImageDraw.Draw(glow_layer2)
+        glow_draw2  = ImageDraw.Draw(glow_layer2)
         cur_y = block_y
         for i, line in enumerate(lines):
             x = (w - line_widths[i]) // 2
-            glow_draw2.text((x, cur_y), line, font=font, fill=(*glow_rgb, 100))
+            glow_draw2.text((x, cur_y), line, font=font, fill=(*glow_rgb, 80))
             cur_y += line_heights[i] + line_spacing
-        glow_layer2 = glow_layer2.filter(ImageFilter.GaussianBlur(radius=font_size // 3))
+        glow_layer2 = glow_layer2.filter(ImageFilter.GaussianBlur(radius=font_size // 2))
 
-        # ── Capa de texto blanco nítido encima ──
+        # ── Capa 3: texto blanco nítido con sombra oscura ──
         text_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        text_draw = ImageDraw.Draw(text_layer)
+        text_draw  = ImageDraw.Draw(text_layer)
         cur_y = block_y
         for i, line in enumerate(lines):
             x = (w - line_widths[i]) // 2
-            # Sombra sutil para legibilidad
-            text_draw.text((x + 2, cur_y + 2), line, font=font, fill=(0, 0, 0, 160))
-            # Texto blanco
+            # Sombra desplazada para profundidad
+            for dx, dy in [(3, 3), (2, 2), (-1, -1)]:
+                text_draw.text((x + dx, cur_y + dy), line, font=font, fill=(0, 0, 0, 180))
+            # Texto blanco brillante
             text_draw.text((x, cur_y), line, font=font, fill=(255, 255, 255, 255))
             cur_y += line_heights[i] + line_spacing
 
-        # Combinar capas: imagen base → glow difuso → glow → texto
+        # Combinar: imagen → banda → glow difuso → glow → texto
         resultado = img.copy()
+        resultado = Image.alpha_composite(resultado, band_layer)
         resultado = Image.alpha_composite(resultado, glow_layer2)
         resultado = Image.alpha_composite(resultado, glow_layer)
         resultado = Image.alpha_composite(resultado, text_layer)
@@ -631,7 +652,7 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         resultado_rgb = resultado.convert("RGB")
         out_path = imagen_path.replace(".jpg", "_overlay.jpg").replace(".png", "_overlay.jpg")
         resultado_rgb.save(out_path, "JPEG", quality=92)
-        log(f"✍️ Overlay de texto aplicado ✅ — '{texto}' ({posicion}, glow #{glow_color})", "success")
+        log(f"✍️ Overlay de texto aplicado ✅ — '{texto}' ({posicion}, glow #{glow_hex})", "success")
         return out_path
 
     except ImportError:
