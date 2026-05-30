@@ -163,10 +163,49 @@ body::after {
 .tab-btn.active { color:var(--cyan); border-bottom-color:var(--cyan); }
 .tab-btn .tb-icon { font-size:14px; }
 
-/* tab panels */
-.tab-panels { flex:1; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
-.tab-panel { display:none; padding:16px; }
+/* ─── PANEL SCROLL FIX + STICKY BUTTONS ─── */
+.tab-panels {
+  flex:1;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border2) transparent;
+  -webkit-overflow-scrolling:touch; /* fix scroll pegado en iOS/Android */
+  overscroll-behavior:contain;
+}
+
+.tab-panel { display:none; padding:16px 16px 80px; } /* padding-bottom para que el btn sticky no tape contenido */
 .tab-panel.active { display:block; }
+
+/* Botón sticky al fondo del sidebar */
+.btn-sticky-wrap {
+  position:sticky;
+  bottom:0;
+  background:linear-gradient(to top, var(--bg2) 70%, transparent);
+  padding:10px 16px 12px;
+  margin:0 -16px -80px; /* compensar el padding del panel */
+  z-index:10;
+}
+
+/* Campo de título del producto */
+.product-title-field {
+  background:rgba(0,229,255,0.04);
+  border:1px solid rgba(0,229,255,0.18);
+  border-radius:8px;
+  padding:8px 11px;
+  width:100%;
+  color:var(--text);
+  font-size:12px;
+  font-family:'DM Sans',sans-serif;
+  outline:none;
+  transition:border-color .2s;
+}
+.product-title-field::placeholder { color:var(--text3); }
+.product-title-field:focus { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,0.1); }
+.product-title-hint {
+  font-family:'Space Mono',monospace;
+  font-size:8px; color:var(--text3);
+  margin-top:3px; padding-left:2px;
+}
 
 /* form elements */
 .field-label {
@@ -627,7 +666,11 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
           <span id="clienteLabel">Cargando clientes…</span>
         </div>
 
-        <div class="field-label" style="margin-top:14px;">⚡ Búsqueda libre</div>
+        <div class="field-label" style="margin-top:14px;">🏷️ Título del producto</div>
+        <input type="text" class="product-title-field" id="ciclo-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass, Kaspersky…">
+        <div class="product-title-hint">Solo para el bot — no aparece en la imagen ni el caption</div>
+
+        <div class="field-label" style="margin-top:12px;">⚡ Búsqueda libre</div>
         <div class="search-wrapper">
           <span class="search-icon">⚡</span>
           <input type="text" class="search-input" id="input-busqueda" placeholder="laptop gamer, curso inglés…">
@@ -709,8 +752,10 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
           </div>
         </div>
 
-        <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
-        <div class="btn-row">
+        <div class="btn-sticky-wrap">
+          <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
+        </div>
+        <div class="btn-row" style="padding: 0 16px 12px;">
           <button class="btn-sm" onclick="limpiarLogs()">🗑 Logs</button>
           <button class="btn-sm" onclick="limpiarTodosLosCaptions()">🧼 Captions</button>
         </div>
@@ -719,7 +764,11 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
       <!-- ── TAB: PUBLICAR ── -->
       <div class="tab-panel" id="panel-publicar">
 
-        <div class="field-label" style="margin-top:0">🖼️ Imagen propia</div>
+        <div class="field-label" style="margin-top:0">🏷️ Título del producto</div>
+        <input type="text" class="product-title-field" id="publicar-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass, Kaspersky…">
+        <div class="product-title-hint">Solo para el bot — no aparece en la imagen ni el caption</div>
+
+        <div class="field-label" style="margin-top:10px;">🖼️ Imagen propia</div>
         <div class="upload-section">
           <div class="upload-drop-zone" id="uploadDropZone">
             <input type="file" id="inputImagenPropia" accept="image/*" onchange="cargarImagenPropia(this)">
@@ -783,7 +832,9 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
             </select>
           </div>
 
-          <button class="btn-publish" id="btnPublicar" onclick="publicarImagenPropia()">📤 Publicar con caption IA</button>
+          <div class="btn-sticky-wrap">
+            <button class="btn-publish" id="btnPublicar" onclick="publicarImagenPropia()">📤 Publicar con caption IA</button>
+          </div>
         </div>
       </div><!-- /panel-publicar -->
 
@@ -1172,8 +1223,10 @@ async function publicarImagenPropia() {
   btn.classList.add('loading'); btn.textContent = '⏳ Procesando…';
   const overlayActivo = document.getElementById('toggleOverlay').checked;
   const textoOverlay  = document.getElementById('overlayTexto').value.trim();
+  const titulo        = document.getElementById('publicar-titulo').value.trim();
   const body = {
     imagen_url: urlImagenPropia, cliente_id,
+    titulo_producto: titulo || null,
     precio: document.getElementById('upload-precio').value || 'Consultar por DM',
     modo:   modoPublicacion,
     mood:   modoPublicacion==='reel' ? document.getElementById('upload-mood').value : null,
@@ -1207,6 +1260,7 @@ function setModoImagen(modo) {
 // ── Ejecutar ciclo ───────────────────────────────────────
 function ejecutarCiclo() {
   const busqueda   = inputBusqueda.value.trim();
+  const titulo     = document.getElementById('ciclo-titulo').value.trim();
   const precio     = document.getElementById('input-precio').value || 'Consultar por DM';
   const cliente_id = document.getElementById('select-cliente').value;
   const mood       = document.getElementById('select-mood').value;
@@ -1218,7 +1272,8 @@ function ejecutarCiclo() {
     setModoImagen('texto');
   }
   const styleWeight = parseFloat(document.getElementById('styleWeight').value)||0.5;
-  const body = { busqueda_libre:busqueda, precio, cliente_id, mood, hacer_reel,
+  const body = { busqueda_libre: titulo || busqueda, precio, cliente_id, mood, hacer_reel,
+    titulo_producto: titulo || null,
     imagen_referencia_url: modoImagen==='referencia' ? urlReferencia : null,
     style_weight:          modoImagen==='referencia' ? styleWeight   : null };
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text||cliente_id;
