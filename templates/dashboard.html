@@ -1043,6 +1043,7 @@ function renderClientesList() {
       <div class="client-name">${c.nombre}</div>
       <div style="display:flex;align-items:center;gap:5px;">
         <span class="badge-posts">${stats.posts||0} posts</span>
+        <span class="badge-posts">📲 ${stats.clicks_whatsapp||0} WA</span>
         <span class="badge-active">ACTIVO</span>
       </div>
     </div>`;
@@ -1080,6 +1081,7 @@ function renderCaptions() {
           <div class="published-badge ${estadoClass}">${estado}</div>
           <div class="published-badge no" style="background:rgba(0,229,255,0.08);color:var(--cyan);border-color:rgba(0,229,255,0.22);">${tipo}</div>
           ${c.reel_generado?`<div class="published-badge yes" style="background:rgba(157,111,255,0.1);color:var(--purple);border-color:rgba(157,111,255,0.3);">🎬 Reel generado</div>`:''}
+          ${c.whatsapp_link?`<div class="published-badge yes" style="background:rgba(0,232,122,0.1);color:var(--green);border-color:rgba(0,232,122,0.25);">📲 WA ${c.clicks_whatsapp||0}</div>`:''}
         </div>
         <div class="caption-field-label">Caption editable</div>
         <textarea class="caption-ta" rows="5" id="caption_${i}">${c.caption}</textarea>
@@ -1090,6 +1092,8 @@ function renderCaptions() {
           <button class="action-btn"        onclick="copiarCaption(${i})">📋 Copiar</button>
           <button class="action-btn"        onclick="copiarPrompt(${i})">🎨 Prompt</button>
           ${c.imagen_url?`<button class="action-btn view" onclick="window.open('${c.imagen_url}','_blank')">🔗 Ver</button>`:''}
+          ${c.whatsapp_link?`<button class="action-btn view" onclick="window.open('${c.whatsapp_link}','_blank')">📲 WhatsApp</button>`:''}
+          ${c.whatsapp_mensaje?`<button class="action-btn" onclick="copiarWhatsApp(${i})">💬 Msg WA</button>`:''}
           <button class="action-btn danger" onclick="borrarCaption(${i})">🗑</button>
         </div>
       </div>
@@ -1099,6 +1103,13 @@ function renderCaptions() {
 
 function copiarCaption(i) { navigator.clipboard.writeText(document.getElementById('caption_'+i).value); agregarLog('Caption copiado ✅','success'); }
 function copiarPrompt(i)  { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value);  agregarLog('Prompt copiado ✅','success');  }
+function copiarWhatsApp(i) {
+  const c = captions[i] || {};
+  const texto = [c.whatsapp_mensaje || '', c.whatsapp_link || ''].filter(Boolean).join('\n');
+  if (!texto) { agregarLog('⚠️ Este borrador no tiene WhatsApp generado','warning'); return; }
+  navigator.clipboard.writeText(texto);
+  agregarLog('WhatsApp copiado ✅','success');
+}
 function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); renderCaptions(); agregarLog('Caption eliminado','warning'); } }
 function limpiarLogs()    { document.getElementById('logBox').innerHTML=''; }
 function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
