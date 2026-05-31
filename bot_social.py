@@ -901,10 +901,13 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         max_line_w = max(line_widths)
 
         # Padding interno de la banda
-        band_pad_v = int(font_size * 0.55)
-        band_pad_h = int(font_size * 0.70)
+        band_pad_v = int(font_size * 0.52)
         band_h = block_h + band_pad_v * 2
-        band_w = min(w, max_line_w + band_pad_h * 2)
+
+        # Banda horizontal de extremo a extremo, más limpia y más transparente
+        side_margin = 0
+        band_x = side_margin
+        band_w = max(0, w - (side_margin * 2))
 
         # Calcular Y según posición
         padding = int(h * 0.07)
@@ -916,24 +919,17 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
             band_y = (h - band_h) // 2
 
         block_y = band_y + band_pad_v
-        band_x = (w - band_w) // 2
 
         # ── Capa 1: banda oscura semitransparente detrás del texto ──
         band_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         band_draw  = ImageDraw.Draw(band_layer)
-        # Rectángulo negro 78% opaco — contraste garantizado sobre cualquier fondo
+        # Banda negra más transparente y sin bordes de color
         band_draw.rectangle(
             [band_x, band_y, band_x + band_w, band_y + band_h],
-            fill=(0, 0, 0, 200)
-        )
-        # Borde de color neón en la banda
-        band_draw.rectangle(
-            [band_x, band_y, band_x + band_w, band_y + band_h],
-            outline=(*glow_rgb, 220),
-            width=max(3, font_size // 18)
+            fill=(0, 0, 0, 118)
         )
         # Suavizar bordes de la banda ligeramente
-        band_layer = band_layer.filter(ImageFilter.GaussianBlur(radius=2))
+        band_layer = band_layer.filter(ImageFilter.GaussianBlur(radius=1))
 
         # ── Capa 2: glow difuso del texto en color neón ──
         glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
