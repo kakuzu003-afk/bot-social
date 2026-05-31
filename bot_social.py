@@ -194,56 +194,128 @@ Responde solo con las tendencias válidas separadas por coma, sin explicaciones,
 
 def normalizar_producto_info(titulo_manual, descripcion_vision):
     """
-    Paso intermedio entre Vision y el copywriter.
-    Toma el título del usuario + la descripción cruda de Vision y produce
-    una ficha estructurada limpia en español, lista para el copywriter.
-    Evita que datos vagos o en inglés lleguen al caption.
+    Crea una ficha comercial UNIVERSAL a partir del título escrito por el usuario
+    y/o la descripción generada por visión IA.
+
+    Objetivo: que el bot pueda vender cualquier producto sin depender de catálogo:
+    licencias, software, gaming, cursos, servicios, productos físicos, belleza,
+    comida, hogar, moda, eventos, etc.
     """
     contexto = f"Título que escribió el usuario: {titulo_manual}\n" if titulo_manual else ""
     contexto += f"Descripción detectada por visión IA: {descripcion_vision}" if descripcion_vision else ""
+    contexto = contexto.strip()
+
+    def ficha_fallback():
+        nombre_base = titulo_manual or (descripcion_vision.split(".")[0] if descripcion_vision else "producto")
+        nombre_base = (nombre_base or "producto").strip()[:80]
+        return {
+            "nombre": nombre_base,
+            "beneficio": "beneficio principal pendiente de confirmar",
+            "audiencia": "personas interesadas en comprar este producto en Chile",
+            "categoria": "otro",
+            "problema": "quiere resolver una necesidad concreta con una compra simple",
+            "objecion": "necesita confianza antes de comprar",
+            "angulo_venta": "compra simple, rápida y confiable",
+            "urgencia": "consultar disponibilidad hoy",
+            "confianza": "atención directa por WhatsApp",
+            "tono_producto": "claro, vendedor y confiable",
+            "mensaje_whatsapp": f"Hola, quiero consultar por {nombre_base}",
+            "hashtags_base": ["#Aurakey", "#Oferta", "#Chile"],
+            "elementos_visuales": ["producto destacado", "fondo limpio", "estilo comercial"],
+            "claridad": "baja"
+        }
 
     if not contexto:
-        return {"nombre": "producto digital", "beneficio": "", "audiencia": "", "categoria": "digital"}
+        return ficha_fallback()
 
     prompt = f"""A partir de esta información sobre un producto que se va a vender en Instagram Chile:
 
 {contexto}
 
-Genera una ficha del producto en español. Responde SOLO con JSON válido, sin explicaciones ni backticks:
+Crea una FICHA COMERCIAL UNIVERSAL en español. Debe funcionar para CUALQUIER título o imagen: productos digitales, licencias, software, gaming, suscripciones, cursos, servicios, comida, belleza, moda, hogar, electrónica, eventos o productos físicos.
+
+Responde SOLO con JSON válido, sin explicaciones ni backticks, con exactamente estas claves:
 {{
-  "nombre": "nombre comercial exacto del producto",
-  "beneficio": "qué problema resuelve o qué gana el comprador en una línea",
-  "audiencia": "a quién va dirigido (gamers, estudiantes, profesionales, familias, etc.)",
-  "categoria": "una de estas: software | licencia | cuenta_juego | suscripcion | producto_fisico | servicio_digital | curso | otro"
+  "nombre": "nombre comercial más probable del producto",
+  "beneficio": "qué gana el comprador en una línea concreta",
+  "audiencia": "a quién va dirigido",
+  "categoria": "software | licencia | cuenta_juego | suscripcion | producto_fisico | servicio_digital | curso | alimento | moda | belleza | hogar | evento | otro",
+  "problema": "problema o deseo principal que mueve la compra",
+  "objecion": "duda principal que podría frenar la compra",
+  "angulo_venta": "ángulo de venta más fuerte para este producto",
+  "urgencia": "motivo honesto para consultar hoy, sin inventar stock si no aparece",
+  "confianza": "elemento de confianza que conviene comunicar",
+  "tono_producto": "tono ideal para venderlo: gamer, premium, familiar, técnico, urgente, educativo, etc.",
+  "mensaje_whatsapp": "mensaje corto que el comprador podría enviar para consultar",
+  "hashtags_base": ["#hashtag1", "#hashtag2", "#hashtag3"],
+  "elementos_visuales": ["elemento visual 1", "elemento visual 2", "elemento visual 3"],
+  "claridad": "alta | media | baja"
 }}
 
-Reglas:
-- "nombre" debe ser el nombre de marca real, no una descripción genérica
-- Si el título del usuario es más específico que la visión, usa ese
-- Todo en español salvo nombres de marcas en inglés (Xbox, Kaspersky, etc.)
-- Máximo 15 palabras por campo"""
+Reglas estrictas:
+- Si el título del usuario es más específico que la visión, usa el título.
+- Si la imagen es ambigua, NO inventes marca/modelo: usa el título o un nombre genérico honesto.
+- No inventes precio, descuento, garantía, stock, duración, despacho ni características técnicas que no aparezcan.
+- El nombre debe ser vendible y corto, no una descripción larga.
+- El beneficio debe ser concreto, no genérico tipo "mejora tu vida".
+- La urgencia debe ser honesta: "consulta disponibilidad", "aprovecha el precio publicado", "pide activación hoy", etc.
+- Los hashtags deben ser cortos, sin espacios y útiles para Instagram Chile.
+- Todo en español salvo marcas reales en inglés.
+- Máximo 18 palabras por campo de texto.
+- "claridad" debe ser baja si no se puede identificar bien el producto."""
 
     try:
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
+            max_tokens=550,
             temperature=0.0,
         )
         raw = res.choices[0].message.content.strip()
-        # Limpiar posibles backticks o prefijos
         raw = raw.replace("```json", "").replace("```", "").strip()
+
+        # Si el modelo llega a agregar texto extra, extraemos el primer bloque JSON.
+        if not raw.startswith("{"):
+            inicio = raw.find("{")
+            fin = raw.rfind("}")
+            if inicio != -1 and fin != -1 and fin > inicio:
+                raw = raw[inicio:fin + 1]
+
         ficha = json.loads(raw)
-        log(f"📋 Ficha producto: {ficha.get('nombre')} | {ficha.get('categoria')} | audiencia: {ficha.get('audiencia')}", "info")
+        base = ficha_fallback()
+
+        # Normalizar claves y evitar campos vacíos.
+        for clave, valor_default in base.items():
+            if clave not in ficha or ficha.get(clave) in (None, "", []):
+                ficha[clave] = valor_default
+
+        categorias_validas = {
+            "software", "licencia", "cuenta_juego", "suscripcion", "producto_fisico",
+            "servicio_digital", "curso", "alimento", "moda", "belleza", "hogar", "evento", "otro"
+        }
+        if ficha.get("categoria") not in categorias_validas:
+            ficha["categoria"] = "otro"
+
+        if ficha.get("claridad") not in {"alta", "media", "baja"}:
+            ficha["claridad"] = "media"
+
+        # Asegurar listas cortas y limpias.
+        for clave_lista in ["hashtags_base", "elementos_visuales"]:
+            valor = ficha.get(clave_lista)
+            if isinstance(valor, str):
+                valor = [v.strip() for v in valor.split(",") if v.strip()]
+            elif not isinstance(valor, list):
+                valor = base[clave_lista]
+            ficha[clave_lista] = [str(v).strip()[:40] for v in valor if str(v).strip()][:5] or base[clave_lista]
+
+        log(
+            f"📋 Ficha comercial: {ficha.get('nombre')} | {ficha.get('categoria')} | claridad: {ficha.get('claridad')} | ángulo: {ficha.get('angulo_venta')}",
+            "info"
+        )
         return ficha
     except Exception as e:
-        log(f"⚠️ Error normalizando producto ({e}). Usando datos crudos.", "warning")
-        return {
-            "nombre": titulo_manual or (descripcion_vision.split(".")[0] if descripcion_vision else "producto digital"),
-            "beneficio": descripcion_vision or "",
-            "audiencia": "público general",
-            "categoria": "digital"
-        }
+        log(f"⚠️ Error normalizando producto ({e}). Usando ficha universal fallback.", "warning")
+        return ficha_fallback()
 
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
@@ -262,20 +334,35 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     nombre   = ficha.get("nombre")   or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "")
     beneficio = ficha.get("beneficio") or ""
     audiencia = ficha.get("audiencia") or marca_publico
-    categoria = ficha.get("categoria") or "digital"
+    categoria = ficha.get("categoria") or "otro"
+    problema = ficha.get("problema") or "necesita una solución simple y confiable"
+    objecion = ficha.get("objecion") or "necesita confianza antes de comprar"
+    angulo_venta = ficha.get("angulo_venta") or "compra simple, rápida y confiable"
+    urgencia = ficha.get("urgencia") or "consulta disponibilidad hoy"
+    confianza = ficha.get("confianza") or "atención directa por WhatsApp"
+    tono_producto = ficha.get("tono_producto") or marca_tono
+    mensaje_whatsapp = ficha.get("mensaje_whatsapp") or f"Hola, quiero consultar por {nombre}"
+    claridad_producto = ficha.get("claridad", "media")
+    hashtags_base = ficha.get("hashtags_base") or []
 
     # Estrategia automática según categoría detectada
     estrategias = {
-        "software":        "Énfasis en AHORRO vs precio oficial + activación inmediata. El usuario ahorra tiempo y dinero hoy mismo.",
-        "licencia":        "Énfasis en AHORRO vs precio oficial + activación inmediata. El usuario ahorra tiempo y dinero hoy mismo.",
-        "cuenta_juego":    "Emoción, exclusividad, comunidad gamer. Urgencia por stock limitado. Tono más informal y hype.",
-        "suscripcion":     "Valor por tiempo — cuánto obtienen por tan poco. Lo que pierden si no lo tienen hoy.",
-        "producto_fisico": "Calidad, utilidad práctica, relación precio-valor. Envío y disponibilidad.",
-        "servicio_digital":"Comodidad, ahorro de tiempo, resultado concreto.",
-        "curso":           "Transformación personal, habilidad adquirida, proyección laboral.",
-        "otro":            "Beneficio concreto e inmediato para el comprador.",
+        "software":        "Ahorro vs precio oficial + activación simple + utilidad inmediata.",
+        "licencia":        "Confianza, activación clara y ahorro frente al precio tradicional.",
+        "cuenta_juego":    "Emoción, acceso rápido, comunidad gamer y sensación de oportunidad.",
+        "suscripcion":     "Valor por tiempo: mucho beneficio por un pago bajo o conveniente.",
+        "producto_fisico": "Utilidad práctica, calidad percibida, disponibilidad y relación precio-valor.",
+        "servicio_digital":"Resultado concreto, comodidad y ahorro de tiempo.",
+        "curso":           "Transformación, habilidad adquirida y avance personal o laboral.",
+        "alimento":        "Antojo, sabor, frescura, cercanía y compra impulsiva.",
+        "moda":            "Estilo, identidad, ocasión de uso y sensación de verse mejor.",
+        "belleza":         "Resultado visible, cuidado personal, confianza y autoestima.",
+        "hogar":           "Orden, comodidad, solución práctica y mejora del espacio.",
+        "evento":          "Experiencia, fecha cercana, cupos y miedo a quedarse fuera.",
+        "otro":            "Beneficio concreto, confianza y acción simple por WhatsApp.",
     }
-    estrategia = estrategias.get(categoria, estrategias["otro"])
+    estrategia_categoria = estrategias.get(categoria, estrategias["otro"])
+    estrategia = f"{estrategia_categoria} Ángulo detectado por IA: {angulo_venta}. Objeción a resolver: {objecion}."
 
     prompt = f"""Eres el mejor copywriter de ventas digitales de Chile. Escribes para Instagram y cada caption tuyo genera ventas reales porque suena humano, específico y directo — nunca genérico.
 
@@ -294,6 +381,15 @@ PRODUCTO:
 - Para quién: {audiencia}
 - Precio: {precio}
 - Tipo: {categoria}
+- Claridad de detección: {claridad_producto}
+- Problema/deseo del comprador: {problema}
+- Objeción principal: {objecion}
+- Ángulo de venta: {angulo_venta}
+- Urgencia honesta: {urgencia}
+- Confianza a comunicar: {confianza}
+- Tono ideal del producto: {tono_producto}
+- Mensaje WhatsApp sugerido: {mensaje_whatsapp}
+- Hashtags base sugeridos: {', '.join(hashtags_base) if hashtags_base else '—'}
 - Tendencias útiles hoy: {', '.join(tendencias_filtradas) if tendencias_filtradas else '—'}
 
 ESTRATEGIA: {estrategia}
@@ -314,10 +410,14 @@ REGLAS:
 6. Emojis con intención, máximo 6-8 en todo el texto.
 7. Largo: 80-120 palabras exactos.
 8. La marca debe sentirse confiable: activación clara, compra simple y atención por WhatsApp.
+9. Si la claridad de detección es baja, evita afirmar características específicas no confirmadas; vende desde consulta, beneficio general y confianza.
+10. No inventes garantía, stock, despacho, duración, descuentos ni características técnicas si no aparecen en la ficha.
+11. Resuelve la objeción principal de forma natural dentro del caption.
 
-Justo antes de los hashtags incluye exactamente estas dos líneas:
+Justo antes de los hashtags incluye exactamente estas tres líneas:
 {marca_cta}
 📲 WhatsApp: {marca_whatsapp}
+Mensaje sugerido: "{mensaje_whatsapp}"
 
 HASHTAGS (exactamente 5):
 - 2 del producto o marca
@@ -396,9 +496,13 @@ def analizar_imagen_referencia(imagen_referencia_url):
 
 
 def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_referencia=None):
-    # Usar el nombre normalizado de la ficha si existe, sino el detalle original
+    # Usar la ficha comercial universal si existe, sino el detalle original
     ficha = prod_info.get("ficha") or {}
     nombre = ficha.get("nombre") or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "producto")
+    categoria = ficha.get("categoria", "otro")
+    angulo_venta = ficha.get("angulo_venta", "premium commercial offer")
+    elementos_visuales = ficha.get("elementos_visuales") or []
+    elementos_visuales_txt = ", ".join(elementos_visuales[:5]) if elementos_visuales else "clean premium commercial elements"
 
     if con_referencia and descripcion_referencia:
         # Groq vio la imagen real — usamos su análisis para guiar a Ideogram
@@ -415,13 +519,16 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
     prompt = f"""
     You are a world-class prompt engineer specialized in Ideogram v3 Balanced — the most advanced AI image generation model for commercial advertising.
     Product to advertise: "{nombre}"
+    Product category: "{categoria}"
+    Sales angle: "{angulo_venta}"
+    Suggested visual elements: "{elementos_visuales_txt}"
     
     Your goal: write a MASTERCLASS-level prompt that pushes Ideogram v3 Balanced to its full potential.
     
     CRITICAL PRODUCT ACCURACY RULES:
     1. {contexto_estilo}
     2. The product "{nombre}" must be the HERO of the image — visually dominant, accurate, and recognizable. Do NOT invent generic product visuals. Base the design on the REAL product identity.
-    3. Include REAL product-specific visual elements: if it's software, show UI screenshots or icons; if it's antivirus, show shields/protection; if it's CAD software, show 3D blueprints; if it's Office, show document/spreadsheet interfaces. Be specific.
+    3. Include REAL product-specific visual elements based on the product category and suggested visual elements. If uncertain, use honest generic commercial visuals instead of inventing logos or technical claims.
     4. Typography: include ONLY the product name "{nombre}" as a single bold headline. NO other text, NO taglines, NO subtext, NO descriptions, NO numbers except the product name.
     5. ABSOLUTE TEXT RULE — THIS IS THE MOST IMPORTANT RULE:
        - ZERO background text patterns, ZERO decorative letters, ZERO texture made of characters
