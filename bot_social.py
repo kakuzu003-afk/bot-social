@@ -62,11 +62,47 @@ _bot_lock = threading.Lock()  # 🔒 Protege bot_activo contra race conditions
 
 GRAPH_API_VERSION = "v21.0"  # Actualizar aquí en futuras migraciones de Meta
 
+# ============================================
+# BRAND KIT — AURAKEY
+# ============================================
+# Esta configuración convierte el bot en una máquina de contenido para Aurakey.
+# Todo caption, CTA y estilo comercial puede tomar contexto desde aquí.
+AURAKEY_BRAND = {
+    "nombre": "Aurakey",
+    "nicho": "productos digitales, licencias, software, gaming y suscripciones",
+    "tono": "chileno, directo, vendedor, confiable, moderno",
+    "whatsapp": "56946557876",
+    "colores": ["negro", "cyan", "azul eléctrico"],
+    "publico": "personas que buscan cuentas, licencias y productos digitales económicos en Chile",
+    "cta": "Escríbenos por WhatsApp para activar tu producto"
+}
+
+
+def normalizar_whatsapp(numero):
+    """Devuelve el número en formato +569... para mostrarlo en captions."""
+    numero = str(numero or "").strip().replace(" ", "").replace("-", "")
+    if not numero:
+        return ""
+    return numero if numero.startswith("+") else f"+{numero}"
+
+
+def obtener_brand_cliente(cliente_id="aurakey"):
+    """Retorna el brand kit del cliente. Por ahora Aurakey es la marca principal."""
+    cliente = CLIENTES.get(cliente_id) if "CLIENTES" in globals() else None
+    if cliente and cliente.get("brand"):
+        return cliente["brand"]
+    return AURAKEY_BRAND
+
+
 CLIENTES = {
     "aurakey": {
-        "nombre": "Aurakey",
+        "nombre": AURAKEY_BRAND["nombre"],
         "meta_token": os.environ.get("META_ACCESS_TOKEN"),
         "ig_user_id": os.environ.get("IG_USER_ID"),
+        "whatsapp": AURAKEY_BRAND["whatsapp"],
+        "nicho": AURAKEY_BRAND["nicho"],
+        "tono": AURAKEY_BRAND["tono"],
+        "brand": AURAKEY_BRAND,
     },
 }
 
@@ -213,9 +249,19 @@ Reglas:
 def generar_post_estricto(prod_info, tendencias_reales, precio):
     tendencias_filtradas = filtrar_tendencias_con_llm(tendencias_reales, prod_info)
     ficha = prod_info.get("ficha") or {}
+    brand = prod_info.get("brand") or obtener_brand_cliente(prod_info.get("cliente_id", "aurakey"))
+
+    marca_nombre = brand.get("nombre", "Aurakey")
+    marca_nicho = brand.get("nicho", "productos digitales")
+    marca_tono = brand.get("tono", "chileno, directo, vendedor, confiable, moderno")
+    marca_publico = brand.get("publico", "personas en Chile que buscan productos digitales")
+    marca_cta = brand.get("cta", "Escríbenos por WhatsApp")
+    marca_colores = ", ".join(brand.get("colores", [])) or "negro, cyan y azul eléctrico"
+    marca_whatsapp = normalizar_whatsapp(brand.get("whatsapp", ""))
+
     nombre   = ficha.get("nombre")   or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "")
     beneficio = ficha.get("beneficio") or ""
-    audiencia = ficha.get("audiencia") or "público general en Chile"
+    audiencia = ficha.get("audiencia") or marca_publico
     categoria = ficha.get("categoria") or "digital"
 
     # Estrategia automática según categoría detectada
@@ -232,6 +278,15 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     estrategia = estrategias.get(categoria, estrategias["otro"])
 
     prompt = f"""Eres el mejor copywriter de ventas digitales de Chile. Escribes para Instagram y cada caption tuyo genera ventas reales porque suena humano, específico y directo — nunca genérico.
+
+MARCA:
+- Nombre: {marca_nombre}
+- Nicho: {marca_nicho}
+- Tono obligatorio: {marca_tono}
+- Público principal: {marca_publico}
+- Colores de marca: {marca_colores}
+- CTA principal: {marca_cta}
+- WhatsApp oficial: {marca_whatsapp}
 
 PRODUCTO:
 - Nombre: {nombre}
@@ -255,12 +310,14 @@ REGLAS:
 2. Beneficio central en 2-3 líneas. Concreto. Qué gana exactamente el que compra.
 3. Precio como revelación: "y lo mejor: te sale en {precio} — sí, en serio."
 4. CTA directa y urgente, específica al producto. Sin "¡no lo pierdas!"
-5. Tono chileno natural, con personalidad. Puede tener humor si el producto lo permite.
+5. Tono chileno natural, con personalidad, alineado a la marca {marca_nombre}. Puede tener humor si el producto lo permite.
 6. Emojis con intención, máximo 6-8 en todo el texto.
 7. Largo: 80-120 palabras exactos.
+8. La marca debe sentirse confiable: activación clara, compra simple y atención por WhatsApp.
 
-Justo antes de los hashtags incluye exactamente:
-📲 WhatsApp: +56946557876
+Justo antes de los hashtags incluye exactamente estas dos líneas:
+{marca_cta}
+📲 WhatsApp: {marca_whatsapp}
 
 HASHTAGS (exactamente 5):
 - 2 del producto o marca
@@ -880,13 +937,17 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         detalle = titulo_producto or busqueda
 
     log(f'🔍 Ciclo libre para "{detalle}" — Cliente: {nombre_cliente}...', 'info')
+    brand = cliente.get("brand", AURAKEY_BRAND)
     prod_info = {
         "nombre": nombre_cliente,
+        "cliente_id": cliente_id,
+        "brand": brand,
         "titulo_producto": titulo_producto or busqueda,
         "detalle_producto": detalle,
         "keyword_busqueda": (titulo_producto or busqueda).split()[0],
-        "nicho": titulo_producto or busqueda,
-        "tono": "profesional, vendedor, directo y confiable"
+        "nicho": brand.get("nicho", titulo_producto or busqueda),
+        "tono": brand.get("tono", "profesional, vendedor, directo y confiable"),
+        "whatsapp": brand.get("whatsapp", "")
     }
     try:
         tendencias_reales = buscar_tendencias_reales_api(prod_info)
@@ -1154,12 +1215,18 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
         nombre_final = titulo_producto if titulo_producto else descripcion_producto.split(".")[0]
         detalle_final = f"{titulo_producto}. {descripcion_producto}" if titulo_producto else descripcion_producto
         ficha = normalizar_producto_info(titulo_producto, descripcion_producto)
+        brand = cliente.get("brand", AURAKEY_BRAND)
         prod_info = {
             'nombre': cliente['nombre'],
+            'cliente_id': cliente_id,
+            'brand': brand,
             'titulo_producto': ficha.get("nombre") or nombre_final,
             'detalle_producto': detalle_final,
             'keyword_busqueda': (ficha.get("nombre") or nombre_final).split()[0],
             'ficha': ficha,
+            'nicho': brand.get("nicho", "productos digitales"),
+            'tono': brand.get("tono", "chileno, directo y vendedor"),
+            'whatsapp': brand.get("whatsapp", ""),
         }
         tendencias = buscar_tendencias_reales_api(prod_info)
         caption = generar_post_estricto(prod_info, tendencias, precio)
@@ -1281,12 +1348,18 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
         # 5. Normalizar ficha del producto antes de pasarla al copywriter
         ficha = normalizar_producto_info(titulo_producto, descripcion_producto)
 
+        brand = cliente.get("brand", AURAKEY_BRAND)
         prod_info = {
             'nombre': cliente['nombre'],
+            'cliente_id': cliente_id,
+            'brand': brand,
             'titulo_producto': ficha.get("nombre") or nombre_final,
             'detalle_producto': detalle_final,
             'keyword_busqueda': (ficha.get("nombre") or nombre_final).split()[0],
             'ficha': ficha,
+            'nicho': brand.get("nicho", "productos digitales"),
+            'tono': brand.get("tono", "chileno, directo y vendedor"),
+            'whatsapp': brand.get("whatsapp", ""),
         }
         tendencias = buscar_tendencias_reales_api(prod_info)
         caption = generar_post_estricto(prod_info, tendencias, precio)
