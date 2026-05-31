@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, redirect
 from flask_socketio import SocketIO, emit
 import json
 import os
@@ -10,6 +10,7 @@ import random
 from groq import Groq
 import requests as req
 from functools import wraps
+from urllib.parse import quote
 
 # Auto-instalar Pillow si no está disponible (necesario para overlay de texto en imágenes)
 try:
@@ -86,6 +87,60 @@ def normalizar_whatsapp(numero):
     return numero if numero.startswith("+") else f"+{numero}"
 
 
+def normalizar_whatsapp_wa(numero):
+    """Devuelve solo dígitos para enlaces wa.me: 569..."""
+    return "".join(ch for ch in str(numero or "") if ch.isdigit())
+
+
+def obtener_mensaje_whatsapp_borrador(prod_info):
+    """Crea un mensaje corto y universal para que el comprador lo envíe por WhatsApp."""
+    ficha = (prod_info or {}).get("ficha") or {}
+    brand = (prod_info or {}).get("brand") or obtener_brand_cliente((prod_info or {}).get("cliente_id", "aurakey"))
+    nombre = ficha.get("nombre") or (prod_info or {}).get("titulo_producto") or (prod_info or {}).get("detalle_producto") or "un producto"
+    mensaje = ficha.get("mensaje_whatsapp") or f"Hola, quiero consultar por {nombre}"
+    mensaje = str(mensaje).strip().strip('"')
+    if not mensaje.lower().startswith(("hola", "buenas")):
+        mensaje = f"Hola, {mensaje[0].lower() + mensaje[1:] if mensaje else f'quiero consultar por {nombre}'}"
+    if brand.get("nombre") and brand.get("nombre", "").lower() not in mensaje.lower():
+        mensaje = f"{mensaje} en {brand.get('nombre')}"
+    return mensaje[:180]
+
+
+def crear_whatsapp_directo(cliente_id="aurakey", mensaje=""):
+    """Construye un enlace directo a WhatsApp sin usar API oficial."""
+    brand = obtener_brand_cliente(cliente_id)
+    numero = normalizar_whatsapp_wa(brand.get("whatsapp", ""))
+    if not numero:
+        return ""
+    texto = quote(mensaje or f"Hola, quiero consultar por un producto de {brand.get('nombre', 'Aurakey')}")
+    return f"https://wa.me/{numero}?text={texto}"
+
+
+def crear_whatsapp_link(cliente_id="aurakey", borrador_id=None, mensaje=""):
+    """Usa tracking propio si PUBLIC_BASE_URL está configurado; si no, cae a wa.me directo."""
+    directo = crear_whatsapp_directo(cliente_id, mensaje)
+    base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    if base_url and borrador_id:
+        tracking = f"{base_url}/w/{cliente_id}/{borrador_id}"
+        return {"preferido": tracking, "tracking": tracking, "directo": directo}
+    return {"preferido": directo, "tracking": "", "directo": directo}
+
+
+def enriquecer_borrador_whatsapp(entrada, prod_info):
+    """Agrega link, mensaje y contador WhatsApp a cada borrador/historial."""
+    if not entrada:
+        return entrada
+    cliente_id = entrada.get("cliente_id", (prod_info or {}).get("cliente_id", "aurakey"))
+    mensaje = obtener_mensaje_whatsapp_borrador(prod_info or {})
+    links = crear_whatsapp_link(cliente_id, entrada.get("id"), mensaje)
+    entrada["whatsapp_mensaje"] = mensaje
+    entrada["whatsapp_link"] = links.get("preferido", "")
+    entrada["whatsapp_link_directo"] = links.get("directo", "")
+    entrada["whatsapp_link_tracking"] = links.get("tracking", "")
+    entrada["clicks_whatsapp"] = entrada.get("clicks_whatsapp", 0)
+    return entrada
+
+
 def obtener_brand_cliente(cliente_id="aurakey"):
     """Retorna el brand kit del cliente. Por ahora Aurakey es la marca principal."""
     cliente = CLIENTES.get(cliente_id) if "CLIENTES" in globals() else None
@@ -113,6 +168,7 @@ for clave, cliente in CLIENTES.items():
         'comentarios': 0,
         'likes': 0,
         'interacciones': 0,
+        'clicks_whatsapp': 0,
         'ultimo_ciclo': 'Nunca'
     }
 
@@ -1115,6 +1171,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'con_referencia': bool(imagen_referencia_url),
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
+        enriquecer_borrador_whatsapp(entrada, prod_info)
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
         log(f'✅ Borrador generado — pendiente de aprobación para {"Reel" if hacer_reel else "Post"}', 'success')
@@ -1193,6 +1250,31 @@ def _buscar_borrador(borrador_id):
         if entrada.get('id') == borrador_id:
             return entrada
     return None
+
+
+@app.route('/w/<cliente_id>/<borrador_id>')
+def redirigir_whatsapp(cliente_id, borrador_id):
+    """Tracking básico: cuenta clics y redirige a WhatsApp sin usar WhatsApp API."""
+    cliente = CLIENTES.get(cliente_id)
+    if not cliente:
+        return Response("Cliente no encontrado.", 404)
+
+    borrador = _buscar_borrador(borrador_id)
+    mensaje = (borrador or {}).get('whatsapp_mensaje') or f"Hola, quiero consultar por un producto de {cliente.get('nombre', 'Aurakey')}"
+    link_directo = crear_whatsapp_directo(cliente_id, mensaje)
+    if not link_directo:
+        return Response("WhatsApp no configurado para este cliente.", 400)
+
+    if cliente_id not in stats_global:
+        stats_global[cliente_id] = {'nombre': cliente.get('nombre', cliente_id), 'posts': 0, 'comentarios': 0, 'likes': 0, 'interacciones': 0, 'clicks_whatsapp': 0, 'ultimo_ciclo': 'Nunca'}
+    stats_global[cliente_id]['clicks_whatsapp'] = stats_global[cliente_id].get('clicks_whatsapp', 0) + 1
+
+    if borrador is not None:
+        borrador['clicks_whatsapp'] = borrador.get('clicks_whatsapp', 0) + 1
+
+    socketio.emit('stats', stats_global)
+    log(f"📲 Click WhatsApp registrado para {cliente.get('nombre')} — borrador {borrador_id}", "success")
+    return redirect(link_directo, code=302)
 
 
 def publicar_post_instagram_url(imagen_url, caption, cliente_id="aurakey"):
@@ -1356,6 +1438,7 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
             'con_referencia': False,
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
+        enriquecer_borrador_whatsapp(entrada, prod_info)
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
         log("📝 Borrador listo. Revísalo y apruébalo desde el panel.", "success")
@@ -1496,6 +1579,7 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
 
         # Guardar en historial del dashboard
         entrada = {
+            'id': _nuevo_borrador_id(),
             'cliente': cliente['nombre'],
             'cliente_id': cliente_id,
             'tendencia': tendencias[0] if tendencias else '—',
@@ -1503,10 +1587,12 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
             'prompt_imagen': f"[Imagen propia{' + overlay: ' + overlay['texto'] if overlay and overlay.get('texto') else ''}]",
             'imagen_url': imagen_url_final,
             'publicado': publicado,
+            'estado': 'publicado' if publicado else 'generado',
             'reel_generado': reel_generado,
             'con_referencia': False,
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
+        enriquecer_borrador_whatsapp(entrada, prod_info)
         captions_guardados.insert(0, entrada)
         socketio.emit('caption', entrada)
         stats_global[cliente_id]['posts'] += 1
