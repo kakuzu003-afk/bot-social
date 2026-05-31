@@ -1640,6 +1640,7 @@ def api_generar_imagen_propia():
 @app.route('/api/publicar_borrador', methods=['POST'])
 @requiere_auth
 def api_publicar_borrador():
+    global bot_activo
     data = request.get_json() or {}
     borrador_id = data.get('id')
     caption_editado = data.get('caption', '').strip()
