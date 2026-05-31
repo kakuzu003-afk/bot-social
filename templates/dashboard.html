@@ -166,6 +166,7 @@ body::after {
 /* ─── PANEL SCROLL FIX + STICKY BUTTONS ─── */
 .tab-panels {
   flex:1;
+  min-height:0; /* importante en flex: evita que el panel crezca en móvil */
   overflow-y:auto;
   scrollbar-width:thin;
   scrollbar-color:var(--border2) transparent;
@@ -179,10 +180,10 @@ body::after {
 /* Botón sticky al fondo del sidebar */
 .btn-sticky-wrap {
   position:sticky;
-  bottom:0;
+  bottom:env(safe-area-inset-bottom, 0px);
   background:linear-gradient(to top, var(--bg2) 70%, transparent);
   padding:10px 16px 12px;
-  margin:0 -16px -80px; /* compensar el padding del panel */
+  margin:12px -16px 0; /* sin margen negativo: evita que el botón se pierda en móvil */
   z-index:10;
 }
 
@@ -598,6 +599,71 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
   .caption-grid { grid-template-columns:1fr; }
   .log-box { height:150px; }
 }
+
+
+/* ─── FIX MOBILE PUBLICAR: evita que la imagen expanda el panel ─── */
+#panel-publicar .btn-sticky-wrap {
+  border-top:1px solid rgba(157,111,255,0.18);
+}
+
+@media (max-width:768px) {
+  .sidebar {
+    height:100dvh;
+    max-height:100dvh;
+  }
+
+  .tab-panels {
+    min-height:0;
+    max-height:calc(100dvh - var(--tab-h) - 62px);
+    overflow-y:auto;
+  }
+
+  .tab-panel {
+    padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  #panel-publicar .upload-section {
+    padding:10px;
+  }
+
+  #panel-publicar #previewScroll {
+    max-height:clamp(110px, 24dvh, 150px) !important;
+    overflow-y:auto !important;
+  }
+
+  #panel-publicar #overlayCanvas {
+    width:100% !important;
+    height:auto !important;
+  }
+
+  #panel-publicar .upload-drop-zone.has-image {
+    padding:7px 8px;
+  }
+
+  #panel-publicar .upload-drop-zone.has-image .upload-drop-icon {
+    display:none;
+  }
+
+  #panel-publicar .upload-drop-zone.has-image .upload-drop-text {
+    font-size:8px;
+    line-height:1.25;
+  }
+
+  #panel-publicar .overlay-section {
+    margin-top:7px;
+    padding:7px;
+  }
+
+  #panel-publicar .btn-sticky-wrap {
+    position:sticky;
+    bottom:env(safe-area-inset-bottom, 0px);
+    margin:12px -10px 0;
+    padding:10px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(to top, var(--bg2) 78%, rgba(11,15,23,0));
+    z-index:50;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1191,6 +1257,9 @@ async function cargarImagenPropia(input) {
     img.onload = () => {
       overlayImageObj = img;
       document.getElementById('previewContainer').style.display = 'block';
+      const uploadDropZone = document.getElementById('uploadDropZone');
+      uploadDropZone.classList.add('has-image');
+      uploadDropZone.querySelector('.upload-drop-text').innerHTML = 'Toca para <strong>cambiar imagen</strong>';
       renderOverlayCanvas();
     };
     img.src = e.target.result;
