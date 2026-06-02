@@ -838,11 +838,11 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 
             <div class="field-label" style="margin-top:7px;">Posición</div>
             <div class="pos-presets">
-              <button class="pos-btn" onclick="setCicloPosicion('top')">▲ Arriba</button>
-              <button class="pos-btn ciclo-pos-sel" id="ciclo-pos-center" onclick="setCicloPosicion('center')">● Centro</button>
-              <button class="pos-btn" onclick="setCicloPosicion('bottom')">▼ Abajo</button>
-              <button class="pos-btn" onclick="setCicloPosicion('quarter')">↑ Cuarto</button>
-              <button class="pos-btn" onclick="setCicloPosicion('threequarter')">↓ Tres cuartos</button>
+              <button class="pos-btn" onclick="setCicloPosicion('top',this)">▲ Arriba</button>
+              <button class="pos-btn ciclo-pos-sel" id="ciclo-pos-center" onclick="setCicloPosicion('center',this)">● Centro</button>
+              <button class="pos-btn" onclick="setCicloPosicion('bottom',this)">▼ Abajo</button>
+              <button class="pos-btn" onclick="setCicloPosicion('quarter',this)">↑ Cuarto</button>
+              <button class="pos-btn" onclick="setCicloPosicion('threequarter',this)">↓ Tres cuartos</button>
             </div>
 
             <div class="field-label" style="margin-top:7px;">Color glow</div>
@@ -1344,10 +1344,10 @@ function setGlow(key, hex) {
 function toggleCicloOverlayControls(checked) {
   document.getElementById('cicloOverlayControls').style.display = checked ? 'block' : 'none';
 }
-function setCicloPosicion(pos) {
+function setCicloPosicion(pos, el) {
   cicloPosicion = pos;
   document.querySelectorAll('#cicloOverlayControls .pos-btn').forEach(b => b.classList.remove('ciclo-pos-sel'));
-  event.target.classList.add('ciclo-pos-sel');
+  if (el) el.classList.add('ciclo-pos-sel');
 }
 function setCicloGlow(key, hex) {
   cicloGlowKey = key; cicloGlowColor = hex;
