@@ -1694,13 +1694,13 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
 @requiere_auth
 def api_generar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = data.get('imagen_url', '').strip()
-    cliente_id = data.get('cliente_id', 'aurakey')
-    precio = data.get('precio', 'Consultar por DM')
-    modo = data.get('modo', 'post')
-    mood = data.get('mood', 'energico')
+    imagen_url = (data.get('imagen_url') or '').strip()
+    cliente_id = data.get('cliente_id') or 'aurakey'
+    precio = data.get('precio') or 'Consultar por DM'
+    modo = data.get('modo') or 'post'
+    mood = data.get('mood') or 'energico'
     overlay = data.get('overlay', None)
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -1786,13 +1786,13 @@ def api_publicar_borrador():
 @requiere_auth
 def api_publicar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = data.get('imagen_url', '').strip()
-    cliente_id = data.get('cliente_id', 'aurakey')
-    precio = data.get('precio', 'Consultar por DM')
-    modo = data.get('modo', 'post')
-    mood = data.get('mood', 'energico')
+    imagen_url = (data.get('imagen_url') or '').strip()
+    cliente_id = data.get('cliente_id') or 'aurakey'
+    precio = data.get('precio') or 'Consultar por DM'
+    modo = data.get('modo') or 'post'
+    mood = data.get('mood') or 'energico'
     overlay = data.get('overlay', None)
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -1818,7 +1818,7 @@ def api_ciclo():
     data = request.get_json() or {}
     precio = data.get('precio', 'Consultar por interno')
     busqueda_libre = data.get('busqueda_libre', '').strip()
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
     cliente_id = data.get('cliente_id', 'aurakey')
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
@@ -1925,7 +1925,7 @@ def api_scheduler_set():
     scheduler_config["activo"] = bool(data.get("activo", False))
     scheduler_config["intervalo_horas"] = int(data.get("intervalo_horas", 2))
     scheduler_config["busqueda"] = data.get("busqueda", "").strip()
-    scheduler_config["titulo_producto"] = data.get("titulo_producto", "").strip() or None
+    scheduler_config["titulo_producto"] = (data.get("titulo_producto") or "").strip() or None
     scheduler_config["precio"] = data.get("precio", "Consultar por DM")
     scheduler_config["cliente_id"] = data.get("cliente_id", "aurakey")
     scheduler_config["mood"] = data.get("mood", "energico")
