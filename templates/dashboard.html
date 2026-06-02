@@ -408,6 +408,29 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   cursor:pointer; transition:all .15s; text-align:center;
 }
 .pos-btn.sel { background:rgba(0,229,255,0.1); border-color:var(--cyan); color:var(--cyan); font-weight:700; }
+.overlay-slider-row {
+  display:grid;
+  grid-template-columns:54px 1fr 38px;
+  align-items:center;
+  gap:7px;
+  margin-top:7px;
+}
+.overlay-slider-row span {
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  color:var(--text2);
+}
+.overlay-slider-row output {
+  font-family:'Space Mono',monospace;
+  font-size:9px;
+  color:var(--cyan);
+  text-align:right;
+}
+.overlay-range {
+  width:100%;
+  accent-color:var(--cyan);
+  cursor:pointer;
+}
 .glow-colors { display:flex; gap:5px; margin-top:5px; flex-wrap:wrap; }
 .glow-swatch {
   width:20px; height:20px; border-radius:50%;
@@ -680,6 +703,204 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
   }
 }
 
+/* ─── PURPLE NEON THEME ─────────────────────────────────── */
+:root {
+  --bg:     #070412;
+  --bg2:    #0d071c;
+  --bg3:    #150b2b;
+  --bg4:    #21113f;
+  --border: #342052;
+  --border2:#4a2b75;
+  --cyan:   #d946ef;
+  --purple: #c084fc;
+  --green:  #30f2b2;
+  --amber:  #f9d56e;
+  --red:    #ff5d8f;
+  --text:   #eee7ff;
+  --text2:  #a996c8;
+  --text3:  #6d5a8e;
+  --glow:   rgba(192,132,252,0.34);
+  --glow2:  rgba(217,70,239,0.22);
+}
+
+body {
+  background:
+    linear-gradient(145deg, rgba(25,8,48,0.96) 0%, rgba(7,4,18,1) 42%, rgba(13,7,28,1) 100%);
+}
+body::after {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(217,70,239,0.012) 3px, rgba(217,70,239,0.012) 4px),
+    linear-gradient(90deg, rgba(192,132,252,0.04), transparent 28%, rgba(48,242,178,0.025) 72%, transparent);
+}
+
+.header {
+  background:linear-gradient(180deg, rgba(23,10,48,0.96), rgba(12,6,28,0.96));
+  border-bottom-color:rgba(192,132,252,0.28);
+  box-shadow:0 10px 38px rgba(0,0,0,0.32), 0 0 26px rgba(192,132,252,0.12);
+  backdrop-filter:blur(14px);
+}
+.logo-icon {
+  border-color:rgba(192,132,252,0.86);
+  background:linear-gradient(145deg, rgba(192,132,252,0.18), rgba(217,70,239,0.08));
+  box-shadow:0 0 18px var(--glow), inset 0 0 18px rgba(255,255,255,0.04);
+}
+.logo-text span,
+.panel-title .accent,
+.tab-btn.active,
+.caption-tag,
+.search-icon {
+  color:var(--purple);
+  text-shadow:0 0 16px rgba(192,132,252,0.5);
+}
+
+.sidebar {
+  background:linear-gradient(180deg, rgba(18,8,38,0.98), rgba(10,5,24,0.98));
+  border-right-color:rgba(192,132,252,0.22);
+  box-shadow:12px 0 34px rgba(0,0,0,0.28), inset -1px 0 0 rgba(255,255,255,0.025);
+}
+.stats-strip,
+.tab-nav,
+.caption-card-header {
+  border-color:rgba(192,132,252,0.18);
+}
+.stat-cell {
+  border-right-color:rgba(192,132,252,0.14);
+}
+.stat-val {
+  text-shadow:0 0 18px rgba(192,132,252,0.38);
+}
+.tab-btn:hover {
+  color:#fff;
+  background:rgba(192,132,252,0.06);
+}
+.tab-btn.active {
+  border-bottom-color:var(--purple);
+  background:linear-gradient(180deg, rgba(192,132,252,0.08), rgba(192,132,252,0.02));
+}
+
+.btn-sticky-wrap,
+#panel-publicar .btn-sticky-wrap {
+  background:linear-gradient(to top, rgba(13,7,28,0.98) 72%, rgba(13,7,28,0));
+}
+
+select,
+.text-input,
+.search-input,
+textarea.caption-ta,
+.ref-input {
+  background:linear-gradient(180deg, rgba(27,13,55,0.96), rgba(17,8,36,0.96));
+  border-color:rgba(192,132,252,0.22);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.015);
+}
+select:focus,
+.text-input:focus,
+.search-input:focus,
+.product-title-field:focus,
+textarea.caption-ta:focus {
+  border-color:rgba(216,180,254,0.92);
+  box-shadow:0 0 0 2px rgba(192,132,252,0.16), 0 0 22px rgba(192,132,252,0.12);
+}
+select option {
+  background:#150b2b;
+}
+.product-title-field,
+.toggle-row,
+.mode-tag,
+.ref-section,
+.upload-section,
+.overlay-section,
+.scheduler-panel,
+.client-chip,
+.log-box,
+.caption-card,
+.no-image,
+.empty-state {
+  background:linear-gradient(180deg, rgba(23,10,48,0.92), rgba(13,7,28,0.92));
+  border-color:rgba(192,132,252,0.2);
+  box-shadow:0 12px 34px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.035);
+}
+.upload-drop-zone {
+  background:linear-gradient(180deg, rgba(192,132,252,0.08), rgba(217,70,239,0.035));
+  border-color:rgba(192,132,252,0.42);
+  box-shadow:inset 0 0 28px rgba(192,132,252,0.035);
+}
+.upload-drop-zone:hover,
+.upload-drop-zone.dragover,
+.client-chip.selected,
+.btn-imode.activo,
+.btn-upload-mode.activo,
+.pos-btn.sel,
+.sched-interval-btn.sel {
+  background:rgba(192,132,252,0.14);
+  border-color:rgba(216,180,254,0.72);
+  color:#f4eaff;
+  box-shadow:0 0 18px rgba(192,132,252,0.14);
+}
+
+.btn-execute,
+.btn-publish {
+  background:linear-gradient(135deg, #f0abfc 0%, #c084fc 42%, #7c3aed 100%);
+  color:#160725;
+  box-shadow:0 0 22px rgba(192,132,252,0.26), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.btn-execute:hover,
+.btn-publish:hover {
+  box-shadow:0 8px 28px rgba(192,132,252,0.36), 0 0 38px rgba(217,70,239,0.2);
+}
+.btn-execute.loading,
+.btn-publish.loading {
+  background:rgba(23,10,48,0.9);
+  color:var(--purple);
+  border-color:rgba(192,132,252,0.45);
+}
+.sw-track.on,
+.toggle-sched-track.on {
+  background:linear-gradient(135deg, #f0abfc, #a855f7);
+  box-shadow:0 0 16px rgba(192,132,252,0.28);
+}
+.sw-thumb,
+.toggle-sched-thumb {
+  background:#140722;
+  box-shadow:0 0 8px rgba(255,255,255,0.16);
+}
+
+.status-pill,
+.badge-active,
+.published-badge.yes {
+  background:rgba(48,242,178,0.1);
+  border-color:rgba(48,242,178,0.24);
+  box-shadow:0 0 18px rgba(48,242,178,0.08);
+}
+.status-dot,
+.status-dot-cell,
+.sched-status-dot.on {
+  box-shadow:0 0 10px currentColor;
+}
+.count-badge,
+.mode-tag.libre {
+  background:rgba(192,132,252,0.12);
+  border-color:rgba(192,132,252,0.34);
+  color:var(--purple);
+}
+.log-line.info {
+  color:#d8b4fe;
+}
+.caption-card:hover {
+  border-color:rgba(216,180,254,0.55);
+  box-shadow:0 16px 42px rgba(0,0,0,0.24), 0 0 22px rgba(192,132,252,0.1);
+}
+.caption-card-header {
+  background:linear-gradient(180deg, rgba(35,16,68,0.92), rgba(20,9,42,0.92));
+}
+.action-btn:hover {
+  border-color:rgba(216,180,254,0.78);
+  color:#f4eaff;
+  box-shadow:0 0 14px rgba(192,132,252,0.12);
+}
+::-webkit-scrollbar-thumb {
+  background:linear-gradient(180deg, #c084fc, #7c3aed);
+}
+
 </style>
 </head>
 <body>
@@ -882,10 +1103,30 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
                 <button class="pos-btn sel" id="pos-center" onclick="setPosicion('center')">● Centro</button>
                 <button class="pos-btn"     id="pos-bottom" onclick="setPosicion('bottom')">▼ Abajo</button>
               </div>
+              <div class="overlay-slider-row">
+                <span>Tamaño</span>
+                <input type="range" class="overlay-range" id="overlaySize" min="4" max="16" step="1" value="8" oninput="setOverlaySlider('size', this.value)">
+                <output id="overlaySizeVal">8</output>
+              </div>
+              <div class="overlay-slider-row">
+                <span>X</span>
+                <input type="range" class="overlay-range" id="overlayX" min="5" max="95" step="1" value="50" oninput="setOverlaySlider('x', this.value)">
+                <output id="overlayXVal">50</output>
+              </div>
+              <div class="overlay-slider-row">
+                <span>Y</span>
+                <input type="range" class="overlay-range" id="overlayY" min="5" max="95" step="1" value="50" oninput="setOverlaySlider('y', this.value)">
+                <output id="overlayYVal">50</output>
+              </div>
+              <div class="overlay-slider-row">
+                <span>Banda</span>
+                <input type="range" class="overlay-range" id="overlayBand" min="35" max="100" step="5" value="100" oninput="setOverlaySlider('band', this.value)">
+                <output id="overlayBandVal">100</output>
+              </div>
               <div class="field-label" style="margin-top:7px;">Color glow</div>
               <div class="glow-colors">
-                <div class="glow-swatch sel" id="glow-cyan"   style="background:#00e5ff;" onclick="setGlow('cyan','#00e5ff')"   title="Cyan"></div>
-                <div class="glow-swatch"     id="glow-purple" style="background:#9d6fff;" onclick="setGlow('purple','#9d6fff')" title="Púrpura"></div>
+                <div class="glow-swatch"     id="glow-cyan"   style="background:#00e5ff;" onclick="setGlow('cyan','#00e5ff')"   title="Cyan"></div>
+                <div class="glow-swatch sel" id="glow-purple" style="background:#c084fc;" onclick="setGlow('purple','#c084fc')" title="Púrpura"></div>
                 <div class="glow-swatch"     id="glow-green"  style="background:#00e87a;" onclick="setGlow('green','#00e87a')"  title="Verde"></div>
                 <div class="glow-swatch"     id="glow-amber"  style="background:#ffc040;" onclick="setGlow('amber','#ffc040')"  title="Dorado"></div>
                 <div class="glow-swatch"     id="glow-red"    style="background:#ff4560;" onclick="setGlow('red','#ff4560')"    title="Rojo"></div>
@@ -1133,8 +1374,12 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 let urlImagenPropia  = null;
 let modoPublicacion  = 'post';
 let overlayPosicion  = 'center';
-let overlayGlowColor = '#00e5ff';
-let overlayGlowKey   = 'cyan';
+let overlayGlowColor = '#c084fc';
+let overlayGlowKey   = 'purple';
+let overlaySize      = 8;
+let overlayX         = 50;
+let overlayY         = 50;
+let overlayBand      = 100;
 
 const dropZone = document.getElementById('uploadDropZone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -1158,7 +1403,6 @@ function renderOverlayCanvas() {
   const ctx = canvas.getContext('2d');
   const img = overlayImageObj;
 
-  // Ajustar canvas al tamaño natural de la imagen
   canvas.width  = img.naturalWidth;
   canvas.height = img.naturalHeight;
   ctx.drawImage(img, 0, 0);
@@ -1171,9 +1415,9 @@ function renderOverlayCanvas() {
     const h = canvas.height;
     const padding = w * 0.06;
 
-    // Auto-fit: reducir fontSize hasta que el texto quepa
-    let fontSize = Math.max(32, Math.floor(w * 0.075));
-    const maxTextWidth = w - padding * 2;
+    let fontSize = Math.max(18, Math.floor(w * (overlaySize / 100)));
+    const bandW = Math.max(w * 0.25, w * (overlayBand / 100));
+    const maxTextWidth = Math.max(80, bandW - padding * 2);
     ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
     while (fontSize > 20 && ctx.measureText(texto).width > maxTextWidth) {
       fontSize -= 2;
@@ -1181,19 +1425,17 @@ function renderOverlayCanvas() {
     }
 
     const bandH = fontSize * 2.6;
-    let yBand;
-    if (overlayPosicion === 'top')         yBand = 0;
-    else if (overlayPosicion === 'bottom') yBand = h - bandH;
-    else                                   yBand = (h - bandH) / 2;
+    const centerX = w * (overlayX / 100);
+    const centerY = h * (overlayY / 100);
+    const xBand = Math.max(0, Math.min(w - bandW, centerX - bandW / 2));
+    const yBand = Math.max(0, Math.min(h - bandH, centerY - bandH / 2));
 
-    // Fondo oscuro semitransparente
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(0, yBand, w, bandH);
+    ctx.fillRect(xBand, yBand, bandW, bandH);
 
-    // Clip a la banda — el glow NO se derrama fuera
     ctx.save();
     ctx.beginPath();
-    ctx.rect(0, yBand, w, bandH);
+    ctx.rect(xBand, yBand, bandW, bandH);
     ctx.clip();
 
     ctx.shadowColor  = overlayGlowColor;
@@ -1202,12 +1444,11 @@ function renderOverlayCanvas() {
     ctx.fillStyle    = '#ffffff';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(texto, w / 2, yBand + bandH / 2);
+    ctx.fillText(texto, xBand + bandW / 2, yBand + bandH / 2);
 
-    ctx.restore(); // libera clip y shadow
+    ctx.restore();
   }
 
-  // Mostrar hint de scroll si la imagen es alta
   const container = document.getElementById('previewScroll');
   const hint = document.getElementById('scrollHint');
   setTimeout(() => {
@@ -1222,7 +1463,29 @@ function toggleOverlayControls(checked) {
 }
 function setPosicion(pos) {
   overlayPosicion = pos;
+  overlayY = pos === 'top' ? 16 : pos === 'bottom' ? 84 : 50;
+  document.getElementById('overlayY').value = overlayY;
+  document.getElementById('overlayYVal').textContent = overlayY;
   ['top','center','bottom'].forEach(p => document.getElementById('pos-'+p).classList.toggle('sel', p===pos));
+  renderOverlayCanvas();
+}
+function setOverlaySlider(key, val) {
+  const n = parseFloat(val);
+  if (key === 'size') {
+    overlaySize = n;
+    document.getElementById('overlaySizeVal').textContent = n;
+  } else if (key === 'x') {
+    overlayX = n;
+    document.getElementById('overlayXVal').textContent = n;
+  } else if (key === 'y') {
+    overlayY = n;
+    overlayPosicion = 'custom';
+    document.getElementById('overlayYVal').textContent = n;
+    ['top','center','bottom'].forEach(p => document.getElementById('pos-'+p).classList.remove('sel'));
+  } else if (key === 'band') {
+    overlayBand = n;
+    document.getElementById('overlayBandVal').textContent = n;
+  }
   renderOverlayCanvas();
 }
 function setGlow(key, hex) {
@@ -1335,7 +1598,15 @@ async function generarImagenPropia() {
     precio: document.getElementById('upload-precio').value || 'Consultar por DM',
     modo:   modoPublicacion,
     mood:   modoPublicacion==='reel' ? document.getElementById('upload-mood').value : null,
-    overlay: overlayActivo && textoOverlay ? {texto:textoOverlay, posicion:overlayPosicion, glow_color:overlayGlowColor} : null
+    overlay: overlayActivo && textoOverlay ? {
+      texto:textoOverlay,
+      posicion:overlayPosicion,
+      glow_color:overlayGlowColor,
+      size:overlaySize,
+      x:overlayX,
+      y:overlayY,
+      band:overlayBand
+    } : null
   };
   agregarLog(`🧠 Generando borrador como ${modoPublicacion==='reel'?'Reel':'Post'}${body.overlay?' + texto "'+textoOverlay+'"':''}…`,'info');
   try {
