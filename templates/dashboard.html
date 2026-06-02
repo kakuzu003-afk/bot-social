@@ -434,6 +434,10 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   cursor:pointer; transition:all .15s; text-align:center;
 }
 .pos-btn.sel { background:rgba(0,229,255,0.1); border-color:var(--cyan); color:var(--cyan); font-weight:700; }
+.pos-presets { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+.size-row { display:flex; align-items:center; gap:7px; margin-top:4px; }
+.ciclo-pos-sel { background:rgba(0,229,255,0.1) !important; border-color:var(--cyan) !important; color:var(--cyan) !important; font-weight:700 !important; }
+#overlayCanvas { cursor: crosshair; }
 .glow-colors { display:flex; gap:5px; margin-top:5px; flex-wrap:wrap; }
 .glow-swatch {
   width:20px; height:20px; border-radius:50%;
@@ -815,6 +819,44 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
           </div>
         </div>
 
+        <!-- TEXTO OVERLAY CICLO -->
+        <div class="overlay-section" style="margin-top:12px;">
+          <label class="overlay-toggle">
+            <span class="overlay-toggle-label">✍️ Agregar texto a la imagen</span>
+            <input type="checkbox" id="cicloToggleOverlay" onchange="toggleCicloOverlayControls(this.checked)">
+          </label>
+          <div class="overlay-controls" id="cicloOverlayControls">
+            <div class="field-label" style="margin-top:8px;">Texto</div>
+            <input type="text" class="text-input" id="cicloOverlayTexto" placeholder="Ej: OFERTA EXCLUSIVA" style="font-weight:700;">
+
+            <div class="field-label" style="margin-top:7px;">Tamaño de texto</div>
+            <div class="size-row">
+              <input type="range" class="weight-slider" id="cicloOverlayFontSize" min="12" max="120" value="48"
+                     oninput="document.getElementById('cicloFontSizeVal').textContent=this.value+'px'">
+              <span class="ref-weight-val" id="cicloFontSizeVal">48px</span>
+            </div>
+
+            <div class="field-label" style="margin-top:7px;">Posición</div>
+            <div class="pos-presets">
+              <button class="pos-btn" onclick="setCicloPosicion('top')">▲ Arriba</button>
+              <button class="pos-btn ciclo-pos-sel" id="ciclo-pos-center" onclick="setCicloPosicion('center')">● Centro</button>
+              <button class="pos-btn" onclick="setCicloPosicion('bottom')">▼ Abajo</button>
+              <button class="pos-btn" onclick="setCicloPosicion('quarter')">↑ Cuarto</button>
+              <button class="pos-btn" onclick="setCicloPosicion('threequarter')">↓ Tres cuartos</button>
+            </div>
+
+            <div class="field-label" style="margin-top:7px;">Color glow</div>
+            <div class="glow-colors">
+              <div class="glow-swatch sel" id="ciclo-glow-cyan"   style="background:#00e5ff;" onclick="setCicloGlow('cyan','#00e5ff')"   title="Cyan"></div>
+              <div class="glow-swatch"     id="ciclo-glow-purple" style="background:#9d6fff;" onclick="setCicloGlow('purple','#9d6fff')" title="Púrpura"></div>
+              <div class="glow-swatch"     id="ciclo-glow-green"  style="background:#00e87a;" onclick="setCicloGlow('green','#00e87a')"  title="Verde"></div>
+              <div class="glow-swatch"     id="ciclo-glow-amber"  style="background:#ffc040;" onclick="setCicloGlow('amber','#ffc040')"  title="Dorado"></div>
+              <div class="glow-swatch"     id="ciclo-glow-red"    style="background:#ff4560;" onclick="setCicloGlow('red','#ff4560')"    title="Rojo"></div>
+              <div class="glow-swatch"     id="ciclo-glow-white"  style="background:#ffffff;" onclick="setCicloGlow('white','#ffffff')"  title="Blanco"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- SCHEDULER -->
         <div class="field-label" style="margin-top:14px;">⏰ Programador</div>
         <div class="scheduler-panel" id="schedulerPanel">
@@ -873,6 +915,7 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
             <div id="previewScroll" style="max-height:200px; overflow-y:auto; border-radius:7px; border:1px solid rgba(157,111,255,0.3); scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:var(--border2) transparent;">
               <canvas id="overlayCanvas" style="width:100%; display:block; border-radius:7px;"></canvas>
             </div>
+            <div id="dragHint" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;padding:3px 7px;border-radius:99px;pointer-events:none;display:none;">✋ Arrastra para mover texto</div>
             <div id="scrollHint" style="display:none; position:absolute; bottom:6px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:var(--text2); font-family:'Space Mono',monospace; font-size:9px; padding:3px 8px; border-radius:99px; pointer-events:none; white-space:nowrap;">↕ Desliza para ver la imagen</div>
           </div>
           <img id="uploadPreview" style="display:none;" alt="Vista previa">
@@ -887,12 +930,24 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
             <div class="overlay-controls" id="overlayControls">
               <div class="field-label" style="margin-top:8px;">Título</div>
               <input type="text" class="text-input" id="overlayTexto" placeholder="Ej: 100 CORREOS NUEVOS" style="font-weight:700;">
-              <div class="field-label" style="margin-top:7px;">Posición</div>
-              <div class="pos-btn-row">
-                <button class="pos-btn"     id="pos-top"    onclick="setPosicion('top')">▲ Arriba</button>
-                <button class="pos-btn sel" id="pos-center" onclick="setPosicion('center')">● Centro</button>
-                <button class="pos-btn"     id="pos-bottom" onclick="setPosicion('bottom')">▼ Abajo</button>
+
+              <div class="field-label" style="margin-top:7px;">Tamaño de texto</div>
+              <div class="size-row">
+                <input type="range" class="weight-slider" id="overlayFontSize" min="12" max="120" value="48"
+                       oninput="document.getElementById('fontSizeVal').textContent=this.value+'px'; renderOverlayCanvas()">
+                <span class="ref-weight-val" id="fontSizeVal">48px</span>
               </div>
+
+              <div class="field-label" style="margin-top:7px;">Posición — <span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;">arrastra en la imagen ↕↔</span></div>
+              <div class="pos-presets">
+                <button class="pos-btn" onclick="setOverlayXY(0.5,0.12)">▲ Arriba</button>
+                <button class="pos-btn" onclick="setOverlayXY(0.5,0.5)">● Centro</button>
+                <button class="pos-btn" onclick="setOverlayXY(0.5,0.88)">▼ Abajo</button>
+                <button class="pos-btn" onclick="setOverlayXY(0.5,0.25)">↑ Cuarto</button>
+                <button class="pos-btn" onclick="setOverlayXY(0.5,0.75)">↓ Tres cuartos</button>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-top:3px;">X: <span id="posXVal">50%</span> &nbsp; Y: <span id="posYVal">50%</span></div>
+
               <div class="field-label" style="margin-top:7px;">Color glow</div>
               <div class="glow-colors">
                 <div class="glow-swatch sel" id="glow-cyan"   style="background:#00e5ff;" onclick="setGlow('cyan','#00e5ff')"   title="Cyan"></div>
@@ -1135,6 +1190,14 @@ let modoPublicacion  = 'post';
 let overlayPosicion  = 'center';
 let overlayGlowColor = '#00e5ff';
 let overlayGlowKey   = 'cyan';
+// Posición libre: fracción 0-1 de la imagen
+let overlayX = 0.5;
+let overlayY = 0.5;
+
+// ── Variables ciclo overlay ───────────────────────────────
+let cicloPosicion  = 'center';
+let cicloGlowColor = '#00e5ff';
+let cicloGlowKey   = 'cyan';
 
 const dropZone = document.getElementById('uploadDropZone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -1151,6 +1214,7 @@ dropZone.addEventListener('drop', e => {
 
 // ── Canvas overlay preview ───────────────────────────────
 let overlayImageObj = null; // HTMLImageElement guardada para redibujar
+let isDragging = false;
 
 function renderOverlayCanvas() {
   if (!overlayImageObj) return;
@@ -1169,28 +1233,26 @@ function renderOverlayCanvas() {
   if (textoActivo && texto) {
     const w = canvas.width;
     const h = canvas.height;
-    const padding = w * 0.06;
 
-    // Auto-fit: reducir fontSize hasta que el texto quepa
-    let fontSize = Math.max(32, Math.floor(w * 0.075));
-    const maxTextWidth = w - padding * 2;
-    ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
-    while (fontSize > 20 && ctx.measureText(texto).width > maxTextWidth) {
-      fontSize -= 2;
-      ctx.font = `bold ${fontSize}px "DM Sans", sans-serif`;
-    }
+    // Tamaño manual desde el slider (escalar al tamaño natural de imagen)
+    const sliderVal = parseInt(document.getElementById('overlayFontSize').value);
+    // Escalar: el slider va de 12-120 pensado para ~400px de ancho visual; escalar proporcionalmente
+    const displayWidth = canvas.offsetWidth || 400;
+    const scale = w / displayWidth;
+    let fontSize = Math.round(sliderVal * scale);
+    fontSize = Math.max(16, Math.min(fontSize, h * 0.5));
 
     const bandH = fontSize * 2.6;
-    let yBand;
-    if (overlayPosicion === 'top')         yBand = 0;
-    else if (overlayPosicion === 'bottom') yBand = h - bandH;
-    else                                   yBand = (h - bandH) / 2;
+    // posición Y centrada en overlayY (fracción)
+    const yCenterPx = overlayY * h;
+    const yBand = Math.max(0, Math.min(yCenterPx - bandH / 2, h - bandH));
+    // posición X del texto
+    const xText = overlayX * w;
 
     // Fondo oscuro semitransparente
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(0, yBand, w, bandH);
 
-    // Clip a la banda — el glow NO se derrama fuera
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, yBand, w, bandH);
@@ -1202,13 +1264,16 @@ function renderOverlayCanvas() {
     ctx.fillStyle    = '#ffffff';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(texto, w / 2, yBand + bandH / 2);
+    ctx.fillText(texto, xText, yBand + bandH / 2);
 
-    ctx.restore(); // libera clip y shadow
+    ctx.restore();
+
+    // Actualizar indicadores de posición
+    document.getElementById('posXVal').textContent = Math.round(overlayX * 100) + '%';
+    document.getElementById('posYVal').textContent = Math.round(overlayY * 100) + '%';
   }
 
   // Mostrar hint de scroll si la imagen es alta
-  const container = document.getElementById('previewScroll');
   const hint = document.getElementById('scrollHint');
   setTimeout(() => {
     hint.style.display = canvas.offsetHeight > 200 ? 'block' : 'none';
@@ -1216,8 +1281,51 @@ function renderOverlayCanvas() {
   }, 100);
 }
 
+// ── Arrastrar texto en el canvas ─────────────────────────
+function initCanvasDrag() {
+  const canvas = document.getElementById('overlayCanvas');
+  function getRelPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (clientY - rect.top)  / rect.height))
+    };
+  }
+  function startDrag(e) {
+    if (!document.getElementById('toggleOverlay').checked) return;
+    isDragging = true;
+    const pos = getRelPos(e);
+    overlayX = pos.x; overlayY = pos.y;
+    renderOverlayCanvas();
+    e.preventDefault();
+  }
+  function moveDrag(e) {
+    if (!isDragging) return;
+    const pos = getRelPos(e);
+    overlayX = pos.x; overlayY = pos.y;
+    renderOverlayCanvas();
+    e.preventDefault();
+  }
+  function endDrag() { isDragging = false; }
+  canvas.addEventListener('mousedown',  startDrag);
+  canvas.addEventListener('mousemove',  moveDrag);
+  canvas.addEventListener('mouseup',    endDrag);
+  canvas.addEventListener('touchstart', startDrag, {passive:false});
+  canvas.addEventListener('touchmove',  moveDrag,  {passive:false});
+  canvas.addEventListener('touchend',   endDrag);
+}
+
+function setOverlayXY(x, y) {
+  overlayX = x; overlayY = y;
+  renderOverlayCanvas();
+}
+
 function toggleOverlayControls(checked) {
   document.getElementById('overlayControls').style.display = checked ? 'block' : 'none';
+  const dragHint = document.getElementById('dragHint');
+  if (dragHint) dragHint.style.display = checked ? 'block' : 'none';
   renderOverlayCanvas();
 }
 function setPosicion(pos) {
@@ -1230,6 +1338,21 @@ function setGlow(key, hex) {
   document.querySelectorAll('.glow-swatch').forEach(s => s.classList.remove('sel'));
   document.getElementById('glow-'+key).classList.add('sel');
   renderOverlayCanvas();
+}
+
+// ── Ciclo overlay controls ────────────────────────────────
+function toggleCicloOverlayControls(checked) {
+  document.getElementById('cicloOverlayControls').style.display = checked ? 'block' : 'none';
+}
+function setCicloPosicion(pos) {
+  cicloPosicion = pos;
+  document.querySelectorAll('#cicloOverlayControls .pos-btn').forEach(b => b.classList.remove('ciclo-pos-sel'));
+  event.target.classList.add('ciclo-pos-sel');
+}
+function setCicloGlow(key, hex) {
+  cicloGlowKey = key; cicloGlowColor = hex;
+  document.querySelectorAll('#cicloOverlayControls .glow-swatch').forEach(s => s.classList.remove('sel'));
+  document.getElementById('ciclo-glow-'+key).classList.add('sel');
 }
 
 
@@ -1297,6 +1420,7 @@ async function cargarImagenPropia(input) {
       uploadDropZone.classList.add('has-image');
       uploadDropZone.querySelector('.upload-drop-text').innerHTML = 'Toca para <strong>cambiar imagen</strong>';
       renderOverlayCanvas();
+      initCanvasDrag();
     };
     img.src = e.target.result;
   };
@@ -1328,6 +1452,7 @@ async function generarImagenPropia() {
   btn.classList.add('loading'); btn.textContent = '⏳ Generando…';
   const overlayActivo = document.getElementById('toggleOverlay').checked;
   const textoOverlay  = document.getElementById('overlayTexto').value.trim();
+  const fontSize      = parseInt(document.getElementById('overlayFontSize').value);
   const titulo        = document.getElementById('publicar-titulo').value.trim();
   const body = {
     imagen_url: urlImagenPropia, cliente_id,
@@ -1335,7 +1460,14 @@ async function generarImagenPropia() {
     precio: document.getElementById('upload-precio').value || 'Consultar por DM',
     modo:   modoPublicacion,
     mood:   modoPublicacion==='reel' ? document.getElementById('upload-mood').value : null,
-    overlay: overlayActivo && textoOverlay ? {texto:textoOverlay, posicion:overlayPosicion, glow_color:overlayGlowColor} : null
+    overlay: overlayActivo && textoOverlay ? {
+      texto: textoOverlay,
+      posicion: overlayPosicion,
+      x: overlayX,
+      y: overlayY,
+      font_size: fontSize,
+      glow_color: overlayGlowColor
+    } : null
   };
   agregarLog(`🧠 Generando borrador como ${modoPublicacion==='reel'?'Reel':'Post'}${body.overlay?' + texto "'+textoOverlay+'"':''}…`,'info');
   try {
@@ -1402,14 +1534,25 @@ function ejecutarCiclo() {
     agregarLog('⚠️ No hay imagen de referencia. Continuando en modo solo texto…','warning');
     setModoImagen('texto');
   }
+  const cicloOverlayActivo = document.getElementById('cicloToggleOverlay').checked;
+  const cicloTextoOverlay  = document.getElementById('cicloOverlayTexto').value.trim();
+  const cicloFontSize      = parseInt(document.getElementById('cicloOverlayFontSize').value);
   const styleWeight = parseFloat(document.getElementById('styleWeight').value)||0.5;
   const body = { busqueda_libre: titulo || busqueda, precio, cliente_id, mood, hacer_reel,
     titulo_producto: titulo || null,
     imagen_referencia_url: modoImagen==='referencia' ? urlReferencia : null,
-    style_weight:          modoImagen==='referencia' ? styleWeight   : null };
+    style_weight:          modoImagen==='referencia' ? styleWeight   : null,
+    overlay: cicloOverlayActivo && cicloTextoOverlay ? {
+      texto: cicloTextoOverlay,
+      posicion: cicloPosicion,
+      font_size: cicloFontSize,
+      glow_color: cicloGlowColor
+    } : null
+  };
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text||cliente_id;
   const refInfo = modoImagen==='referencia'&&urlReferencia ? ` | ref: ✅ peso ${styleWeight}` : '';
-  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel?'sí':'no'}${refInfo}`,'info');
+  const overlayInfo = cicloOverlayActivo && cicloTextoOverlay ? ` | texto: "${cicloTextoOverlay}"` : '';
+  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel?'sí':'no'}${refInfo}${overlayInfo}`,'info');
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading'); btn.textContent = '⏳ Procesando…';
   fetch('/api/ciclo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
