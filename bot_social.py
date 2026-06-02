@@ -504,7 +504,12 @@ RESPONDE SOLO CON EL CAPTION, sin explicaciones:"""
         max_tokens=400,
         temperature=0.9,
     )
-    return response.choices[0].message.content
+    ideogram_prompt = response.choices[0].message.content.strip()
+    return (
+        f"{ideogram_prompt} "
+        "FINAL HARD RULE: generate a clean commercial background only, with zero readable text, zero letters, zero words, "
+        "zero numbers, zero logo text, zero fake UI labels, zero feature lists, and empty space reserved for manual overlay text."
+    )
 
 
 def analizar_imagen_referencia(imagen_referencia_url):
@@ -574,7 +579,8 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
     angulo_venta = ficha.get("angulo_venta", "premium commercial offer")
     elementos_visuales = ficha.get("elementos_visuales") or []
     elementos_visuales_txt = ", ".join(elementos_visuales[:5]) if elementos_visuales else "clean premium commercial elements"
-    permitir_texto = not con_referencia
+    # Ideogram puede fallar con texto pequeÃ±o o inventado. La app agrega texto exacto con overlay.
+    permitir_texto = False
 
     if con_referencia and descripcion_referencia:
         # Groq vio la imagen real: usamos su anÃ¡lisis como guÃ­a de composiciÃ³n, no como permiso para copiar texto basura.
@@ -587,7 +593,12 @@ def generar_prompt_imagen(prod_info, caption, con_referencia=False, descripcion_
         # Fallback si la visiÃ³n fallÃ³
         contexto_estilo = f"Use the uploaded reference only for style, lighting, color palette, and composition. Create a clean premium commercial visual for '{nombre}' without generated text or fake UI details."
     else:
-        contexto_estilo = f"Create a visual style that perfectly matches the official brand identity of '{nombre}'. If it is corporate software or productivity tools (like Adobe, Microsoft, etc.), use ultra-clean, premium, modern minimalist aesthetics with sleek gradients and 3D icons. If it is gaming or anime, use epic, high-tech, or cinematic styles."
+        contexto_estilo = (
+            f"Create a premium commercial visual representation for '{nombre}' based on its real category and expected brand mood, "
+            "but do not invent fake screenshots, fake app interfaces, fake browser labels, fake logos, feature lists, or readable text. "
+            "For software, subscriptions, licenses, accounts, gaming keys, or digital products, use an elegant symbolic product card, "
+            "abstract 3D device shapes, clean glow, gradients, and product-category cues instead of fabricated UI details."
+        )
 
     if permitir_texto:
         regla_texto = (
@@ -1179,6 +1190,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         gancho_usado = f"Tendencias en vivo: {', '.join(tendencias_reales[:2])}"
         log(f'ðŸ“‹ Normalizando ficha de producto para "{detalle}"...', 'info')
         ficha = normalizar_producto_info(titulo_producto or busqueda, None)
+        if titulo_producto:
+            ficha["nombre"] = titulo_producto.strip()
         prod_info['ficha'] = ficha
         prod_info['titulo_producto'] = ficha.get("nombre") or prod_info['titulo_producto']
         log(f'âœï¸ Redactando post para "{prod_info["titulo_producto"]}"...', 'info')
@@ -1470,6 +1483,8 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
         nombre_final = titulo_producto if titulo_producto else descripcion_producto.split(".")[0]
         detalle_final = f"{titulo_producto}. {descripcion_producto}" if titulo_producto else descripcion_producto
         ficha = normalizar_producto_info(titulo_producto, descripcion_producto)
+        if titulo_producto:
+            ficha["nombre"] = titulo_producto.strip()
         brand = cliente.get("brand", AURAKEY_BRAND)
         prod_info = {
             'nombre': cliente['nombre'],
@@ -1607,6 +1622,8 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
 
         # 5. Normalizar ficha del producto antes de pasarla al copywriter
         ficha = normalizar_producto_info(titulo_producto, descripcion_producto)
+        if titulo_producto:
+            ficha["nombre"] = titulo_producto.strip()
 
         brand = cliente.get("brand", AURAKEY_BRAND)
         prod_info = {
