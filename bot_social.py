@@ -982,8 +982,14 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
 # OVERLAY DE TEXTO CON GLOW NEÓN — PILLOW
 # ============================================
 
-def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00e5ff'):
-    """Dibuja texto con banda oscura + glow neón. Visible sobre cualquier fondo."""
+def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00e5ff',
+                          font_size_override=None, x_frac=None, y_frac=None):
+    """Dibuja texto con banda oscura + glow neón. Visible sobre cualquier fondo.
+
+    Si se pasan font_size_override (px del slider del dashboard), x_frac e y_frac
+    (coordenadas 0-1 del canvas preview), se usan esos valores exactos en lugar de
+    calcularlos automaticamente. Lo que el usuario vio en preview es lo que sale.
+    """
     try:
         from PIL import Image, ImageDraw, ImageFont, ImageFilter
         import textwrap
@@ -991,8 +997,16 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         img = Image.open(imagen_path).convert("RGBA")
         w, h = img.size
 
-        # Fuente más grande para que sea bien visible
-        font_size = max(52, int(w * 0.10))
+        # ── Tamano de fuente ──────────────────────────────────────────────────
+        # Prioridad: valor del slider del dashboard → fallback automatico
+        if font_size_override and int(font_size_override) > 0:
+            # El slider fue disenado para un canvas de ~400px de ancho (preview).
+            # Escalamos al ancho real de la imagen para mantener proporciones.
+            scale = w / 400.0
+            font_size = max(12, int(int(font_size_override) * scale))
+        else:
+            font_size = max(40, int(w * 0.07))  # fallback mas discreto
+
         font = None
         font_candidates = [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -1014,7 +1028,7 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         glow_hex = glow_color.lstrip('#')
         glow_rgb = tuple(int(glow_hex[i:i+2], 16) for i in (0, 2, 4))
 
-        # Wrap de texto — líneas más cortas para que quepan mejor
+        # Wrap de texto
         max_chars = max(8, int(w / (font_size * 0.62)))
         lines = textwrap.wrap(texto.upper(), width=max_chars)
         if not lines:
@@ -1037,71 +1051,72 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
         band_h = block_h + band_pad_v * 2
         band_w = min(w, max_line_w + band_pad_h * 2)
 
-        # Calcular Y según posición
-        padding = int(h * 0.07)
-        if posicion == 'top':
-            band_y = padding
-        elif posicion == 'bottom':
-            band_y = h - band_h - padding
-        else:  # center
-            band_y = (h - band_h) // 2
+        # ── Calcular posicion Y ───────────────────────────────────────────────
+        # Prioridad: coordenadas exactas del canvas (y_frac) →
+        #            luego string 'top'/'bottom'/'center'
+        if y_frac is not None:
+            # y_frac es el centro del bloque en el canvas preview (0.0 - 1.0)
+            band_y = int(float(y_frac) * h) - band_h // 2
+            band_y = max(0, min(h - band_h, band_y))
+        else:
+            padding = int(h * 0.07)
+            if posicion == 'top':
+                band_y = padding
+            elif posicion == 'bottom':
+                band_y = h - band_h - padding
+            else:  # center
+                band_y = (h - band_h) // 2
 
         block_y = band_y + band_pad_v
-        band_x = (w - band_w) // 2
 
-        # ── Capa 1: banda oscura semitransparente detrás del texto ──
+        # ── Calcular posicion X ───────────────────────────────────────────────
+        if x_frac is not None:
+            band_x = int(float(x_frac) * w) - band_w // 2
+            band_x = max(0, min(w - band_w, band_x))
+        else:
+            band_x = (w - band_w) // 2
+
+        # ── Capa 1: fondo negro semitransparente limpio (sin borde ni blur) ──
         band_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         band_draw  = ImageDraw.Draw(band_layer)
-        # Rectángulo negro 78% opaco — contraste garantizado sobre cualquier fondo
         band_draw.rectangle(
             [band_x, band_y, band_x + band_w, band_y + band_h],
-            fill=(0, 0, 0, 200)
+            fill=(0, 0, 0, 160)
         )
-        # Borde de color neón en la banda
-        band_draw.rectangle(
-            [band_x, band_y, band_x + band_w, band_y + band_h],
-            outline=(*glow_rgb, 220),
-            width=max(3, font_size // 18)
-        )
-        # Suavizar bordes de la banda ligeramente
-        band_layer = band_layer.filter(ImageFilter.GaussianBlur(radius=2))
 
-        # ── Capa 2: glow difuso del texto en color neón ──
-        glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        glow_draw  = ImageDraw.Draw(glow_layer)
-        cur_y = block_y
-        for i, line in enumerate(lines):
-            x = (w - line_widths[i]) // 2
-            # Múltiples pasadas de glow con opacidad decreciente
-            for radius_extra, alpha in [(0, 180), (0, 140), (0, 100)]:
-                glow_draw.text((x, cur_y), line, font=font, fill=(*glow_rgb, alpha))
-            cur_y += line_heights[i] + line_spacing
-        glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=font_size // 5))
-
-        # Segunda pasada de glow más amplia
+        # ── Capa 2: glow amplio del texto (halo exterior de color) ──
         glow_layer2 = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         glow_draw2  = ImageDraw.Draw(glow_layer2)
         cur_y = block_y
         for i, line in enumerate(lines):
-            x = (w - line_widths[i]) // 2
-            glow_draw2.text((x, cur_y), line, font=font, fill=(*glow_rgb, 80))
+            x = band_x + (band_w - line_widths[i]) // 2
+            glow_draw2.text((x, cur_y), line, font=font, fill=(*glow_rgb, 90))
             cur_y += line_heights[i] + line_spacing
         glow_layer2 = glow_layer2.filter(ImageFilter.GaussianBlur(radius=font_size // 2))
 
-        # ── Capa 3: texto blanco nítido con sombra oscura ──
+        # ── Capa 3: glow medio del texto (halo interior mas intenso) ──
+        glow_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        glow_draw  = ImageDraw.Draw(glow_layer)
+        cur_y = block_y
+        for i, line in enumerate(lines):
+            x = band_x + (band_w - line_widths[i]) // 2
+            for alpha in [180, 140, 100]:
+                glow_draw.text((x, cur_y), line, font=font, fill=(*glow_rgb, alpha))
+            cur_y += line_heights[i] + line_spacing
+        glow_layer = glow_layer.filter(ImageFilter.GaussianBlur(radius=font_size // 5))
+
+        # ── Capa 4: texto blanco nitido con sombra oscura ──
         text_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         text_draw  = ImageDraw.Draw(text_layer)
         cur_y = block_y
         for i, line in enumerate(lines):
-            x = (w - line_widths[i]) // 2
-            # Sombra desplazada para profundidad
+            x = band_x + (band_w - line_widths[i]) // 2
             for dx, dy in [(3, 3), (2, 2), (-1, -1)]:
                 text_draw.text((x + dx, cur_y + dy), line, font=font, fill=(0, 0, 0, 180))
-            # Texto blanco brillante
             text_draw.text((x, cur_y), line, font=font, fill=(255, 255, 255, 255))
             cur_y += line_heights[i] + line_spacing
 
-        # Combinar: imagen → banda → glow difuso → glow → texto
+        # Combinar: imagen → fondo → glow exterior → glow interior → texto
         resultado = img.copy()
         resultado = Image.alpha_composite(resultado, band_layer)
         resultado = Image.alpha_composite(resultado, glow_layer2)
@@ -1458,7 +1473,10 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
                 img_path,
                 texto=overlay['texto'],
                 posicion=overlay.get('posicion', 'center'),
-                glow_color=overlay.get('glow_color', '#00e5ff')
+                glow_color=overlay.get('glow_color', '#00e5ff'),
+                font_size_override=overlay.get('font_size'),
+                x_frac=overlay.get('x'),
+                y_frac=overlay.get('y'),
             )
 
         imagen_url_final = subir_imgbb(img_path)
@@ -1572,7 +1590,10 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
                 img_path,
                 texto=overlay['texto'],
                 posicion=overlay.get('posicion', 'center'),
-                glow_color=overlay.get('glow_color', '#00e5ff')
+                glow_color=overlay.get('glow_color', '#00e5ff'),
+                font_size_override=overlay.get('font_size'),
+                x_frac=overlay.get('x'),
+                y_frac=overlay.get('y'),
             )
 
         # 3. Subir imagen procesada (con o sin overlay) a ImgBB
@@ -1694,13 +1715,13 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
 @requiere_auth
 def api_generar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = (data.get('imagen_url') or '').strip()
-    cliente_id = data.get('cliente_id') or 'aurakey'
-    precio = data.get('precio') or 'Consultar por DM'
-    modo = data.get('modo') or 'post'
-    mood = data.get('mood') or 'energico'
+    imagen_url = data.get('imagen_url', '').strip()
+    cliente_id = data.get('cliente_id', 'aurakey')
+    precio = data.get('precio', 'Consultar por DM')
+    modo = data.get('modo', 'post')
+    mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
-    titulo_producto = (data.get('titulo_producto') or '').strip() or None
+    titulo_producto = data.get('titulo_producto', '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -1786,13 +1807,13 @@ def api_publicar_borrador():
 @requiere_auth
 def api_publicar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = (data.get('imagen_url') or '').strip()
-    cliente_id = data.get('cliente_id') or 'aurakey'
-    precio = data.get('precio') or 'Consultar por DM'
-    modo = data.get('modo') or 'post'
-    mood = data.get('mood') or 'energico'
+    imagen_url = data.get('imagen_url', '').strip()
+    cliente_id = data.get('cliente_id', 'aurakey')
+    precio = data.get('precio', 'Consultar por DM')
+    modo = data.get('modo', 'post')
+    mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
-    titulo_producto = (data.get('titulo_producto') or '').strip() or None
+    titulo_producto = data.get('titulo_producto', '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -1818,7 +1839,7 @@ def api_ciclo():
     data = request.get_json() or {}
     precio = data.get('precio', 'Consultar por interno')
     busqueda_libre = data.get('busqueda_libre', '').strip()
-    titulo_producto = (data.get('titulo_producto') or '').strip() or None
+    titulo_producto = data.get('titulo_producto', '').strip() or None
     cliente_id = data.get('cliente_id', 'aurakey')
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
@@ -1925,7 +1946,7 @@ def api_scheduler_set():
     scheduler_config["activo"] = bool(data.get("activo", False))
     scheduler_config["intervalo_horas"] = int(data.get("intervalo_horas", 2))
     scheduler_config["busqueda"] = data.get("busqueda", "").strip()
-    scheduler_config["titulo_producto"] = (data.get("titulo_producto") or "").strip() or None
+    scheduler_config["titulo_producto"] = data.get("titulo_producto", "").strip() or None
     scheduler_config["precio"] = data.get("precio", "Consultar por DM")
     scheduler_config["cliente_id"] = data.get("cliente_id", "aurakey")
     scheduler_config["mood"] = data.get("mood", "energico")
