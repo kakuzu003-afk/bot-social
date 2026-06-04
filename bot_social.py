@@ -923,13 +923,13 @@ def _only_lower_third_video(input_path, output_path, lower_third):
 
 def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
                        color_grade="none", watermark_path=None, lower_third=None,
-                       usar_watermark=True):
+                       usar_watermark=True, movimiento=None):
     """
     Genera un Reel cinematográfico premium usando ffmpeg (gratis).
-    - 6 moods con animaciones únicas (zoom, Ken Burns, pan, drift)
-    - Color grading: 8 presets de corrección de color
-    - Watermark: logo PNG en esquina (segunda pasada ffmpeg)
-    - Lower-third: texto animado con fade-in (nombre + precio)
+    - movimiento: estilo de animación independiente del mood musical
+    - mood: solo para selección de música
+    - color_grade: 8 presets de corrección de color
+    - duracion: 7, 15, 30 o 60 segundos
     Fallback: Ken Burns estándar si cualquier filtro falla.
     """
     import subprocess
@@ -937,71 +937,94 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
     ZOOM_FPS = 30
     TOTAL_FRAMES = duracion * ZOOM_FPS
 
-    # ── Filtros cinematográficos por mood ──────────────────────────────────
-    # Todos parten de una imagen 2160x3840 (2x el target 1080x1920) para
-    # tener margen de movimiento sin pérdida de calidad.
-    # zoompan usa coordenadas en píxeles de la imagen escalada.
-    MOOD_FILTERS = {
-        # Zoom-in potente desde el centro + viñeta oscura pulsante
-        "energico": (
+    # ── Filtros de movimiento cinemático (independientes del mood musical) ─
+    MOTION_FILTERS = {
+        # Zoom-in potente + viñeta pulsante — impacto inmediato
+        "zoom_dramatico": (
             "scale=2160:3840,"
-            f"zoompan=z='min(zoom+0.0018,1.35)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            "vignette=angle=PI/4:mode=backward,"
-            "eq=saturation=1.25:contrast=1.08:brightness=0.02,"
-            "unsharp=5:5:1.2:5:5:0"
-        ),
-        # Ken Burns diagonal ascendente + luz cálida de inspiración
-        "motivador": (
-            "scale=2160:3840,"
-            f"zoompan=z='min(zoom+0.0012,1.25)':x='(iw/2-(iw/zoom/2))+{TOTAL_FRAMES}*0.15-n*0.15':y='ih/2-(ih/zoom/2)-n*0.08':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            "curves=r='0/0 0.5/0.58 1/1':g='0/0 0.5/0.52 1/1':b='0/0 0.5/0.45 1/1',"
-            "eq=saturation=1.15:brightness=0.04,"
-            "unsharp=3:3:0.8:3:3:0"
-        ),
-        # Paneo lateral suave + fade-in desde negro — look corporativo premium
-        "corporativo": (
-            "scale=2160:3840,"
-            f"zoompan=z='1.15':x='(iw/2-(iw/zoom/2))+n*0.35':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            f"fade=t=in:st=0:d=1.2,"
-            "eq=saturation=0.92:contrast=1.05:brightness=0.01,"
-            "unsharp=3:3:0.6:3:3:0"
-        ),
-        # Drift flotante muy suave + leve viñeta — calma visual
-        "relajado": (
-            "scale=2160:3840,"
-            f"zoompan=z='1.10+0.08*sin(2*PI*n/{TOTAL_FRAMES})':x='iw/2-(iw/zoom/2)+20*sin(2*PI*n/{TOTAL_FRAMES}/2)':y='ih/2-(ih/zoom/2)-15*cos(2*PI*n/{TOTAL_FRAMES}/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            "vignette=angle=PI/5,"
-            "eq=saturation=0.88:contrast=1.02:brightness=0.01,"
-            "gblur=sigma=0.6"
-        ),
-        # Zoom lento oscuro + viñeta fuerte + revelado desde negro — suspense
-        "misterioso": (
-            "scale=2160:3840,"
-            f"zoompan=z='min(zoom+0.0010,1.20)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            f"fade=t=in:st=0:d=2.0,"
-            "vignette=angle=PI/3:mode=backward,"
-            "eq=saturation=0.70:contrast=1.18:brightness=-0.04,"
+            f"zoompan=z='min(zoom+0.0022,1.40)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            "vignette=angle=PI/3.5:mode=backward,"
+            "eq=saturation=1.30:contrast=1.12:brightness=0.02,"
             "unsharp=5:5:1.5:5:5:0"
         ),
-        # Zoom-in alegre + saturación vibrante + claridad alta
-        "alegre": (
+        # Ken Burns diagonal ascendente — clásico cinematográfico
+        "ken_burns": (
             "scale=2160:3840,"
-            f"zoompan=z='min(zoom+0.0015,1.28)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            "eq=saturation=1.40:contrast=1.06:brightness=0.05,"
-            "curves=r='0/0 0.6/0.65 1/1':g='0/0 0.6/0.63 1/1':b='0/0 0.6/0.60 1/1',"
-            "unsharp=3:3:1.0:3:3:0"
+            f"zoompan=z='min(zoom+0.0012,1.25)':x='(iw/2-(iw/zoom/2))+{TOTAL_FRAMES}*0.15-n*0.15':y='ih/2-(ih/zoom/2)-n*0.08':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            "eq=saturation=1.15:brightness=0.03,"
+            "unsharp=3:3:0.8:3:3:0"
+        ),
+        # Paneo lateral suave izquierda→derecha — look documental
+        "pan_lateral": (
+            "scale=2160:3840,"
+            f"zoompan=z='1.18':x='(iw/2-(iw/zoom/2))+n*0.45':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            f"fade=t=in:st=0:d=0.8,"
+            "eq=saturation=0.95:contrast=1.05:brightness=0.01,"
+            "unsharp=3:3:0.6:3:3:0"
+        ),
+        # Paneo vertical ascendente — revealing shot premium
+        "pan_vertical": (
+            "scale=2160:3840,"
+            f"zoompan=z='1.18':x='iw/2-(iw/zoom/2)':y='(ih-(ih/zoom))-n*0.40':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            f"fade=t=in:st=0:d=1.0,"
+            "eq=saturation=1.05:contrast=1.08,"
+            "unsharp=3:3:0.7:3:3:0"
+        ),
+        # Drift flotante sinusoidal — calma hipnótica
+        "drift_flotante": (
+            "scale=2160:3840,"
+            f"zoompan=z='1.12+0.06*sin(2*PI*n/{TOTAL_FRAMES})':x='iw/2-(iw/zoom/2)+25*sin(2*PI*n/{TOTAL_FRAMES}/1.5)':y='ih/2-(ih/zoom/2)-18*cos(2*PI*n/{TOTAL_FRAMES}/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            "vignette=angle=PI/5,"
+            "eq=saturation=0.90:contrast=1.02:brightness=0.01,"
+            "gblur=sigma=0.5"
+        ),
+        # Revelado desde negro + zoom lento — suspense cinematográfico
+        "revelado": (
+            "scale=2160:3840,"
+            f"zoompan=z='min(zoom+0.0010,1.20)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            f"fade=t=in:st=0:d=2.5,"
+            "vignette=angle=PI/3:mode=backward,"
+            "eq=saturation=0.72:contrast=1.20:brightness=-0.05,"
+            "unsharp=5:5:1.5:5:5:0"
+        ),
+        # Diagonal dinámica — energía y movimiento
+        "diagonal": (
+            "scale=2160:3840,"
+            f"zoompan=z='min(zoom+0.0016,1.30)':x='(iw/2-(iw/zoom/2))+n*0.28':y='ih/2-(ih/zoom/2)-n*0.18':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            "vignette=angle=PI/4:mode=backward,"
+            "eq=saturation=1.20:contrast=1.10:brightness=0.02,"
+            "unsharp=5:5:1.2:5:5:0"
+        ),
+        # Zoom-out revelador — grandiosidad visual
+        "zoom_out": (
+            "scale=2160:3840,"
+            f"zoompan=z='max(zoom-0.0014,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            f"fade=t=in:st=0:d=1.2,"
+            "eq=saturation=1.10:contrast=1.05:brightness=0.01,"
+            "unsharp=3:3:0.8:3:3:0"
         ),
     }
 
-    # Fallback universal: Ken Burns estándar si el mood no existe o el filtro falla
+    # Compatibilidad: si no hay movimiento explícito, mapear desde mood
+    _MOOD_TO_MOTION = {
+        "energico":    "zoom_dramatico",
+        "motivador":   "ken_burns",
+        "corporativo": "pan_lateral",
+        "relajado":    "drift_flotante",
+        "misterioso":  "revelado",
+        "alegre":      "diagonal",
+    }
+
+    # Fallback universal: Ken Burns estándar
     FALLBACK_FILTER = (
         "scale=2160:3840,"
         f"zoompan=z='min(zoom+0.0010,1.20)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
         "eq=saturation=1.10:contrast=1.04"
     )
 
-    # ── Construir cadena de filtros completa ────────────────────────────────
-    vf = MOOD_FILTERS.get(mood, FALLBACK_FILTER)
+    # ── Seleccionar filtro de movimiento ────────────────────────────────────
+    motion_key = movimiento or _MOOD_TO_MOTION.get(mood, "ken_burns")
+    vf = MOTION_FILTERS.get(motion_key, FALLBACK_FILTER)
 
     # Inyectar color grade (si no es "none")
     cg = COLOR_GRADES.get(color_grade or "none", "")
@@ -1036,12 +1059,12 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         wm_log = "+ wm" if usar_watermark and (watermark_path or os.path.exists(LOGO_PATH_DEFAULT)) else ""
         lt_log = "+ lower3rd" if (lower_third and lower_third.get('texto')) else ""
         cg_log = f"+ {color_grade}" if cg else ""
-        log(f"🎬 Generando Reel premium — mood:{mood}{cg_log}{wm_log}{lt_log} ({duracion}s)...", "info")
+        log(f"🎬 Generando Reel — mov:{motion_key} | música:{mood}{cg_log}{wm_log}{lt_log} ({duracion}s)...", "info")
 
         result = _run_ffmpeg(vf, tmp_path)
 
         if result.returncode != 0:
-            log(f"⚠️ Filtro '{mood}' falló. Reintentando con Ken Burns estándar...", "warning")
+            log(f"⚠️ Filtro '{motion_key}' falló. Reintentando con Ken Burns estándar...", "warning")
             result = _run_ffmpeg(FALLBACK_FILTER, tmp_path)
 
         if result.returncode != 0:
@@ -1067,7 +1090,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
             os.rename(tmp_path, final_path)
 
         size_mb = os.path.getsize(final_path) / (1024 * 1024)
-        log(f"✅ Reel generado → {final_path} ({size_mb:.1f} MB) | mood:{mood}{wm_log}{lt_log}", "success")
+        log(f"✅ Reel generado → {final_path} ({size_mb:.1f} MB) | mov:{motion_key} | música:{mood}{wm_log}{lt_log}", "success")
         return final_path
 
     except FileNotFoundError:
@@ -1552,7 +1575,8 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico",
                 hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None,
-                color_grade="none", lower_third=None, usar_watermark=True):
+                color_grade="none", lower_third=None, usar_watermark=True, duracion_reel=15,
+                movimiento=None):
     global bot_activo
 
     # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
@@ -1641,6 +1665,8 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'tipo_publicacion': 'reel' if hacer_reel else 'post',
             'mood': mood,
             'color_grade': color_grade or 'none',
+            'movimiento': movimiento,
+            'duracion_reel': int(duracion_reel or 15),
             'lower_third': lower_third or {},
             'usar_watermark': usar_watermark,
             'reel_generado': False,
@@ -1783,7 +1809,8 @@ def publicar_post_instagram_url(imagen_url, caption, cliente_id="aurakey"):
         return False
 
 
-def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None):
+def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None,
+                                         color_grade="none", movimiento=None, duracion=15):
     """Analiza imagen, aplica overlay opcional, genera caption y guarda un borrador pendiente."""
     global bot_activo
     with _bot_lock:
@@ -1881,6 +1908,9 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
             'estado': 'pendiente',
             'tipo_publicacion': modo,
             'mood': mood,
+            'color_grade': color_grade,
+            'movimiento': movimiento,
+            'duracion_reel': duracion,
             'reel_generado': False,
             'con_referencia': False,
             'fecha': datetime.now().strftime('%d/%m %H:%M')
@@ -1899,7 +1929,8 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
         socketio.emit('bot_status', {'activo': False})
 
 
-def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None):
+def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None,
+                                color_grade="none", movimiento=None, duracion=15):
     """Analiza imagen con visión, aplica overlay opcional, genera caption y publica."""
     global bot_activo
     with _bot_lock:
@@ -2007,7 +2038,13 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
             audio_path = buscar_musica_pixabay(mood or "energico")
             video_path = None
             if audio_path:
-                video_path = generar_video_reel(img_path, audio_path, mood=mood or "energico")
+                video_path = generar_video_reel(
+                    img_path, audio_path,
+                    duracion=int(duracion or 15),
+                    mood=mood or "energico",
+                    color_grade=color_grade or "none",
+                    movimiento=movimiento or None,
+                )
                 reel_generado = bool(video_path)
             if video_path and meta_token and ig_user_id:
                 publicado = publicar_reel_instagram(video_path, caption, cliente_id)
@@ -2063,6 +2100,9 @@ def api_generar_imagen_propia():
     mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
     titulo_producto = (data.get('titulo_producto') or '').strip() or None
+    color_grade = data.get('color_grade', 'none')
+    movimiento = data.get('movimiento') or None
+    duracion = int(data.get('duracion', 15))
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2072,7 +2112,8 @@ def api_generar_imagen_propia():
 
     hilo = threading.Thread(
         target=generar_borrador_imagen_propia_task,
-        args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto),
+        args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto,
+              color_grade, movimiento, duracion),
         daemon=True
     )
     hilo.start()
@@ -2120,8 +2161,10 @@ def api_publicar_borrador():
             audio_path = buscar_musica_pixabay(borrador.get('mood') or 'energico')
             video_path = generar_video_reel(
                 img_path, audio_path,
+                duracion=int(borrador.get('duracion_reel', 15)),
                 mood=borrador.get('mood') or 'energico',
                 color_grade=borrador.get('color_grade', 'none'),
+                movimiento=borrador.get('movimiento') or None,
                 lower_third=borrador.get('lower_third') or None,
                 usar_watermark=borrador.get('usar_watermark', True),
             ) if audio_path else None
@@ -2170,6 +2213,9 @@ def api_publicar_imagen_propia():
     mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
     titulo_producto = (data.get('titulo_producto') or '').strip() or None
+    color_grade = data.get('color_grade', 'none')
+    movimiento = data.get('movimiento') or None
+    duracion = int(data.get('duracion', 15))
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2179,7 +2225,8 @@ def api_publicar_imagen_propia():
 
     hilo = threading.Thread(
         target=publicar_imagen_propia_task,
-        args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto),
+        args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto,
+              color_grade, movimiento, duracion),
         daemon=True
     )
     hilo.start()
@@ -2204,6 +2251,8 @@ def api_ciclo():
     color_grade = data.get('color_grade', 'none')
     lower_third = data.get('lower_third', None)
     usar_watermark = bool(data.get('usar_watermark', True))
+    duracion_reel = int(data.get('duracion_reel', 15))
+    movimiento = data.get('movimiento') or None
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     with _bot_lock:
@@ -2218,12 +2267,13 @@ def api_ciclo():
             'imagen_referencia_url': imagen_referencia_url, 'style_weight': style_weight,
             'titulo_producto': titulo_producto, 'color_grade': color_grade,
             'lower_third': lower_third, 'usar_watermark': usar_watermark,
+            'duracion_reel': duracion_reel, 'movimiento': movimiento,
         }
     )
     hilo.daemon = True
     hilo.start()
     detalle_log = titulo_producto or busqueda_libre
-    return jsonify({'msg': f'Ciclo iniciado para: {detalle_log} (mood:{mood}, grade:{color_grade}, wm:{usar_watermark})'})
+    return jsonify({'msg': f'Ciclo iniciado para: {detalle_log} (mood:{mood}, grade:{color_grade}, wm:{usar_watermark}, dur:{duracion_reel}s)'})
 
 # ============================================
 # SCHEDULER CONFIGURABLE

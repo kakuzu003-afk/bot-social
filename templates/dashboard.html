@@ -454,6 +454,152 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   box-shadow: 0 0 12px rgba(157,78,255,0.25);
 }
 
+/* ── Pub type selector ── */
+.pub-type-selector {
+  display:flex; gap:6px; margin:4px 0 12px;
+}
+.pub-type-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:10px 6px; border-radius:10px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  cursor:pointer; transition:all .2s;
+}
+.pub-type-btn.activo {
+  border-color:rgba(157,78,255,0.6);
+  background:rgba(157,78,255,0.12);
+  box-shadow:0 0 16px rgba(157,78,255,0.2);
+}
+.ptb-icon { font-size:22px; line-height:1; }
+.ptb-label {
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11px;
+  letter-spacing:.08em; text-transform:uppercase; color:var(--text2);
+}
+.pub-type-btn.activo .ptb-label { color:var(--purple); }
+
+.pub-section-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:var(--text3); text-transform:uppercase; letter-spacing:.06em;
+  margin-bottom:5px;
+}
+
+/* ── Music mode ── */
+.music-mode-row { display:flex; gap:5px; margin:4px 0; }
+.music-btn {
+  flex:1; padding:8px; border-radius:8px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  color:var(--text2); font-family:'Rajdhani',sans-serif; font-weight:600;
+  font-size:12px; cursor:pointer; transition:all .18s;
+}
+.music-btn.activo {
+  background:rgba(0,229,255,0.10); border-color:rgba(0,229,255,0.5);
+  color:var(--cyan); box-shadow:0 0 10px rgba(0,229,255,0.15);
+}
+
+/* ── Image source selector ── */
+.img-src-row { display:flex; gap:5px; margin:4px 0; }
+.img-src-btn {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:9px 6px; border-radius:8px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  color:var(--text2); font-family:'Rajdhani',sans-serif; font-weight:600;
+  font-size:12px; cursor:pointer; transition:all .18s;
+}
+.img-src-btn.activo {
+  background:rgba(0,229,255,0.10); border-color:rgba(0,229,255,0.55);
+  color:var(--cyan); box-shadow:0 0 10px rgba(0,229,255,0.15);
+}
+
+/* ── Reel info box ── */
+.reel-info-box {
+  display:flex; gap:10px; align-items:flex-start;
+  background:rgba(0,229,255,0.04); border:1px solid rgba(0,229,255,0.15);
+  border-radius:8px; padding:10px 12px; margin:6px 0 4px;
+}
+
+/* ── Influence slider ── */
+.influence-row {
+  display:flex; align-items:center; gap:8px; margin:4px 0 2px;
+}
+.influence-val {
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px;
+  color:var(--cyan); min-width:36px; text-align:right;
+}
+.influence-track-labels {
+  display:flex; justify-content:space-between;
+  font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--text3);
+  margin-bottom:6px;
+}
+.influence-warning {
+  display:flex; align-items:center; gap:7px;
+  background:rgba(255,196,64,0.08); border:1px solid rgba(255,196,64,0.35);
+  border-radius:7px; padding:7px 10px; margin:6px 0;
+  font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--amber);
+}
+
+/* ── Motion grid ── */
+.motion-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:5px; margin:6px 0;
+}
+.motion-btn {
+  display:flex; flex-direction:column; align-items:flex-start;
+  padding:8px 10px; border-radius:8px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  cursor:pointer; transition:all .18s; text-align:left; gap:1px;
+}
+.motion-btn:hover { border-color:rgba(157,78,255,0.4); background:rgba(157,78,255,0.06); }
+.motion-btn.activo {
+  background:rgba(157,78,255,0.12); border-color:rgba(157,78,255,0.55);
+  box-shadow:0 0 10px rgba(157,78,255,0.2);
+}
+.motion-icon {
+  font-size:16px; line-height:1; display:block;
+}
+.motion-name {
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11px;
+  color:var(--text1); text-transform:uppercase; letter-spacing:.04em; display:block;
+}
+.motion-btn.activo .motion-name { color:var(--purple); }
+.motion-desc {
+  font-family:'Share Tech Mono',monospace; font-size:8px;
+  color:var(--text3); display:block; line-height:1.2;
+}
+
+/* ── Color grade grid ── */
+.grade-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin:6px 0;
+}
+.grade-btn {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:7px 4px; border-radius:8px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  cursor:pointer; transition:all .18s;
+  font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--text2);
+}
+.grade-btn:hover { border-color:rgba(0,229,255,0.35); background:rgba(0,229,255,0.04); }
+.grade-btn.activo {
+  border-color:rgba(0,229,255,0.55); background:rgba(0,229,255,0.08);
+  color:var(--cyan); box-shadow:0 0 8px rgba(0,229,255,0.15);
+}
+.grade-swatch {
+  width:100%; height:20px; border-radius:4px; display:block;
+}
+
+/* ── Duración row ── */
+.duracion-row {
+  display:flex; gap:5px; margin:6px 0;
+}
+.dur-btn {
+  flex:1; padding:7px 4px; border-radius:8px;
+  border:1px solid var(--border2); background:rgba(6,3,15,0.8);
+  color:var(--text2); font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:13px; cursor:pointer; transition:all .18s; text-align:center;
+}
+.dur-btn:hover { border-color:rgba(0,229,255,0.4); color:var(--cyan); }
+.dur-btn.activo {
+  background:rgba(0,229,255,0.10); border-color:rgba(0,229,255,0.55);
+  color:var(--cyan); box-shadow:0 0 8px rgba(0,229,255,0.15);
+}
+
 .btn-publish {
   width:100%;
   background:linear-gradient(135deg,var(--purple),#4c1d95);
@@ -856,11 +1002,21 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
         <div class="toggle-row">
           <span class="toggle-label">🎬 Generar Reel</span>
           <label class="sw">
-            <input type="checkbox" id="toggle-reel" checked>
+            <input type="checkbox" id="toggle-reel" checked onchange="toggleCicloDuracion(this.checked)">
             <span class="sw-track on" id="toggle-track">
               <span class="sw-thumb on" id="toggle-thumb"></span>
             </span>
           </label>
+        </div>
+
+        <div id="cicloDuracionRow">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:4px;">⏱ Duración del reel</div>
+          <div class="duracion-row">
+            <button class="dur-btn ciclo-dur" data-dur="7"  onclick="setCicloDuracion(7)">7s</button>
+            <button class="dur-btn ciclo-dur activo" data-dur="15" onclick="setCicloDuracion(15)">15s</button>
+            <button class="dur-btn ciclo-dur" data-dur="30" onclick="setCicloDuracion(30)">30s</button>
+            <button class="dur-btn ciclo-dur" data-dur="60" onclick="setCicloDuracion(60)">60s</button>
+          </div>
         </div>
 
         <div class="field-label">🖼️ Modo de imagen</div>
@@ -1025,91 +1181,252 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
       <!-- ── TAB: PUBLICAR ── -->
       <div class="tab-panel" id="panel-publicar">
 
-        <div class="field-label" style="margin-top:0">🏷️ Título del producto</div>
-        <input type="text" class="product-title-field" id="publicar-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass, Kaspersky…">
-        <div class="product-title-hint">Solo para el bot — no aparece en la imagen ni el caption</div>
+        <!-- ── SELECTOR DE TIPO ── -->
+        <div class="pub-type-selector">
+          <button class="pub-type-btn activo" id="ptPost" onclick="setPubTipo('post')">
+            <span class="ptb-icon">📸</span>
+            <span class="ptb-label">POST</span>
+          </button>
+          <button class="pub-type-btn" id="ptReel" onclick="setPubTipo('reel')">
+            <span class="ptb-icon">🎬</span>
+            <span class="ptb-label">REEL</span>
+          </button>
+        </div>
 
-        <div class="field-label" style="margin-top:10px;">🖼️ Imagen propia</div>
-        <div class="upload-section">
-          <div class="upload-drop-zone" id="uploadDropZone">
-            <input type="file" id="inputImagenPropia" accept="image/*" onchange="cargarImagenPropia(this)">
-            <div class="upload-drop-icon">📤</div>
-            <div class="upload-drop-text">Arrastra o <strong>selecciona imagen</strong><br>El bot detecta el producto y prepara un borrador</div>
-          </div>
-          <!-- Vista previa con canvas para overlay en tiempo real -->
-          <div id="previewContainer" style="display:none; margin-top:7px; position:relative;">
-            <div id="previewScroll" style="max-height:200px; overflow-y:auto; border-radius:7px; border:1px solid rgba(157,111,255,0.3); scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:var(--border2) transparent;">
-              <canvas id="overlayCanvas" style="width:100%; display:block; border-radius:7px;"></canvas>
+        <!-- ══════════════════════════════════════
+             SUBPANEL — POST
+        ══════════════════════════════════════ -->
+        <div id="subpanel-post">
+
+          <div class="pub-section-label">🏷️ Título del producto</div>
+          <input type="text" class="product-title-field" id="pub-post-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass…">
+          <div class="product-title-hint">Solo para el bot — no aparece en la imagen</div>
+
+          <div class="pub-section-label" style="margin-top:10px;">🖼️ Imagen propia</div>
+          <div class="upload-section">
+            <div class="upload-drop-zone" id="uploadDropZone">
+              <input type="file" id="inputImagenPropia" accept="image/*" onchange="cargarImagenPropia(this)">
+              <div class="upload-drop-icon">📤</div>
+              <div class="upload-drop-text">Arrastra o <strong>selecciona imagen</strong><br>El bot detecta el producto y prepara un borrador</div>
             </div>
-            <div id="dragHint" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;padding:3px 7px;border-radius:99px;pointer-events:none;display:none;">✋ Arrastra para mover texto</div>
-            <div id="scrollHint" style="display:none; position:absolute; bottom:6px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:var(--text2); font-family:'Space Mono',monospace; font-size:9px; padding:3px 8px; border-radius:99px; pointer-events:none; white-space:nowrap;">↕ Desliza para ver la imagen</div>
-          </div>
-          <img id="uploadPreview" style="display:none;" alt="Vista previa">
-          <div class="upload-status" id="uploadStatus"></div>
-
-          <!-- OVERLAY DE TEXTO -->
-          <div class="overlay-section">
-            <label class="overlay-toggle">
-              <span class="overlay-toggle-label">✍️ Agregar texto a la imagen</span>
-              <input type="checkbox" id="toggleOverlay" onchange="toggleOverlayControls(this.checked)">
-            </label>
-            <div class="overlay-controls" id="overlayControls">
-              <div class="field-label" style="margin-top:8px;">Título</div>
-              <input type="text" class="text-input" id="overlayTexto" placeholder="Ej: 100 CORREOS NUEVOS" style="font-weight:700;">
-
-              <div class="field-label" style="margin-top:7px;">Tamaño de texto</div>
-              <div class="size-row">
-                <input type="range" class="weight-slider" id="overlayFontSize" min="12" max="120" value="48"
-                       oninput="document.getElementById('fontSizeVal').textContent=this.value+'px'; renderOverlayCanvas()">
-                <span class="ref-weight-val" id="fontSizeVal">48px</span>
+            <div id="previewContainer" style="display:none; margin-top:7px; position:relative;">
+              <div id="previewScroll" style="max-height:200px; overflow-y:auto; border-radius:7px; border:1px solid rgba(157,111,255,0.3); scroll-behavior:smooth; scrollbar-width:thin; scrollbar-color:var(--border2) transparent;">
+                <canvas id="overlayCanvas" style="width:100%; display:block; border-radius:7px;"></canvas>
               </div>
+              <div id="dragHint" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;padding:3px 7px;border-radius:99px;pointer-events:none;display:none;">✋ Arrastra para mover texto</div>
+              <div id="scrollHint" style="display:none; position:absolute; bottom:6px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:var(--text2); font-family:'Space Mono',monospace; font-size:9px; padding:3px 8px; border-radius:99px; pointer-events:none; white-space:nowrap;">↕ Desliza para ver la imagen</div>
+            </div>
+            <img id="uploadPreview" style="display:none;" alt="Vista previa">
+            <div class="upload-status" id="uploadStatus"></div>
 
-              <div class="field-label" style="margin-top:7px;">Posición — <span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;">arrastra en la imagen ↕↔</span></div>
-              <div class="pos-presets">
-                <button class="pos-btn" onclick="setOverlayXY(0.5,0.12)">▲ Arriba</button>
-                <button class="pos-btn" onclick="setOverlayXY(0.5,0.5)">● Centro</button>
-                <button class="pos-btn" onclick="setOverlayXY(0.5,0.88)">▼ Abajo</button>
-                <button class="pos-btn" onclick="setOverlayXY(0.5,0.25)">↑ Cuarto</button>
-                <button class="pos-btn" onclick="setOverlayXY(0.5,0.75)">↓ Tres cuartos</button>
-              </div>
-              <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-top:3px;">X: <span id="posXVal">50%</span> &nbsp; Y: <span id="posYVal">50%</span></div>
-
-              <div class="field-label" style="margin-top:7px;">Color glow</div>
-              <div class="glow-colors">
-                <div class="glow-swatch sel" id="glow-cyan"   style="background:#00e5ff;" onclick="setGlow('cyan','#00e5ff')"   title="Cyan"></div>
-                <div class="glow-swatch"     id="glow-purple" style="background:#9d6fff;" onclick="setGlow('purple','#9d6fff')" title="Púrpura"></div>
-                <div class="glow-swatch"     id="glow-green"  style="background:#00e87a;" onclick="setGlow('green','#00e87a')"  title="Verde"></div>
-                <div class="glow-swatch"     id="glow-amber"  style="background:#ffc040;" onclick="setGlow('amber','#ffc040')"  title="Dorado"></div>
-                <div class="glow-swatch"     id="glow-red"    style="background:#ff4560;" onclick="setGlow('red','#ff4560')"    title="Rojo"></div>
-                <div class="glow-swatch"     id="glow-white"  style="background:#ffffff;" onclick="setGlow('white','#ffffff')"  title="Blanco"></div>
+            <div class="overlay-section">
+              <label class="overlay-toggle">
+                <span class="overlay-toggle-label">✍️ Agregar texto a la imagen</span>
+                <input type="checkbox" id="toggleOverlay" onchange="toggleOverlayControls(this.checked)">
+              </label>
+              <div class="overlay-controls" id="overlayControls">
+                <div class="field-label" style="margin-top:8px;">Título</div>
+                <input type="text" class="text-input" id="overlayTexto" placeholder="Ej: 100 CORREOS NUEVOS" style="font-weight:700;">
+                <div class="field-label" style="margin-top:7px;">Tamaño de texto</div>
+                <div class="size-row">
+                  <input type="range" class="weight-slider" id="overlayFontSize" min="12" max="120" value="48"
+                         oninput="document.getElementById('fontSizeVal').textContent=this.value+'px'; renderOverlayCanvas()">
+                  <span class="ref-weight-val" id="fontSizeVal">48px</span>
+                </div>
+                <div class="field-label" style="margin-top:7px;">Posición — <span style="color:var(--cyan);font-family:'Space Mono',monospace;font-size:8px;">arrastra en la imagen ↕↔</span></div>
+                <div class="pos-presets">
+                  <button class="pos-btn" onclick="setOverlayXY(0.5,0.12)">▲ Arriba</button>
+                  <button class="pos-btn" onclick="setOverlayXY(0.5,0.5)">● Centro</button>
+                  <button class="pos-btn" onclick="setOverlayXY(0.5,0.88)">▼ Abajo</button>
+                  <button class="pos-btn" onclick="setOverlayXY(0.5,0.25)">↑ Cuarto</button>
+                  <button class="pos-btn" onclick="setOverlayXY(0.5,0.75)">↓ Tres cuartos</button>
+                </div>
+                <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-top:3px;">X: <span id="posXVal">50%</span> &nbsp; Y: <span id="posYVal">50%</span></div>
+                <div class="field-label" style="margin-top:7px;">Color glow</div>
+                <div class="glow-colors">
+                  <div class="glow-swatch sel" id="glow-cyan"   style="background:#00e5ff;" onclick="setGlow('cyan','#00e5ff')"   title="Cyan"></div>
+                  <div class="glow-swatch"     id="glow-purple" style="background:#9d6fff;" onclick="setGlow('purple','#9d6fff')" title="Púrpura"></div>
+                  <div class="glow-swatch"     id="glow-green"  style="background:#00e87a;" onclick="setGlow('green','#00e87a')"  title="Verde"></div>
+                  <div class="glow-swatch"     id="glow-amber"  style="background:#ffc040;" onclick="setGlow('amber','#ffc040')"  title="Dorado"></div>
+                  <div class="glow-swatch"     id="glow-red"    style="background:#ff4560;" onclick="setGlow('red','#ff4560')"    title="Rojo"></div>
+                  <div class="glow-swatch"     id="glow-white"  style="background:#ffffff;" onclick="setGlow('white','#ffffff')"  title="Blanco"></div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="field-label" style="margin-top:9px;">Precio (opcional)</div>
-          <input type="text" class="text-input" id="upload-precio" placeholder="Ej: $15.000">
+            <div class="pub-section-label" style="margin-top:9px;">💰 Precio (opcional)</div>
+            <input type="text" class="text-input" id="pub-post-precio" placeholder="Ej: $15.000">
 
-          <div class="field-label" style="margin-top:8px;">📤 Tipo de publicación</div>
-          <div class="upload-mode-row">
-            <button class="btn-upload-mode activo" id="btnPublicPost" onclick="setModoPublicacion('post')">📸 Post</button>
-            <button class="btn-upload-mode"        id="btnPublicReel" onclick="setModoPublicacion('reel')">🎬 Reel</button>
-          </div>
-          <div id="uploadMoodRow" style="display:none;">
-            <div class="field-label">🎵 Mood musical</div>
-            <select id="upload-mood">
-              <option value="energico">⚡ Enérgico</option>
-              <option value="motivador">🔥 Motivador</option>
-              <option value="alegre">😊 Alegre</option>
-              <option value="corporativo">💼 Corporativo</option>
-              <option value="relajado">🌿 Relajado</option>
-              <option value="misterioso">🌑 Misterioso</option>
-            </select>
+            <!-- MÚSICA POST -->
+            <div class="pub-section-label" style="margin-top:10px;">🎵 Música</div>
+            <div class="music-mode-row">
+              <button class="music-btn activo" id="btnPostSinMusica" onclick="setPostMusica(false)">🔇 Sin música</button>
+              <button class="music-btn"        id="btnPostConMusica" onclick="setPostMusica(true)">🎵 Con música</button>
+            </div>
+            <div id="postMoodRow" style="display:none;margin-top:7px;">
+              <select id="pub-post-mood">
+                <option value="energico">⚡ Enérgico</option>
+                <option value="motivador">🔥 Motivador</option>
+                <option value="alegre">😊 Alegre</option>
+                <option value="corporativo">💼 Corporativo</option>
+                <option value="relajado">🌿 Relajado</option>
+                <option value="misterioso">🌑 Misterioso</option>
+              </select>
+            </div>
           </div>
 
           <div class="btn-sticky-wrap">
-            <button class="btn-publish" id="btnPublicar" onclick="generarImagenPropia()">🧠 Generar borrador IA</button>
+            <button class="btn-publish" id="btnPublicar" onclick="generarPost()">🧠 Generar borrador Post</button>
           </div>
-        </div>
+        </div><!-- /subpanel-post -->
+
+        <!-- ══════════════════════════════════════
+             SUBPANEL — REEL
+        ══════════════════════════════════════ -->
+        <div id="subpanel-reel" style="display:none;">
+
+          <div class="pub-section-label">🏷️ Título del producto</div>
+          <input type="text" class="product-title-field" id="pub-reel-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass…">
+          <div class="product-title-hint">Lo usa la IA para generar la imagen y el caption</div>
+
+          <!-- FUENTE DE IMAGEN -->
+          <div class="pub-section-label" style="margin-top:10px;">🖼️ Fuente de imagen</div>
+          <div class="img-src-row">
+            <button class="img-src-btn activo" id="btnSrcTexto" onclick="setReelFuente('texto')">
+              <span>✏️</span><span>Mediante texto</span>
+            </button>
+            <button class="img-src-btn" id="btnSrcRef" onclick="setReelFuente('referencia')">
+              <span>🎨</span><span>Referencia</span>
+            </button>
+          </div>
+
+          <!-- TEXTO: hint -->
+          <div id="reelTextoInfo" class="reel-info-box">
+            <span style="font-size:16px;">✏️</span>
+            <div>
+              <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:var(--text1);">La IA genera la imagen</div>
+              <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);">Escribe el título del producto arriba y la IA creará la imagen ideal para el reel.</div>
+            </div>
+          </div>
+
+          <!-- REFERENCIA: upload + influencia -->
+          <div id="reelRefSection" style="display:none;">
+            <div class="upload-drop-zone" id="reelRefDropZone" style="margin-top:6px;">
+              <input type="file" id="inputReelRef" accept="image/*" onchange="cargarReelRef(this)">
+              <div class="upload-drop-icon" id="reelRefIcon">🎨</div>
+              <div class="upload-drop-text" id="reelRefText">Arrastra o <strong>selecciona imagen de referencia</strong></div>
+            </div>
+            <img id="reelRefPreview" style="display:none;width:100%;border-radius:7px;margin-top:6px;max-height:140px;object-fit:cover;" alt="Referencia">
+            <div class="upload-status" id="reelRefStatus"></div>
+
+            <div class="pub-section-label" style="margin-top:10px;">🎚 Influencia de referencia</div>
+            <div class="influence-row">
+              <input type="range" class="weight-slider" id="reelInfluence" min="0" max="100" value="50"
+                     oninput="updateInfluence(this.value)">
+              <span class="influence-val" id="influenceVal">50%</span>
+            </div>
+            <div class="influence-track-labels">
+              <span>IA libre</span><span>Equilibrado</span><span>Tal cual</span>
+            </div>
+            <div id="influenceWarning" class="influence-warning" style="display:none;">
+              ⚡ Influencia máxima — se usará la imagen exactamente tal cual, sin IA
+            </div>
+          </div>
+
+          <div class="pub-section-label" style="margin-top:10px;">💰 Precio (opcional)</div>
+          <input type="text" class="text-input" id="reel-precio" placeholder="Ej: $15.000">
+
+          <!-- MÚSICA REEL -->
+          <div class="pub-section-label" style="margin-top:10px;">🎵 Mood musical</div>
+          <select id="reel-mood">
+            <option value="energico">⚡ Enérgico</option>
+            <option value="motivador">🔥 Motivador</option>
+            <option value="alegre">😊 Alegre</option>
+            <option value="corporativo">💼 Corporativo</option>
+            <option value="relajado">🌿 Relajado</option>
+            <option value="misterioso">🌑 Misterioso</option>
+          </select>
+
+          <!-- MOVIMIENTO -->
+          <div class="pub-section-label" style="margin-top:10px;">🎥 Estilo de movimiento</div>
+          <div class="motion-grid">
+            <button class="motion-btn activo" data-motion="zoom_dramatico" onclick="setMovimiento('zoom_dramatico')">
+              <span class="motion-icon">🔍+</span><span class="motion-name">Zoom Dramático</span>
+              <span class="motion-desc">Zoom-in potente al centro</span>
+            </button>
+            <button class="motion-btn" data-motion="ken_burns" onclick="setMovimiento('ken_burns')">
+              <span class="motion-icon">🎞</span><span class="motion-name">Ken Burns</span>
+              <span class="motion-desc">Diagonal ascendente clásico</span>
+            </button>
+            <button class="motion-btn" data-motion="pan_lateral" onclick="setMovimiento('pan_lateral')">
+              <span class="motion-icon">↔</span><span class="motion-name">Pan Lateral</span>
+              <span class="motion-desc">Paneo suave izq→der</span>
+            </button>
+            <button class="motion-btn" data-motion="pan_vertical" onclick="setMovimiento('pan_vertical')">
+              <span class="motion-icon">↕</span><span class="motion-name">Pan Vertical</span>
+              <span class="motion-desc">Revelado ascendente</span>
+            </button>
+            <button class="motion-btn" data-motion="drift_flotante" onclick="setMovimiento('drift_flotante')">
+              <span class="motion-icon">🌊</span><span class="motion-name">Drift Flotante</span>
+              <span class="motion-desc">Movimiento ondulante suave</span>
+            </button>
+            <button class="motion-btn" data-motion="revelado" onclick="setMovimiento('revelado')">
+              <span class="motion-icon">🌑→🌕</span><span class="motion-name">Revelado</span>
+              <span class="motion-desc">Fade desde negro + zoom</span>
+            </button>
+            <button class="motion-btn" data-motion="diagonal" onclick="setMovimiento('diagonal')">
+              <span class="motion-icon">↗</span><span class="motion-name">Diagonal</span>
+              <span class="motion-desc">Movimiento diagonal dinámico</span>
+            </button>
+            <button class="motion-btn" data-motion="zoom_out" onclick="setMovimiento('zoom_out')">
+              <span class="motion-icon">🔍−</span><span class="motion-name">Zoom Out</span>
+              <span class="motion-desc">Revelador grandioso</span>
+            </button>
+          </div>
+
+          <!-- PALETA VISUAL -->
+          <div class="pub-section-label" style="margin-top:10px;">🎨 Paleta visual</div>
+          <div class="grade-grid">
+            <button class="grade-btn" data-grade="none" onclick="setReelGrade('none')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#888,#ccc)"></span><span>Sin filtro</span>
+            </button>
+            <button class="grade-btn activo" data-grade="cinematico" onclick="setReelGrade('cinematico')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#1a0a2e,#5a3080)"></span><span>Cinematico</span>
+            </button>
+            <button class="grade-btn" data-grade="calido" onclick="setReelGrade('calido')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#7a3000,#ffa040)"></span><span>Cálido</span>
+            </button>
+            <button class="grade-btn" data-grade="frio" onclick="setReelGrade('frio')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#003070,#40b0ff)"></span><span>Frío</span>
+            </button>
+            <button class="grade-btn" data-grade="dramatico" onclick="setReelGrade('dramatico')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#0a0a0a,#444)"></span><span>Dramático</span>
+            </button>
+            <button class="grade-btn" data-grade="vibrante" onclick="setReelGrade('vibrante')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#ff0060,#ffee00)"></span><span>Vibrante</span>
+            </button>
+            <button class="grade-btn" data-grade="vintage" onclick="setReelGrade('vintage')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#7a5030,#d4a060)"></span><span>Vintage</span>
+            </button>
+            <button class="grade-btn" data-grade="neon" onclick="setReelGrade('neon')">
+              <span class="grade-swatch" style="background:linear-gradient(135deg,#00ffaa,#aa00ff)"></span><span>Neon</span>
+            </button>
+          </div>
+
+          <!-- DURACIÓN -->
+          <div class="pub-section-label" style="margin-top:10px;">⏱ Duración del reel</div>
+          <div class="duracion-row">
+            <button class="dur-btn" data-dur="7"  onclick="setDuracion(7)">7s</button>
+            <button class="dur-btn activo" data-dur="15" onclick="setDuracion(15)">15s</button>
+            <button class="dur-btn" data-dur="30" onclick="setDuracion(30)">30s</button>
+            <button class="dur-btn" data-dur="60" onclick="setDuracion(60)">60s</button>
+          </div>
+
+          <div class="btn-sticky-wrap">
+            <button class="btn-publish" id="btnGenerarReel" onclick="generarReel()">🧠 Generar borrador Reel</button>
+          </div>
+        </div><!-- /subpanel-reel -->
+
       </div><!-- /panel-publicar -->
 
       <!-- ── TAB: PERFILES ── -->
@@ -1351,10 +1668,47 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 
 // ── Publicar imagen propia ───────────────────────────────
 let urlImagenPropia  = null;
-let modoPublicacion  = 'post';
+let modoPublicacion  = 'post'; // legacy — kept for compatibility
+let pubTipo          = 'post';  // 'post' | 'reel'
+let postConMusica    = false;
+let reelFuente       = 'texto'; // 'texto' | 'referencia'
+let reelInfluencia   = 50;      // 0–100
+let urlReelRef       = null;
 let overlayGlowColor = '#00e5ff';
 let overlayX = 0.5;
 let overlayY = 0.5;
+let reelMovimiento   = 'zoom_dramatico';
+let reelColorGrade   = 'cinematico';
+let reelDuracion     = 15;
+let cicloDuracion    = 15;
+
+function setMovimiento(m) {
+  reelMovimiento = m;
+  document.querySelectorAll('.motion-btn').forEach(b => {
+    b.classList.toggle('activo', b.dataset.motion === m);
+  });
+}
+function setReelGrade(g) {
+  reelColorGrade = g;
+  document.querySelectorAll('#uploadMoodRow .grade-btn').forEach(b => {
+    b.classList.toggle('activo', b.dataset.grade === g);
+  });
+}
+function setDuracion(d) {
+  reelDuracion = d;
+  document.querySelectorAll('.dur-btn:not(.ciclo-dur)').forEach(b => {
+    b.classList.toggle('activo', parseInt(b.dataset.dur) === d);
+  });
+}
+function setCicloDuracion(d) {
+  cicloDuracion = d;
+  document.querySelectorAll('.ciclo-dur').forEach(b => {
+    b.classList.toggle('activo', parseInt(b.dataset.dur) === d);
+  });
+}
+function toggleCicloDuracion(checked) {
+  document.getElementById('cicloDuracionRow').style.display = checked ? 'block' : 'none';
+}
 
 // ── Variables ciclo overlay ───────────────────────────────
 let cicloPosicion  = 'center';
@@ -1512,11 +1866,63 @@ function setCicloGlow(key, hex) {
 }
 
 
-function setModoPublicacion(modo) {
-  modoPublicacion = modo;
-  document.getElementById('btnPublicPost').classList.toggle('activo', modo==='post');
-  document.getElementById('btnPublicReel').classList.toggle('activo', modo==='reel');
-  document.getElementById('uploadMoodRow').style.display = modo==='reel' ? 'block' : 'none';
+function setModoPublicacion(modo) { /* legacy no-op */ }
+
+function setPubTipo(tipo) {
+  pubTipo = tipo;
+  document.getElementById('subpanel-post').style.display = tipo === 'post' ? 'block' : 'none';
+  document.getElementById('subpanel-reel').style.display = tipo === 'reel' ? 'block' : 'none';
+  document.getElementById('ptPost').classList.toggle('activo', tipo === 'post');
+  document.getElementById('ptReel').classList.toggle('activo', tipo === 'reel');
+}
+
+function setPostMusica(con) {
+  postConMusica = con;
+  document.getElementById('btnPostSinMusica').classList.toggle('activo', !con);
+  document.getElementById('btnPostConMusica').classList.toggle('activo', con);
+  document.getElementById('postMoodRow').style.display = con ? 'block' : 'none';
+}
+
+function setReelFuente(fuente) {
+  reelFuente = fuente;
+  document.getElementById('btnSrcTexto').classList.toggle('activo', fuente === 'texto');
+  document.getElementById('btnSrcRef').classList.toggle('activo', fuente === 'referencia');
+  document.getElementById('reelTextoInfo').style.display = fuente === 'texto' ? 'flex' : 'none';
+  document.getElementById('reelRefSection').style.display = fuente === 'referencia' ? 'block' : 'none';
+}
+
+function updateInfluence(val) {
+  reelInfluencia = parseInt(val);
+  document.getElementById('influenceVal').textContent = val + '%';
+  const warn = document.getElementById('influenceWarning');
+  const slider = document.getElementById('reelInfluence');
+  const isMax = reelInfluencia >= 100;
+  warn.style.display = isMax ? 'flex' : 'none';
+  slider.style.accentColor = isMax ? 'var(--amber)' : 'var(--cyan)';
+}
+
+async function cargarReelRef(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const STATUS = document.getElementById('reelRefStatus');
+  STATUS.textContent = 'Subiendo...';
+  const formData = new FormData();
+  formData.append('image', file);
+  try {
+    const res  = await fetch('/api/subir_imagen', { method:'POST', body: formData });
+    const data = await res.json();
+    if (data.url) {
+      urlReelRef = data.url;
+      const prev = document.getElementById('reelRefPreview');
+      prev.src = data.url; prev.style.display = 'block';
+      document.getElementById('reelRefIcon').textContent = '✅';
+      document.getElementById('reelRefText').innerHTML = '<strong>Imagen de referencia lista</strong>';
+      STATUS.textContent = '';
+      agregarLog('🎨 Imagen de referencia cargada', 'success');
+    } else {
+      STATUS.textContent = 'Error al subir imagen';
+    }
+  } catch(e) { STATUS.textContent = 'Error de conexión'; }
 }
 
 async function convertirAJpeg(archivo) {
@@ -1599,37 +2005,106 @@ async function cargarImagenPropia(input) {
   }
 }
 
-async function generarImagenPropia() {
-  if (!urlImagenPropia) { agregarLog('⚠️ Primero sube una imagen','warning'); return; }
+async function generarImagenPropia() { /* legacy — delegado a generarPost/generarReel */ generarPost(); }
+
+async function generarPost() {
+  if (!urlImagenPropia) { agregarLog('⚠️ Primero sube una imagen en el panel Post','warning'); return; }
   const cliente_id = document.getElementById('select-cliente').value;
-  if (!cliente_id)  { agregarLog('⚠️ Selecciona un cliente primero','warning'); return; }
+  if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero','warning'); return; }
   const btn = document.getElementById('btnPublicar');
   btn.classList.add('loading'); btn.textContent = '⏳ Generando…';
+
+  const titulo        = (document.getElementById('pub-post-titulo').value || '').trim();
+  const precio        = document.getElementById('pub-post-precio').value || 'Consultar por DM';
   const overlayActivo = document.getElementById('toggleOverlay').checked;
   const textoOverlay  = document.getElementById('overlayTexto').value.trim();
   const fontSize      = parseInt(document.getElementById('overlayFontSize').value);
-  const titulo        = document.getElementById('publicar-titulo').value.trim();
+
+  // "Con música" → reel corto con movimiento mínimo (7s, ken_burns)
+  const modo = postConMusica ? 'reel' : 'post';
+  const mood = postConMusica ? document.getElementById('pub-post-mood').value : null;
+
   const body = {
     imagen_url: urlImagenPropia, cliente_id,
     titulo_producto: titulo || null,
-    precio: document.getElementById('upload-precio').value || 'Consultar por DM',
-    modo:   modoPublicacion,
-    mood:   modoPublicacion==='reel' ? document.getElementById('upload-mood').value : null,
+    precio, modo, mood,
+    movimiento:  postConMusica ? 'ken_burns' : null,
+    color_grade: 'none',
+    duracion:    postConMusica ? 7 : 15,
     overlay: overlayActivo && textoOverlay ? {
-      texto: textoOverlay,
-      x: overlayX,
-      y: overlayY,
-      font_size: fontSize,
-      glow_color: overlayGlowColor
+      texto: textoOverlay, x: overlayX, y: overlayY,
+      font_size: fontSize, glow_color: overlayGlowColor
     } : null
   };
-  agregarLog(`🧠 Generando borrador como ${modoPublicacion==='reel'?'Reel':'Post'}${body.overlay?' + texto "'+textoOverlay+'"':''}…`,'info');
+  agregarLog(`🧠 Generando borrador Post${postConMusica?' con música':''}…`, 'info');
   try {
-    const res  = await fetch('/api/generar_imagen_propia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const res  = await fetch('/api/generar_imagen_propia', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
     const data = await res.json();
-    agregarLog(data.msg, data.ok?'success':'warning');
+    agregarLog(data.msg, data.ok ? 'success' : 'warning');
   } catch(e) { agregarLog('❌ Error al generar borrador','error'); }
-  finally { btn.classList.remove('loading'); btn.textContent = '🧠 Generar borrador IA'; }
+  finally { btn.classList.remove('loading'); btn.textContent = '🧠 Generar borrador Post'; }
+}
+
+async function generarReel() {
+  const cliente_id = document.getElementById('select-cliente').value;
+  if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero','warning'); return; }
+  const titulo  = (document.getElementById('pub-reel-titulo').value || '').trim();
+  const precio  = document.getElementById('reel-precio').value || 'Consultar por DM';
+  const mood    = document.getElementById('reel-mood').value;
+  const btn = document.getElementById('btnGenerarReel');
+  btn.classList.add('loading'); btn.textContent = '⏳ Generando…';
+
+  try {
+    if (reelFuente === 'texto') {
+      if (!titulo) { agregarLog('⚠️ Escribe el título del producto para generar el reel','warning'); return; }
+      const body = {
+        busqueda_libre: titulo, titulo_producto: titulo, precio, cliente_id,
+        mood, hacer_reel: true,
+        color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
+        usar_watermark: true,
+      };
+      agregarLog(`🧠 Generando Reel desde texto: "${titulo}" | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
+      const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const data = await res.json();
+      agregarLog(data.msg, 'info');
+
+    } else {
+      // Fuente: referencia
+      if (!urlReelRef) { agregarLog('⚠️ Sube la imagen de referencia primero','warning'); return; }
+
+      if (reelInfluencia >= 100) {
+        // Influencia máxima → imagen tal cual, sin IA
+        const body = {
+          imagen_url: urlReelRef, cliente_id,
+          titulo_producto: titulo || null,
+          precio, modo: 'reel', mood,
+          movimiento: reelMovimiento, color_grade: reelColorGrade, duracion: reelDuracion,
+          overlay: null,
+        };
+        agregarLog('🎨 Influencia 100% → usando imagen tal cual (sin generación IA)…', 'info');
+        const res  = await fetch('/api/generar_imagen_propia', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        agregarLog(data.msg, data.ok ? 'success' : 'warning');
+
+      } else {
+        // Influencia parcial → IA toma referencia como guía de estilo
+        const styleWeight = reelInfluencia / 100;
+        if (!titulo) { agregarLog('⚠️ Escribe el título del producto','warning'); return; }
+        const body = {
+          busqueda_libre: titulo, titulo_producto: titulo, precio, cliente_id,
+          mood, hacer_reel: true,
+          imagen_referencia_url: urlReelRef, style_weight: styleWeight,
+          color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
+          usar_watermark: true,
+        };
+        agregarLog(`🎨 Generando Reel con referencia al ${reelInfluencia}% de influencia | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
+        const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        agregarLog(data.msg, 'info');
+      }
+    }
+  } catch(e) { agregarLog('❌ Error al generar Reel','error'); }
+  finally { btn.classList.remove('loading'); btn.textContent = '🧠 Generar borrador Reel'; }
 }
 
 async function publicarBorrador(i) {
@@ -1702,6 +2177,7 @@ function ejecutarCiclo() {
     imagen_referencia_url: modoImagen==='referencia' ? urlReferencia : null,
     style_weight:          modoImagen==='referencia' ? styleWeight   : null,
     color_grade:           colorGrade,
+    duracion_reel:         hacer_reel ? cicloDuracion : 15,
     usar_watermark,
     lower_third,
     overlay: cicloOverlayActivo && cicloTextoOverlay ? {
