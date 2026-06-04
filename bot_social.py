@@ -2056,13 +2056,13 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
 @requiere_auth
 def api_generar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = data.get('imagen_url', '').strip()
+    imagen_url = (data.get('imagen_url') or '').strip()
     cliente_id = data.get('cliente_id', 'aurakey')
     precio = data.get('precio', 'Consultar por DM')
     modo = data.get('modo', 'post')
     mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2088,7 +2088,7 @@ def api_publicar_borrador():
     global bot_activo
     data = request.get_json() or {}
     borrador_id = data.get('id')
-    caption_editado = data.get('caption', '').strip()
+    caption_editado = (data.get('caption') or '').strip()
     borrador = _buscar_borrador(borrador_id)
 
     if not borrador:
@@ -2163,13 +2163,13 @@ def api_publicar_borrador():
 @requiere_auth
 def api_publicar_imagen_propia():
     data = request.get_json() or {}
-    imagen_url = data.get('imagen_url', '').strip()
+    imagen_url = (data.get('imagen_url') or '').strip()
     cliente_id = data.get('cliente_id', 'aurakey')
     precio = data.get('precio', 'Consultar por DM')
     modo = data.get('modo', 'post')
     mood = data.get('mood', 'energico')
     overlay = data.get('overlay', None)
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2194,8 +2194,8 @@ def api_publicar_imagen_propia():
 def api_ciclo():
     data = request.get_json() or {}
     precio = data.get('precio', 'Consultar por interno')
-    busqueda_libre = data.get('busqueda_libre', '').strip()
-    titulo_producto = data.get('titulo_producto', '').strip() or None
+    busqueda_libre = (data.get('busqueda_libre') or '').strip()
+    titulo_producto = (data.get('titulo_producto') or '').strip() or None
     cliente_id = data.get('cliente_id', 'aurakey')
     mood = data.get('mood', 'energico')
     hacer_reel = data.get('hacer_reel', True)
@@ -2316,8 +2316,8 @@ def api_scheduler_set():
         scheduler_config["intervalo_minutos"] = int(data["intervalo_minutos"])
     elif "intervalo_horas" in data:
         scheduler_config["intervalo_minutos"] = int(data["intervalo_horas"]) * 60
-    scheduler_config["busqueda"] = data.get("busqueda", "").strip()
-    scheduler_config["titulo_producto"] = data.get("titulo_producto", "").strip() or None
+    scheduler_config["busqueda"] = (data.get("busqueda") or "").strip()
+    scheduler_config["titulo_producto"] = (data.get("titulo_producto") or "").strip() or None
     scheduler_config["precio"] = data.get("precio", "Consultar por DM")
     scheduler_config["cliente_id"] = data.get("cliente_id", "aurakey")
     scheduler_config["mood"] = data.get("mood", "energico")
@@ -2365,15 +2365,15 @@ def api_profiles_get():
 @requiere_auth
 def api_profiles_post():
     data = request.get_json() or {}
-    nombre = data.get('nombre', '').strip()
+    nombre = (data.get('nombre') or '').strip()
     if not nombre:
         return jsonify({'ok': False, 'msg': 'El perfil necesita un nombre'}), 400
     profile = {
         'id': f"profile_{int(time.time() * 1000)}",
         'nombre': nombre,
-        'busqueda': data.get('busqueda', '').strip(),
-        'titulo_producto': data.get('titulo_producto', '').strip(),
-        'precio': data.get('precio', '').strip(),
+        'busqueda': (data.get('busqueda') or '').strip(),
+        'titulo_producto': (data.get('titulo_producto') or '').strip(),
+        'precio': (data.get('precio') or '').strip(),
         'mood': data.get('mood', 'energico'),
         'cliente_id': data.get('cliente_id', 'aurakey'),
         'fecha': datetime.now().strftime('%d/%m/%Y'),
