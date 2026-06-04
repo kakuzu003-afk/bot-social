@@ -1,0 +1,9 @@
+cookies_aurakey.json
+config.json
+__pycache__/
+*.pyc
+.env
+static/test_*.jpg
+static/logo/
+bot_social.db
+.claude/launch.json
