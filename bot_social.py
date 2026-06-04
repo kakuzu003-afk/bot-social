@@ -736,20 +736,197 @@ def buscar_musica_pixabay(mood="energico"):
     return None
 
 # ============================================
+# EDICIÓN PREMIUM — WATERMARK + COLOR GRADE
+# ============================================
+
+# Presets de color grading — 100% ffmpeg, 100% gratis
+COLOR_GRADES = {
+    "none":        "",
+    "cinematico":  "curves=r='0/0 0.35/0.40 1/0.88':g='0/0.01 0.5/0.47 1/0.92':b='0/0.02 0.5/0.44 1/0.78',eq=contrast=1.10:saturation=0.88",
+    "calido":      "curves=r='0/0 0.5/0.58 1/1.0':g='0/0 0.5/0.52 1/0.98':b='0/0 0.5/0.42 1/0.82',eq=saturation=1.10",
+    "frio":        "curves=r='0/0 0.5/0.42 1/0.85':g='0/0 0.5/0.50 1/0.96':b='0/0 0.5/0.58 1/1.0',eq=saturation=1.05",
+    "dramatico":   "eq=contrast=1.35:saturation=1.15:brightness=-0.04,vignette=angle=PI/2.5",
+    "vibrante":    "eq=saturation=1.55:contrast=1.08:brightness=0.02,unsharp=3:3:1.5:3:3:0",
+    "vintage":     "curves=r='0/0.04 0.5/0.48 1/0.88':g='0/0.02 0.5/0.45 1/0.84':b='0/0 0.5/0.38 1/0.72',eq=saturation=0.75",
+    "neon":        "eq=saturation=1.8:contrast=1.2:brightness=0.03,curves=r='0/0 0.6/0.7 1/1':b='0/0 0.4/0.5 1/1',unsharp=3:3:2.0:3:3:0",
+}
+
+LOGO_PATH_DEFAULT = os.environ.get("LOGO_PATH", "static/logo/watermark.png")
+
+# Fuentes disponibles en contenedor Debian/Railway
+_FONT_PATHS = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+]
+DRAWTEXT_FONT = next((f for f in _FONT_PATHS if os.path.exists(f)), None)
+
+
+def _esc_dt(text):
+    """Escapa texto para el filtro drawtext de ffmpeg."""
+    if not text:
+        return ""
+    return (text.replace('\\', '\\\\')
+                .replace("'", "’")   # reemplaza comilla simple para evitar rotura
+                .replace(':', '\\:')
+                .replace('%', '\\%'))
+
+
+def aplicar_watermark_imagen(imagen_path, logo_path=None, opacidad=0.75, posicion='br', margen=25):
+    """Aplica logo PNG como watermark sobre imagen usando Pillow. Gratis."""
+    lpath = logo_path or LOGO_PATH_DEFAULT
+    if not lpath or not os.path.exists(lpath):
+        return imagen_path
+    try:
+        from PIL import Image
+        img  = Image.open(imagen_path).convert('RGBA')
+        logo = Image.open(lpath).convert('RGBA')
+
+        logo_w = max(80, int(img.width * 0.14))
+        logo_h = int(logo.height * logo_w / logo.width)
+        logo   = logo.resize((logo_w, logo_h), Image.LANCZOS)
+
+        r, g, b, a = logo.split()
+        a = a.point(lambda x: int(x * opacidad))
+        logo = Image.merge('RGBA', (r, g, b, a))
+
+        w, h = img.size
+        pos_map = {
+            'tl': (margen, margen),
+            'tr': (w - logo_w - margen, margen),
+            'bl': (margen, h - logo_h - margen),
+            'br': (w - logo_w - margen, h - logo_h - margen),
+            'center': ((w - logo_w) // 2, (h - logo_h) // 2),
+        }
+        x, y = pos_map.get(posicion, pos_map['br'])
+        capa = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        capa.paste(logo, (x, y), logo)
+        resultado = Image.alpha_composite(img, capa).convert('RGB')
+        resultado.save(imagen_path, 'JPEG', quality=92)
+        log(f"✅ Watermark aplicado en imagen ({posicion}, {int(opacidad*100)}%)", "success")
+        return imagen_path
+    except Exception as e:
+        log(f"⚠️ Error watermark imagen: {e}. Continuando sin watermark.", "warning")
+        return imagen_path
+
+
+def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=None):
+    """
+    Segunda pasada ffmpeg: aplica watermark + lower-third sobre un video ya generado.
+    - Watermark: filter_complex overlay (logo PNG en esquina)
+    - Lower-third: drawtext animado con fade-in (nombre + precio)
+    """
+    os.makedirs("static", exist_ok=True)
+
+    # Construir lower-third
+    lt_filters = ""
+    if lower_third and lower_third.get('texto') and DRAWTEXT_FONT:
+        titulo = _esc_dt(lower_third['texto'].upper())
+        precio  = _esc_dt(lower_third.get('precio', ''))
+        color   = lower_third.get('color', 'white')
+        fa = f"fontfile={DRAWTEXT_FONT}:"
+        lt_parts = [
+            f"drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.22:color=black@0.60:t=fill",
+            f"drawtext={fa}text='{titulo}':fontsize=72:fontcolor={color}:"
+            f"x=(w-text_w)/2:y=h*0.79:shadowcolor=black@0.8:shadowx=3:shadowy=3:"
+            f"alpha='if(lt(t\\,0.8)\\,0\\,if(lt(t\\,1.5)\\,(t-0.8)/0.7\\,1))'",
+        ]
+        if precio:
+            lt_parts.append(
+                f"drawtext={fa}text='{precio}':fontsize=56:fontcolor=yellow:"
+                f"x=(w-text_w)/2:y=h*0.88:shadowcolor=black@0.8:shadowx=2:shadowy=2:"
+                f"alpha='if(lt(t\\,1.1)\\,0\\,if(lt(t\\,1.8)\\,(t-1.1)/0.7\\,1))'"
+            )
+        lt_filters = ",".join(lt_parts)
+
+    wm_w = 220  # ancho del logo en píxeles
+
+    try:
+        if lt_filters:
+            filter_complex = (
+                f"[0:v]{lt_filters}[vlt];"
+                f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa=0.72[vwm];"
+                f"[vlt][vwm]overlay=main_w-overlay_w-30:main_h-overlay_h-30[vout]"
+            )
+        else:
+            filter_complex = (
+                f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa=0.72[vwm];"
+                f"[0:v][vwm]overlay=main_w-overlay_w-30:main_h-overlay_h-30[vout]"
+            )
+
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path, "-i", logo_path,
+            "-filter_complex", filter_complex,
+            "-map", "[vout]", "-map", "0:a",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "17",
+            "-c:a", "copy", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+            output_path
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        if res.returncode != 0:
+            log(f"⚠️ Watermark video falló ({res.stderr[-150:].strip()}). Usando sin watermark.", "warning")
+            import shutil
+            shutil.copy2(input_path, output_path)
+        else:
+            log(f"✅ Watermark + lower-third aplicados al Reel ✅", "success")
+    except Exception as e:
+        log(f"⚠️ Error overlay video: {e}", "warning")
+        import shutil
+        shutil.copy2(input_path, output_path)
+
+    return output_path
+
+
+def _only_lower_third_video(input_path, output_path, lower_third):
+    """Aplica solo lower-third (sin watermark) vía -vf."""
+    if not lower_third or not lower_third.get('texto') or not DRAWTEXT_FONT:
+        import shutil; shutil.copy2(input_path, output_path); return output_path
+    titulo = _esc_dt(lower_third['texto'].upper())
+    precio  = _esc_dt(lower_third.get('precio', ''))
+    color   = lower_third.get('color', 'white')
+    fa = f"fontfile={DRAWTEXT_FONT}:"
+    lt = (
+        f"drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.22:color=black@0.60:t=fill,"
+        f"drawtext={fa}text='{titulo}':fontsize=72:fontcolor={color}:"
+        f"x=(w-text_w)/2:y=h*0.79:shadowcolor=black@0.8:shadowx=3:shadowy=3:"
+        f"alpha='if(lt(t\\,0.8)\\,0\\,if(lt(t\\,1.5)\\,(t-0.8)/0.7\\,1))'"
+    )
+    if precio:
+        lt += (
+            f",drawtext={fa}text='{precio}':fontsize=56:fontcolor=yellow:"
+            f"x=(w-text_w)/2:y=h*0.88:shadowcolor=black@0.8:shadowx=2:shadowy=2:"
+            f"alpha='if(lt(t\\,1.1)\\,0\\,if(lt(t\\,1.8)\\,(t-1.1)/0.7\\,1))'"
+        )
+    try:
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-vf", lt, "-c:v", "libx264", "-preset", "fast", "-crf", "17",
+            "-c:a", "copy", "-movflags", "+faststart", output_path
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        if res.returncode != 0:
+            import shutil; shutil.copy2(input_path, output_path)
+        else:
+            log("✅ Lower-third aplicado ✅", "success")
+    except Exception as e:
+        log(f"⚠️ Error lower-third: {e}", "warning")
+        import shutil; shutil.copy2(input_path, output_path)
+    return output_path
+
+
+# ============================================
 # FFMPEG — COMBINAR IMAGEN + AUDIO → VIDEO
 # ============================================
 
-def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico"):
+def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
+                       color_grade="none", watermark_path=None, lower_third=None):
     """
-    Genera un Reel con animación cinematográfica realista usando ffmpeg.
-    Cada mood tiene su propia dinámica visual:
-      - energico:    zoom-in explosivo + vibración + viñeta pulsante
-      - motivador:   Ken Burns diagonal + resplandor de luz cálida
-      - corporativo: paneo horizontal suave + fade-in profesional
-      - relajado:    zoom lento flotante + desenfoque suave de bordes
-      - misterioso:  zoom-in oscuro + viñeta intensa + revelado gradual
-      - alegre:      zoom-in + rebote + saturación vibrante
-    Fallback universal si el filtro falla: Ken Burns estándar.
+    Genera un Reel cinematográfico premium usando ffmpeg (gratis).
+    - 6 moods con animaciones únicas (zoom, Ken Burns, pan, drift)
+    - Color grading: 8 presets de corrección de color
+    - Watermark: logo PNG en esquina (segunda pasada ffmpeg)
+    - Lower-third: texto animado con fade-in (nombre + precio)
+    Fallback: Ken Burns estándar si cualquier filtro falla.
     """
     import subprocess
 
@@ -819,55 +996,78 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico"):
         "eq=saturation=1.10:contrast=1.04"
     )
 
+    # ── Construir cadena de filtros completa ────────────────────────────────
     vf = MOOD_FILTERS.get(mood, FALLBACK_FILTER)
 
-    os.makedirs("static", exist_ok=True)
-    video_path = f"static/reel_{int(time.time())}.mp4"
+    # Inyectar color grade (si no es "none")
+    cg = COLOR_GRADES.get(color_grade or "none", "")
+    if cg:
+        vf = vf + "," + cg
 
-    def _run_ffmpeg(vf_filter):
+    # Fade-out final suave para cierre premium
+    vf = vf + f",fade=t=out:st={max(0, duracion-1.2):.1f}:d=1.2"
+
+    os.makedirs("static", exist_ok=True)
+    ts = int(time.time())
+    tmp_path   = f"static/reel_tmp_{ts}.mp4"
+    final_path = f"static/reel_{ts}.mp4"
+
+    def _run_ffmpeg(vf_filter, out_path):
         cmd = [
             "ffmpeg", "-y",
-            "-loop", "1",
-            "-framerate", str(ZOOM_FPS),
+            "-loop", "1", "-framerate", str(ZOOM_FPS),
             "-i", imagen_path,
             "-i", audio_path,
             "-t", str(duracion),
             "-vf", vf_filter,
-            "-c:v", "libx264",
-            "-preset", "medium",
-            "-crf", "18",
-            "-profile:v", "high",
-            "-level", "4.0",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-ar", "44100",
-            "-ac", "2",
-            "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            "-shortest",
-            video_path
+            "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+            "-profile:v", "high", "-level", "4.0",
+            "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
+            "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-shortest",
+            out_path
         ]
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
     try:
-        log(f"🎬 Generando Reel cinematográfico — mood: {mood} ({duracion}s, {ZOOM_FPS}fps)...", "info")
-        result = _run_ffmpeg(vf)
+        wm_log = "+ wm" if (watermark_path or os.path.exists(LOGO_PATH_DEFAULT)) else ""
+        lt_log = "+ lower3rd" if (lower_third and lower_third.get('texto')) else ""
+        cg_log = f"+ {color_grade}" if cg else ""
+        log(f"🎬 Generando Reel premium — mood:{mood}{cg_log}{wm_log}{lt_log} ({duracion}s)...", "info")
 
-        # Si el filtro del mood falla, reintenta con fallback seguro
+        result = _run_ffmpeg(vf, tmp_path)
+
         if result.returncode != 0:
-            log(f"⚠️ Filtro '{mood}' falló ({result.stderr[-200:].strip()}). Reintentando con Ken Burns estándar...", "warning")
-            result = _run_ffmpeg(FALLBACK_FILTER)
+            log(f"⚠️ Filtro '{mood}' falló. Reintentando con Ken Burns estándar...", "warning")
+            result = _run_ffmpeg(FALLBACK_FILTER, tmp_path)
 
         if result.returncode != 0:
             log(f"❌ ffmpeg error (fallback): {result.stderr[-300:]}", "error")
             return None
 
-        size_mb = os.path.getsize(video_path) / (1024 * 1024)
-        log(f"✅ Reel generado → {video_path} ({size_mb:.1f} MB) | mood: {mood}", "success")
-        return video_path
+        # ── Segunda pasada: watermark + lower-third ──────────────────────────
+        lpath = watermark_path or (LOGO_PATH_DEFAULT if os.path.exists(LOGO_PATH_DEFAULT) else None)
+        use_wm = bool(lpath and os.path.exists(lpath))
+        use_lt = bool(lower_third and lower_third.get('texto') and DRAWTEXT_FONT)
+
+        if use_wm:
+            _overlay_watermark_video(tmp_path, final_path,
+                                     logo_path=lpath,
+                                     lower_third=lower_third if use_lt else None)
+            try: os.remove(tmp_path)
+            except: pass
+        elif use_lt:
+            _only_lower_third_video(tmp_path, final_path, lower_third)
+            try: os.remove(tmp_path)
+            except: pass
+        else:
+            os.rename(tmp_path, final_path)
+
+        size_mb = os.path.getsize(final_path) / (1024 * 1024)
+        log(f"✅ Reel generado → {final_path} ({size_mb:.1f} MB) | mood:{mood}{wm_log}{lt_log}", "success")
+        return final_path
 
     except FileNotFoundError:
-        log("❌ ffmpeg no está instalado. Instálalo con: apt install ffmpeg", "error")
+        log("❌ ffmpeg no está instalado.", "error")
         return None
     except Exception as e:
         log(f"❌ Error generando video: {e}", "error")
@@ -1346,7 +1546,9 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 # CICLO PRINCIPAL
 # ============================================
 
-def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico", hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None):
+def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico",
+                hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None,
+                color_grade="none", lower_third=None, usar_watermark=True):
     global bot_activo
 
     # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
@@ -1412,6 +1614,10 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         # Generación directa con Ideogram Turbo
         imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
 
+        # Aplicar watermark a la imagen (si está configurado)
+        if imagen_filepath and usar_watermark and os.path.exists(LOGO_PATH_DEFAULT):
+            imagen_filepath = aplicar_watermark_imagen(imagen_filepath, posicion='br')
+
         if imagen_filepath:
             imagen_url_publica = subir_imgbb(imagen_filepath)
 
@@ -1430,6 +1636,9 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'estado': 'pendiente',
             'tipo_publicacion': 'reel' if hacer_reel else 'post',
             'mood': mood,
+            'color_grade': color_grade or 'none',
+            'lower_third': lower_third or {},
+            'usar_watermark': usar_watermark,
             'reel_generado': False,
             'con_referencia': bool(imagen_referencia_url),
             'fecha': datetime.now().strftime('%d/%m %H:%M')
@@ -1905,7 +2114,13 @@ def api_publicar_borrador():
                 with open(img_path, 'wb') as f:
                     f.write(img_bytes)
             audio_path = buscar_musica_pixabay(borrador.get('mood') or 'energico')
-            video_path = generar_video_reel(img_path, audio_path, mood=borrador.get('mood') or 'energico') if audio_path else None
+            video_path = generar_video_reel(
+                img_path, audio_path,
+                mood=borrador.get('mood') or 'energico',
+                color_grade=borrador.get('color_grade', 'none'),
+                lower_third=borrador.get('lower_third') or None,
+                usar_watermark=borrador.get('usar_watermark', True),
+            ) if audio_path else None
             reel_generado = bool(video_path)
             publicado = publicar_reel_instagram(video_path, caption_final, cliente_id) if video_path else False
         else:
@@ -1982,17 +2197,29 @@ def api_ciclo():
     hacer_reel = data.get('hacer_reel', True)
     imagen_referencia_url = data.get('imagen_referencia_url', None)
     style_weight = float(data.get('style_weight', 0.5) or 0.5)
+    color_grade = data.get('color_grade', 'none')
+    lower_third = data.get('lower_third', None)
+    usar_watermark = bool(data.get('usar_watermark', True))
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     with _bot_lock:
         if bot_activo:
             return jsonify({'msg': '⚠️ Ya hay un ciclo corriendo. Esperá que termine antes de iniciar otro.'})
     modo_img = "con referencia" if imagen_referencia_url else "solo texto"
-    hilo = threading.Thread(target=ciclo_libre, args=(busqueda_libre, precio, cliente_id, mood, hacer_reel, imagen_referencia_url, style_weight, titulo_producto))
+    hilo = threading.Thread(
+        target=ciclo_libre,
+        kwargs={
+            'busqueda': busqueda_libre, 'precio_manual': precio,
+            'cliente_id': cliente_id, 'mood': mood, 'hacer_reel': hacer_reel,
+            'imagen_referencia_url': imagen_referencia_url, 'style_weight': style_weight,
+            'titulo_producto': titulo_producto, 'color_grade': color_grade,
+            'lower_third': lower_third, 'usar_watermark': usar_watermark,
+        }
+    )
     hilo.daemon = True
     hilo.start()
     detalle_log = titulo_producto or busqueda_libre
-    return jsonify({'msg': f'Ciclo iniciado para: {detalle_log} (mood: {mood}, reel: {hacer_reel}, imagen: {modo_img})'})
+    return jsonify({'msg': f'Ciclo iniciado para: {detalle_log} (mood:{mood}, grade:{color_grade}, wm:{usar_watermark})'})
 
 # ============================================
 # SCHEDULER CONFIGURABLE
@@ -2100,6 +2327,30 @@ def api_scheduler_set():
 # ============================================
 # NUEVAS RUTAS PREMIUM
 # ============================================
+
+@app.route('/api/upload_logo', methods=['POST'])
+@requiere_auth
+def api_upload_logo():
+    if 'logo' not in request.files:
+        return jsonify({'ok': False, 'msg': 'No se envió archivo'}), 400
+    archivo = request.files['logo']
+    os.makedirs("static/logo", exist_ok=True)
+    filepath = LOGO_PATH_DEFAULT
+    archivo.save(filepath)
+    log(f"🏷️ Logo watermark subido ✅ → {filepath}", "success")
+    return jsonify({'ok': True, 'path': filepath, 'msg': f'Logo guardado en {filepath}'})
+
+@app.route('/api/logo_status', methods=['GET'])
+@requiere_auth
+def api_logo_status():
+    exists = os.path.exists(LOGO_PATH_DEFAULT)
+    size = os.path.getsize(LOGO_PATH_DEFAULT) // 1024 if exists else 0
+    return jsonify({'ok': True, 'existe': exists, 'path': LOGO_PATH_DEFAULT, 'kb': size})
+
+@app.route('/api/color_grades', methods=['GET'])
+@requiere_auth
+def api_color_grades():
+    return jsonify(list(COLOR_GRADES.keys()))
 
 @app.route('/api/profiles', methods=['GET'])
 @requiere_auth

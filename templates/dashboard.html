@@ -334,6 +334,61 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   background:var(--neon); box-shadow:0 0 8px rgba(191,0,255,0.8); cursor:pointer;
 }
 
+/* color grade grid */
+.grade-grid { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.grade-btn {
+  flex:1; min-width:70px; padding:6px 4px; border-radius:7px;
+  border:1px solid var(--border2); background:rgba(18,11,40,0.8);
+  color:var(--text3); font-size:10px; font-family:'Rajdhani',sans-serif; font-weight:700;
+  cursor:pointer; transition:all .15s; text-align:center; letter-spacing:.04em;
+}
+.grade-btn.sel {
+  background:rgba(191,0,255,0.15); color:var(--neon);
+  border-color:rgba(191,0,255,0.5); box-shadow:0 0 10px rgba(191,0,255,0.2);
+}
+.grade-btn:hover:not(.sel) { border-color:var(--border2); color:var(--text); }
+
+/* logo upload */
+.logo-drop {
+  border:2px dashed rgba(0,255,159,0.3); border-radius:8px;
+  padding:12px; text-align:center; cursor:pointer;
+  background:rgba(0,255,159,0.03); transition:all .2s; position:relative;
+}
+.logo-drop:hover { border-color:var(--green); background:rgba(0,255,159,0.08); }
+.logo-drop input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.logo-status {
+  font-family:'Space Mono',monospace; font-size:9px; color:var(--text3);
+  margin-top:4px; text-align:center;
+}
+.logo-status.ok { color:var(--green); }
+
+/* wm position row */
+.wm-pos-row { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+.wm-pos-btn {
+  flex:1; min-width:40px; padding:5px 3px; border-radius:6px;
+  border:1px solid var(--border2); background:var(--bg);
+  color:var(--text3); font-size:9px; font-family:'Space Mono',monospace;
+  cursor:pointer; transition:all .15s; text-align:center;
+}
+.wm-pos-btn.sel { background:rgba(0,255,159,0.1); border-color:var(--green); color:var(--green); font-weight:700; }
+
+/* lower-third section */
+.lt-section {
+  margin-top:9px; padding:9px;
+  background:rgba(255,192,64,0.03); border:1px solid rgba(255,192,64,0.15);
+  border-radius:8px;
+}
+.lt-toggle { display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+.lt-toggle-label { font-family:'Space Mono',monospace; font-size:9px; color:var(--amber); }
+.lt-toggle input { accent-color:var(--amber); width:13px; height:13px; cursor:pointer; }
+.lt-controls { margin-top:8px; display:none; }
+.lt-color-row { display:flex; gap:5px; margin-top:5px; }
+.lt-color-swatch {
+  width:20px; height:20px; border-radius:50%; cursor:pointer;
+  border:2px solid transparent; transition:all .15s;
+}
+.lt-color-swatch.sel { border-color:#fff; transform:scale(1.2); }
+
 /* execute button */
 .btn-execute {
   width:100%;
@@ -823,6 +878,69 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
               <input type="range" class="weight-slider" id="styleWeight" min="0.1" max="1.0" step="0.1" value="0.5"
                      oninput="document.getElementById('weightVal').textContent=parseFloat(this.value).toFixed(1)">
               <span class="ref-weight-val" id="weightVal">0.5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ EDICIÓN PREMIUM ═══ -->
+        <div class="field-label" style="margin-top:16px;color:var(--green);text-shadow:0 0 8px rgba(0,255,159,0.6);">🎬 Edición Premium (gratis)</div>
+
+        <!-- Color Grade -->
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:5px;">🎨 Color Grade</div>
+        <div class="grade-grid" id="gradeGrid">
+          <button class="grade-btn sel" id="grade-none"       onclick="setColorGrade('none')">⬛ Original</button>
+          <button class="grade-btn"     id="grade-cinematico" onclick="setColorGrade('cinematico')">🎬 Cinémático</button>
+          <button class="grade-btn"     id="grade-calido"     onclick="setColorGrade('calido')">🌅 Cálido</button>
+          <button class="grade-btn"     id="grade-frio"       onclick="setColorGrade('frio')">❄️ Frío</button>
+          <button class="grade-btn"     id="grade-dramatico"  onclick="setColorGrade('dramatico')">⚡ Dramático</button>
+          <button class="grade-btn"     id="grade-vibrante"   onclick="setColorGrade('vibrante')">🌈 Vibrante</button>
+          <button class="grade-btn"     id="grade-vintage"    onclick="setColorGrade('vintage')">📽 Vintage</button>
+          <button class="grade-btn"     id="grade-neon"       onclick="setColorGrade('neon')">💜 Neon</button>
+        </div>
+
+        <!-- Watermark / Logo -->
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:10px;margin-bottom:5px;">🏷️ Watermark (logo en imagen + reel)</div>
+        <div class="logo-drop" id="logoDropZone">
+          <input type="file" id="inputLogo" accept="image/png,image/jpeg" onchange="subirLogo(this)">
+          <div style="font-size:16px;margin-bottom:3px;">🖼️</div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);">PNG con fondo transparente</div>
+        </div>
+        <div class="logo-status" id="logoStatus">Verificando...</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
+          <span style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);">Posición watermark</span>
+        </div>
+        <div class="wm-pos-row">
+          <button class="wm-pos-btn" id="wm-tl" onclick="setWmPos('tl')">↖ TL</button>
+          <button class="wm-pos-btn" id="wm-tr" onclick="setWmPos('tr')">↗ TR</button>
+          <button class="wm-pos-btn sel" id="wm-br" onclick="setWmPos('br')">↘ BR</button>
+          <button class="wm-pos-btn" id="wm-bl" onclick="setWmPos('bl')">↙ BL</button>
+        </div>
+        <div class="toggle-row" style="margin-top:7px;">
+          <span class="toggle-label" style="font-size:12px;">Activar watermark</span>
+          <label class="sw">
+            <input type="checkbox" id="toggleWatermark" checked>
+            <span class="sw-track on" id="wmTrack"><span class="sw-thumb on" id="wmThumb"></span></span>
+          </label>
+        </div>
+
+        <!-- Lower-third -->
+        <div class="lt-section">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label">📺 Lower-third (texto animado en reel)</span>
+            <input type="checkbox" id="toggleLowerThird" onchange="toggleLTControls(this.checked)">
+          </label>
+          <div class="lt-controls" id="ltControls">
+            <div class="field-label" style="margin-top:8px;color:var(--amber);">Título</div>
+            <input type="text" class="text-input" id="ltTexto" placeholder="Ej: XBOX GAME PASS ULTIMATE" style="font-weight:700;text-transform:uppercase;">
+            <div class="field-label" style="color:var(--amber);">Precio</div>
+            <input type="text" class="text-input" id="ltPrecio" placeholder="Ej: $9.900">
+            <div class="field-label" style="color:var(--amber);">Color texto</div>
+            <div class="lt-color-row">
+              <div class="lt-color-swatch sel" id="ltc-white"  style="background:#ffffff;" onclick="setLtColor('white','white')"   title="Blanco"></div>
+              <div class="lt-color-swatch"     id="ltc-yellow" style="background:#ffc040;" onclick="setLtColor('yellow','yellow')" title="Dorado"></div>
+              <div class="lt-color-swatch"     id="ltc-cyan"   style="background:#00e5ff;" onclick="setLtColor('cyan','cyan')"     title="Cyan"></div>
+              <div class="lt-color-swatch"     id="ltc-green"  style="background:#00e87a;" onclick="setLtColor('green','green')"   title="Verde"></div>
+              <div class="lt-color-swatch"     id="ltc-red"    style="background:#ff4560;" onclick="setLtColor('red','red')"       title="Rojo"></div>
             </div>
           </div>
         </div>
@@ -1584,33 +1702,43 @@ function ejecutarCiclo() {
   const cicloOverlayActivo = document.getElementById('cicloToggleOverlay').checked;
   const cicloTextoOverlay  = document.getElementById('cicloOverlayTexto').value.trim();
   const cicloFontSize      = parseInt(document.getElementById('cicloOverlayFontSize').value);
-  const styleWeight = parseFloat(document.getElementById('styleWeight').value)||0.5;
-  const body = { busqueda_libre: titulo || busqueda, precio, cliente_id, mood, hacer_reel,
-    titulo_producto: titulo || null,
+  const styleWeight        = parseFloat(document.getElementById('styleWeight').value)||0.5;
+  const usar_watermark     = document.getElementById('toggleWatermark').checked;
+  const lower_third        = getLowerThird();
+
+  const body = {
+    busqueda_libre: titulo || busqueda,
+    precio, cliente_id, mood, hacer_reel,
+    titulo_producto:       titulo || null,
     imagen_referencia_url: modoImagen==='referencia' ? urlReferencia : null,
     style_weight:          modoImagen==='referencia' ? styleWeight   : null,
+    color_grade:           colorGrade,
+    usar_watermark,
+    lower_third,
     overlay: cicloOverlayActivo && cicloTextoOverlay ? {
-      texto: cicloTextoOverlay,
-      posicion: cicloPosicion,
-      font_size: cicloFontSize,
-      glow_color: cicloGlowColor
+      texto: cicloTextoOverlay, posicion: cicloPosicion,
+      font_size: cicloFontSize, glow_color: cicloGlowColor
     } : null
   };
-  const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text||cliente_id;
-  const refInfo = modoImagen==='referencia'&&urlReferencia ? ` | ref: ✅ peso ${styleWeight}` : '';
-  const overlayInfo = cicloOverlayActivo && cicloTextoOverlay ? ` | texto: "${cicloTextoOverlay}"` : '';
-  agregarLog(`Iniciando ciclo para ${nombreCliente} — "${busqueda}" | mood: ${mood} | reel: ${hacer_reel?'sí':'no'}${refInfo}${overlayInfo}`,'info');
+
+  const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
+  const refInfo  = modoImagen==='referencia'&&urlReferencia ? ` | ref:✅` : '';
+  const gradeInfo = colorGrade !== 'none' ? ` | grade:${colorGrade}` : '';
+  const wmInfo   = usar_watermark ? ' | 🏷️wm' : '';
+  const ltInfo   = lower_third ? ` | 📺"${lower_third.texto}"` : '';
+  agregarLog(`🚀 Ciclo: ${nombreCliente} — "${busqueda}" | ${mood}${gradeInfo}${wmInfo}${ltInfo}${refInfo}`, 'info');
+
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading'); btn.textContent = '⏳ Procesando…';
-  fetch('/api/ciclo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+  fetch('/api/ciclo', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
     .then(r=>r.json())
     .then(d => {
-      agregarLog(d.msg,'success');
-      if (d.msg && (d.msg.includes('⚠️')||d.msg.includes('Error'))) {
-        btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo';
+      agregarLog(d.msg, 'success');
+      if (d.msg && (d.msg.includes('⚠️') || d.msg.includes('Error'))) {
+        btn.classList.remove('loading'); btn.textContent = '▶ Ejecutar ciclo';
       }
     })
-    .catch(()=>{ agregarLog('Error al lanzar ciclo','error'); btn.classList.remove('loading'); btn.textContent='▶ Ejecutar ciclo'; });
+    .catch(() => { agregarLog('Error al lanzar ciclo', 'error'); btn.classList.remove('loading'); btn.textContent = '▶ Ejecutar ciclo'; });
 }
 
 // ── Scheduler ────────────────────────────────────────────
@@ -1656,6 +1784,7 @@ function updateSchedStatus(on) {
 }
 
 // ── Carga inicial ─────────────────────────────────────────
+verificarLogoStatus();
 fetch('/api/clientes').then(r=>r.json()).then(data => {
   clientesData = data;
   const sel = document.getElementById('select-cliente');
@@ -1678,6 +1807,80 @@ socket.on('caption_regenerado', d => {
   }
   agregarLog('✅ Caption regenerado ✅', 'success');
 });
+
+// ── Color Grade ──────────────────────────────────────────
+let colorGrade = 'none';
+function setColorGrade(grade) {
+  colorGrade = grade;
+  document.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('sel'));
+  const el = document.getElementById('grade-' + grade);
+  if (el) el.classList.add('sel');
+}
+
+// ── Watermark / Logo ─────────────────────────────────────
+let wmPos = 'br';
+function setWmPos(pos) {
+  wmPos = pos;
+  ['tl','tr','bl','br'].forEach(p => document.getElementById('wm-'+p).classList.toggle('sel', p===pos));
+}
+
+const wmToggle = document.getElementById('toggleWatermark');
+const wmTrack  = document.getElementById('wmTrack');
+const wmThumb  = document.getElementById('wmThumb');
+wmToggle.addEventListener('change', () => {
+  wmTrack.className = 'sw-track' + (wmToggle.checked ? ' on' : '');
+  wmThumb.className = 'sw-thumb' + (wmToggle.checked ? ' on' : '');
+});
+
+function subirLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const st = document.getElementById('logoStatus');
+  st.textContent = '⏳ Subiendo logo...'; st.className = 'logo-status';
+  const fd = new FormData(); fd.append('logo', file);
+  fetch('/api/upload_logo', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => {
+      st.textContent = d.ok ? `✅ Logo activo — ${file.name}` : `❌ ${d.msg}`;
+      st.className = 'logo-status' + (d.ok ? ' ok' : '');
+      if (d.ok) agregarLog(`🏷️ Logo subido ✅ — se aplicará a imágenes y reels`, 'success');
+    }).catch(() => { st.textContent = '❌ Error subiendo logo'; });
+}
+
+function verificarLogoStatus() {
+  fetch('/api/logo_status').then(r => r.json()).then(d => {
+    const st = document.getElementById('logoStatus');
+    if (d.existe) {
+      st.textContent = `✅ Logo activo (${d.kb} KB)`;
+      st.className = 'logo-status ok';
+    } else {
+      st.textContent = 'Sin logo — sube un PNG para activar watermark';
+      st.className = 'logo-status';
+    }
+  }).catch(() => {});
+}
+
+// ── Lower-third ───────────────────────────────────────────
+let ltColor = 'white';
+function toggleLTControls(on) {
+  document.getElementById('ltControls').style.display = on ? 'block' : 'none';
+}
+function setLtColor(key, val) {
+  ltColor = val;
+  ['white','yellow','cyan','green','red'].forEach(c =>
+    document.getElementById('ltc-'+c).classList.toggle('sel', c === key)
+  );
+}
+
+function getLowerThird() {
+  if (!document.getElementById('toggleLowerThird').checked) return null;
+  const texto  = document.getElementById('ltTexto').value.trim();
+  if (!texto) return null;
+  return {
+    texto,
+    precio: document.getElementById('ltPrecio').value.trim(),
+    color:  ltColor,
+  };
+}
 
 // ── Regenerar caption ────────────────────────────────────
 function regenerarCaption(i) {
