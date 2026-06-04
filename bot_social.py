@@ -4,6 +4,9 @@ import json
 import os
 import base64
 import subprocess
+import sqlite3
+import csv
+import io as io_module
 from datetime import datetime, timedelta
 import threading
 import schedule
@@ -23,11 +26,126 @@ except ImportError:
     print("✅ Pillow instalado correctamente.")
 
 app = Flask(__name__)
-# SECRET_KEY debe ser fijo para que SocketIO mantenga sesiones entre restarts.
-# En Railway: configurar como variable de entorno. Fallback: hash derivado del nombre de app.
 _fallback_secret = "social-bot-manager-default-secret-key-2026"
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", _fallback_secret)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# ============================================
+# PERSISTENCIA SQLite
+# ============================================
+DB_PATH = os.environ.get("DB_PATH", "bot_social.db")
+
+def init_db():
+    con = sqlite3.connect(DB_PATH)
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS captions (
+        id TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        fecha TEXT
+    );
+    CREATE TABLE IF NOT EXISTS stats (
+        cliente_id TEXT PRIMARY KEY,
+        data TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS product_profiles (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        data TEXT NOT NULL,
+        fecha TEXT
+    );
+    """)
+    con.commit()
+    con.close()
+
+def _db_save_caption(entrada):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute(
+            "INSERT OR REPLACE INTO captions (id, data, fecha) VALUES (?, ?, ?)",
+            (entrada['id'], json.dumps(entrada, ensure_ascii=False), entrada.get('fecha', ''))
+        )
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error guardando caption: {e}")
+
+def _db_update_caption(borrador_id, updates):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        row = con.execute("SELECT data FROM captions WHERE id = ?", (borrador_id,)).fetchone()
+        if row:
+            data = json.loads(row[0])
+            data.update(updates)
+            con.execute("UPDATE captions SET data = ? WHERE id = ?",
+                        (json.dumps(data, ensure_ascii=False), borrador_id))
+            con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error actualizando caption: {e}")
+
+def _db_save_stats():
+    try:
+        con = sqlite3.connect(DB_PATH)
+        for cid, data in stats_global.items():
+            con.execute("INSERT OR REPLACE INTO stats (cliente_id, data) VALUES (?, ?)",
+                        (cid, json.dumps(data, ensure_ascii=False)))
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error guardando stats: {e}")
+
+def _db_load_captions():
+    try:
+        con = sqlite3.connect(DB_PATH)
+        rows = con.execute("SELECT data FROM captions ORDER BY fecha DESC LIMIT 200").fetchall()
+        con.close()
+        return [json.loads(r[0]) for r in rows]
+    except Exception as e:
+        print(f"[DB] Error cargando captions: {e}")
+        return []
+
+def _db_load_stats():
+    try:
+        con = sqlite3.connect(DB_PATH)
+        rows = con.execute("SELECT cliente_id, data FROM stats").fetchall()
+        con.close()
+        return {r[0]: json.loads(r[1]) for r in rows}
+    except Exception as e:
+        print(f"[DB] Error cargando stats: {e}")
+        return {}
+
+def _db_save_profile(profile):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute(
+            "INSERT OR REPLACE INTO product_profiles (id, nombre, data, fecha) VALUES (?, ?, ?, ?)",
+            (profile['id'], profile['nombre'], json.dumps(profile, ensure_ascii=False), profile.get('fecha', ''))
+        )
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error guardando perfil: {e}")
+
+def _db_load_profiles():
+    try:
+        con = sqlite3.connect(DB_PATH)
+        rows = con.execute("SELECT data FROM product_profiles ORDER BY fecha DESC").fetchall()
+        con.close()
+        return [json.loads(r[0]) for r in rows]
+    except Exception as e:
+        print(f"[DB] Error cargando perfiles: {e}")
+        return []
+
+def _db_delete_profile(profile_id):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute("DELETE FROM product_profiles WHERE id = ?", (profile_id,))
+        con.commit()
+        con.close()
+        return True
+    except Exception as e:
+        print(f"[DB] Error eliminando perfil: {e}")
+        return False
 
 # ============================================
 # AUTENTICACIÓN BÁSICA
@@ -62,9 +180,9 @@ groq_client = Groq(api_key=groq_api_key)
 stats_global = {}
 logs_global = []
 bot_activo = False
-_bot_lock = threading.Lock()  # 🔒 Protege bot_activo contra race conditions
+_bot_lock = threading.Lock()
 
-GRAPH_API_VERSION = "v21.0"  # Actualizar aquí en futuras migraciones de Meta
+GRAPH_API_VERSION = "v21.0"
 
 CLIENTES = {
     "aurakey": {
@@ -83,6 +201,14 @@ for clave, cliente in CLIENTES.items():
         'interacciones': 0,
         'ultimo_ciclo': 'Nunca'
     }
+
+# Inicializar DB y restaurar datos persistidos
+init_db()
+captions_guardados = _db_load_captions()
+_stats_db = _db_load_stats()
+for cid, sdata in _stats_db.items():
+    if cid in stats_global:
+        stats_global[cid].update(sdata)
 
 # ============================================
 # LOGS
@@ -584,8 +710,6 @@ OUTPUT: Write ONLY the Ideogram prompt, in English, 120-160 words. Start directl
         top_p=0.9,
     )
     return response.choices[0].message.content.strip()
-
-captions_guardados = []
 
 # ============================================
 # MÚSICA LOCAL POR MOOD
@@ -1311,6 +1435,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
         captions_guardados.insert(0, entrada)
+        _db_save_caption(entrada)
         socketio.emit('caption', entrada)
         log(f'✅ Borrador generado — pendiente de aprobación para {"Reel" if hacer_reel else "Post"}', 'success')
     except Exception as e:
@@ -1548,6 +1673,7 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
         captions_guardados.insert(0, entrada)
+        _db_save_caption(entrada)
         socketio.emit('caption', entrada)
         log("📝 Borrador listo. Revísalo y apruébalo desde el panel.", "success")
         socketio.emit('stats', stats_global)
@@ -1698,9 +1824,11 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
         captions_guardados.insert(0, entrada)
+        _db_save_caption(entrada)
         socketio.emit('caption', entrada)
         stats_global[cliente_id]['posts'] += 1
         stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+        _db_save_stats()
         socketio.emit('stats', stats_global)
 
     except Exception as e:
@@ -1788,10 +1916,18 @@ def api_publicar_borrador():
         borrador['estado'] = 'publicado' if publicado else 'error_publicacion'
         borrador['reel_generado'] = reel_generado
         borrador['fecha_publicacion'] = datetime.now().strftime('%d/%m %H:%M')
+        _db_update_caption(borrador_id, {
+            'caption': caption_final,
+            'publicado': publicado,
+            'estado': borrador['estado'],
+            'reel_generado': reel_generado,
+            'fecha_publicacion': borrador['fecha_publicacion'],
+        })
 
         if publicado:
             stats_global[cliente_id]['posts'] += 1
             stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
+            _db_save_stats()
             socketio.emit('stats', stats_global)
             return jsonify({'ok': True, 'msg': f"✅ {'Reel' if modo == 'reel' else 'Post'} publicado en Instagram.", 'entrada': borrador})
         return jsonify({'ok': False, 'msg': f"⚠️ No se pudo publicar el {'Reel' if modo == 'reel' else 'Post'}. Revisa los logs.", 'entrada': borrador})
@@ -1864,7 +2000,7 @@ def api_ciclo():
 
 scheduler_config = {
     "activo": False,
-    "intervalo_horas": 2,
+    "intervalo_minutos": 120,
     "busqueda": "",
     "titulo_producto": None,
     "precio": "Consultar por DM",
@@ -1880,18 +2016,16 @@ scheduler_config = {
 def _ejecutar_ciclo_scheduler():
     if not scheduler_config["activo"]:
         return
-    # 🔒 Verificar que no haya un ciclo ya corriendo antes de disparar
     with _bot_lock:
         if bot_activo:
             log("⏰ Scheduler: ciclo anterior aún activo, se omite esta ejecución.", "warning")
             return
     log("⏰ Scheduler: disparando ciclo automático...", "info")
     scheduler_config["ciclos_ejecutados"] += 1
-    # Calcular próximo ciclo
-    proximo = datetime.now() + timedelta(hours=scheduler_config["intervalo_horas"])
+    minutos = scheduler_config["intervalo_minutos"]
+    proximo = datetime.now() + timedelta(minutes=minutos)
     scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
     socketio.emit("scheduler_status", scheduler_config)
-    # 🔧 Lanzar en thread separado — no bloquear el loop del scheduler
     hilo = threading.Thread(
         target=ciclo_libre,
         kwargs={
@@ -1911,11 +2045,12 @@ def _ejecutar_ciclo_scheduler():
 def _aplicar_schedule():
     schedule.clear("auto")
     if scheduler_config["activo"] and scheduler_config["busqueda"]:
-        horas = scheduler_config["intervalo_horas"]
-        schedule.every(horas).hours.do(_ejecutar_ciclo_scheduler).tag("auto")
-        proximo = datetime.now() + timedelta(hours=horas)
+        minutos = scheduler_config["intervalo_minutos"]
+        schedule.every(minutos).minutes.do(_ejecutar_ciclo_scheduler).tag("auto")
+        proximo = datetime.now() + timedelta(minutes=minutos)
         scheduler_config["proximo_ciclo"] = proximo.strftime("%d/%m %H:%M")
-        log(f"⏰ Scheduler activado — cada {horas}h | próximo: {scheduler_config['proximo_ciclo']}", "success")
+        label = f"{minutos}m" if minutos < 60 else f"{minutos//60}h"
+        log(f"⏰ Scheduler activado — cada {label} | próximo: {scheduler_config['proximo_ciclo']}", "success")
     else:
         scheduler_config["proximo_ciclo"] = None
         log("⏹ Scheduler detenido.", "warning")
@@ -1945,7 +2080,11 @@ def api_estado():
 def api_scheduler_set():
     data = request.get_json() or {}
     scheduler_config["activo"] = bool(data.get("activo", False))
-    scheduler_config["intervalo_horas"] = int(data.get("intervalo_horas", 2))
+    # Soporte para intervalo_minutos (nuevo) e intervalo_horas (legado)
+    if "intervalo_minutos" in data:
+        scheduler_config["intervalo_minutos"] = int(data["intervalo_minutos"])
+    elif "intervalo_horas" in data:
+        scheduler_config["intervalo_minutos"] = int(data["intervalo_horas"]) * 60
     scheduler_config["busqueda"] = data.get("busqueda", "").strip()
     scheduler_config["titulo_producto"] = data.get("titulo_producto", "").strip() or None
     scheduler_config["precio"] = data.get("precio", "Consultar por DM")
@@ -1956,6 +2095,182 @@ def api_scheduler_set():
     scheduler_config["style_weight"] = float(data.get("style_weight", 0.5) or 0.5)
     _aplicar_schedule()
     return jsonify({"ok": True, "config": scheduler_config})
+
+
+# ============================================
+# NUEVAS RUTAS PREMIUM
+# ============================================
+
+@app.route('/api/profiles', methods=['GET'])
+@requiere_auth
+def api_profiles_get():
+    return jsonify(_db_load_profiles())
+
+@app.route('/api/profiles', methods=['POST'])
+@requiere_auth
+def api_profiles_post():
+    data = request.get_json() or {}
+    nombre = data.get('nombre', '').strip()
+    if not nombre:
+        return jsonify({'ok': False, 'msg': 'El perfil necesita un nombre'}), 400
+    profile = {
+        'id': f"profile_{int(time.time() * 1000)}",
+        'nombre': nombre,
+        'busqueda': data.get('busqueda', '').strip(),
+        'titulo_producto': data.get('titulo_producto', '').strip(),
+        'precio': data.get('precio', '').strip(),
+        'mood': data.get('mood', 'energico'),
+        'cliente_id': data.get('cliente_id', 'aurakey'),
+        'fecha': datetime.now().strftime('%d/%m/%Y'),
+    }
+    _db_save_profile(profile)
+    return jsonify({'ok': True, 'profile': profile})
+
+@app.route('/api/profiles/<profile_id>', methods=['DELETE'])
+@requiere_auth
+def api_profiles_delete(profile_id):
+    ok = _db_delete_profile(profile_id)
+    return jsonify({'ok': ok})
+
+
+@app.route('/api/regenerar_caption', methods=['POST'])
+@requiere_auth
+def api_regenerar_caption():
+    data = request.get_json() or {}
+    borrador_id = data.get('id')
+    borrador = _buscar_borrador(borrador_id)
+    if not borrador:
+        return jsonify({'ok': False, 'msg': '⚠️ Borrador no encontrado'})
+    with _bot_lock:
+        if bot_activo:
+            return jsonify({'ok': False, 'msg': '⚠️ Ya hay un proceso corriendo. Esperá que termine.'})
+
+    def _regen():
+        global bot_activo
+        with _bot_lock:
+            bot_activo = True
+        socketio.emit('bot_status', {'activo': True})
+        try:
+            cliente_str = borrador.get('cliente', '')
+            nombre_prod = cliente_str.split('—')[1].strip() if '—' in cliente_str else cliente_str
+            prod_info = {
+                'nombre': borrador.get('cliente_id', 'aurakey'),
+                'titulo_producto': nombre_prod,
+                'detalle_producto': nombre_prod,
+                'keyword_busqueda': nombre_prod.split()[0] if nombre_prod else 'producto',
+                'ficha': None,
+            }
+            log(f"🔄 Regenerando caption para '{nombre_prod}'...", "info")
+            ficha = normalizar_producto_info(nombre_prod, None)
+            prod_info['ficha'] = ficha
+            tendencias = buscar_tendencias_reales_api(prod_info)
+            precio = data.get('precio', 'Consultar por DM')
+            nuevo_caption = generar_post_estricto(prod_info, tendencias, precio)
+            borrador['caption'] = nuevo_caption
+            _db_update_caption(borrador_id, {'caption': nuevo_caption})
+            socketio.emit('caption_regenerado', {'id': borrador_id, 'caption': nuevo_caption})
+            log('✅ Caption regenerado ✅', 'success')
+        except Exception as e:
+            log(f'❌ Error regenerando caption: {e}', 'error')
+        finally:
+            with _bot_lock:
+                bot_activo = False
+            socketio.emit('bot_status', {'activo': False})
+
+    threading.Thread(target=_regen, daemon=True).start()
+    return jsonify({'ok': True, 'msg': '🔄 Regenerando caption...'})
+
+
+@app.route('/api/captions/export', methods=['GET'])
+@requiere_auth
+def api_captions_export():
+    output = io_module.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Cliente', 'Fecha', 'Estado', 'Tipo', 'Caption', 'URL Imagen', 'Tendencia'])
+    for c in captions_guardados:
+        writer.writerow([
+            c.get('id', ''),
+            c.get('cliente', ''),
+            c.get('fecha', ''),
+            'Publicado' if c.get('publicado') else 'Borrador',
+            c.get('tipo_publicacion', ''),
+            c.get('caption', '').replace('\n', ' '),
+            c.get('imagen_url', ''),
+            c.get('tendencia', ''),
+        ])
+    output.seek(0)
+    filename = f"captions_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
+
+
+@app.route('/api/token_check', methods=['GET'])
+@requiere_auth
+def api_token_check():
+    results = {}
+    for cid, cliente in CLIENTES.items():
+        token = cliente.get('meta_token')
+        if not token:
+            results[cid] = {'valido': False, 'msg': 'Sin token configurado'}
+            continue
+        try:
+            res = req.get(
+                "https://graph.facebook.com/debug_token",
+                params={"input_token": token, "access_token": token},
+                timeout=8
+            )
+            d = res.json().get('data', {})
+            exp = d.get('expires_at', 0)
+            if exp == 0:
+                results[cid] = {'valido': True, 'tipo': 'never_expires', 'msg': 'Token sin expiración (largo plazo)'}
+            else:
+                exp_dt = datetime.fromtimestamp(exp)
+                dias = (exp_dt - datetime.now()).days
+                results[cid] = {
+                    'valido': d.get('is_valid', False),
+                    'expira': exp_dt.strftime('%d/%m/%Y'),
+                    'dias_restantes': dias,
+                    'msg': f'Expira en {dias} días' if dias > 0 else '⚠️ TOKEN EXPIRADO',
+                }
+        except Exception as e:
+            results[cid] = {'valido': False, 'msg': str(e)}
+    return jsonify(results)
+
+
+@app.route('/api/insights/<cliente_id>', methods=['GET'])
+@requiere_auth
+def api_insights(cliente_id):
+    cliente = CLIENTES.get(cliente_id)
+    if not cliente:
+        return jsonify({'error': 'Cliente no encontrado'}), 404
+    meta_token = cliente.get('meta_token')
+    ig_user_id = cliente.get('ig_user_id')
+    if not meta_token or not ig_user_id:
+        return jsonify({'error': 'Credenciales no configuradas'}), 400
+    try:
+        res_info = req.get(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}",
+            params={"fields": "followers_count,media_count,username", "access_token": meta_token},
+            timeout=10
+        )
+        info = res_info.json()
+        res_media = req.get(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media",
+            params={
+                "fields": "id,timestamp,like_count,comments_count,media_type,thumbnail_url,media_url",
+                "limit": 10,
+                "access_token": meta_token
+            },
+            timeout=10
+        )
+        media = res_media.json()
+        return jsonify({'ok': True, 'perfil': info, 'media_reciente': media.get('data', [])})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
 
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")

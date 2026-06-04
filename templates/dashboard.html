@@ -702,6 +702,11 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 <!-- SIDEBAR OVERLAY (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
+<!-- Token warning banner -->
+<div id="tokenWarning" style="display:none;background:rgba(255,45,107,0.12);border-bottom:1px solid rgba(255,45,107,0.4);padding:6px 20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#ff2d6b;text-align:center;">
+  ⚠️ <span id="tokenWarningText">Token Meta próximo a expirar</span> — <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" style="color:#ff6ef7;text-decoration:underline;">Renovar token</a>
+</div>
+
 <header class="header">
   <div class="logo">
     <button class="burger" id="burgerBtn" onclick="toggleSidebar()" aria-label="Menú">☰</button>
@@ -713,6 +718,8 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Sistema activo</span>
     </div>
+    <button onclick="exportarCSV()" title="Exportar historial CSV" style="background:rgba(0,255,159,0.08);border:1px solid rgba(0,255,159,0.25);border-radius:6px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer;">⬇ CSV</button>
+    <button onclick="verificarToken()" title="Verificar token Meta" style="background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.25);border-radius:6px;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer;">🔑 Token</button>
     <div class="clock" id="reloj">--:--:--</div>
   </div>
 </header>
@@ -745,7 +752,8 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
     <nav class="tab-nav" role="tablist">
       <button class="tab-btn active" id="tab-ciclo"    onclick="switchTab('ciclo')"    role="tab"><span class="tb-icon">⚡</span> Ciclo</button>
       <button class="tab-btn"        id="tab-publicar" onclick="switchTab('publicar')" role="tab"><span class="tb-icon">📤</span> Publicar</button>
-      <button class="tab-btn"        id="tab-clientes" onclick="switchTab('clientes')" role="tab"><span class="tb-icon">👥</span> Clientes</button>
+      <button class="tab-btn"        id="tab-perfiles" onclick="switchTab('perfiles')" role="tab"><span class="tb-icon">💾</span> Perfiles</button>
+      <button class="tab-btn"        id="tab-clientes" onclick="switchTab('clientes')" role="tab"><span class="tb-icon">📊</span> Stats</button>
     </nav>
 
     <!-- tab panels -->
@@ -874,10 +882,10 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
           <div class="sched-row">
             <span class="sched-label">Intervalo</span>
             <div class="sched-interval-btns">
-              <button class="sched-interval-btn sel" id="sched-15"  onclick="setSchedInterval(15)">15m</button>
+              <button class="sched-interval-btn"     id="sched-15"  onclick="setSchedInterval(15)">15m</button>
               <button class="sched-interval-btn"     id="sched-30"  onclick="setSchedInterval(30)">30m</button>
               <button class="sched-interval-btn"     id="sched-60"  onclick="setSchedInterval(60)">1h</button>
-              <button class="sched-interval-btn"     id="sched-120" onclick="setSchedInterval(120)">2h</button>
+              <button class="sched-interval-btn sel" id="sched-120" onclick="setSchedInterval(120)">2h</button>
             </div>
           </div>
           <div class="sched-status">
@@ -986,12 +994,48 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
         </div>
       </div><!-- /panel-publicar -->
 
-      <!-- ── TAB: CLIENTES ── -->
+      <!-- ── TAB: PERFILES ── -->
+      <div class="tab-panel" id="panel-perfiles">
+        <div class="field-label" style="margin-top:0">💾 Productos guardados</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:10px;">Guarda combinaciones frecuentes para lanzar con 1 clic</div>
+
+        <!-- Formulario nuevo perfil -->
+        <div style="background:rgba(0,229,255,0.03);border:1px solid rgba(0,229,255,0.15);border-radius:9px;padding:11px;margin-bottom:12px;">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--cyan);margin-bottom:8px;">+ NUEVO PERFIL</div>
+          <input type="text" class="text-input" id="perfil-nombre" placeholder="Nombre del perfil (ej: Xbox Game Pass)">
+          <div class="field-label">Búsqueda libre</div>
+          <input type="text" class="text-input" id="perfil-busqueda" placeholder="gaming, xbox, consola chile">
+          <div class="field-label">Título producto</div>
+          <input type="text" class="text-input" id="perfil-titulo" placeholder="Xbox Game Pass Ultimate">
+          <div class="field-label">Precio</div>
+          <input type="text" class="text-input" id="perfil-precio" placeholder="$9.900">
+          <div class="field-label">Mood</div>
+          <select id="perfil-mood">
+            <option value="energico">⚡ Enérgico</option>
+            <option value="motivador">🔥 Motivador</option>
+            <option value="alegre">😊 Alegre</option>
+            <option value="corporativo">💼 Corporativo</option>
+            <option value="relajado">🌿 Relajado</option>
+            <option value="misterioso">🌑 Misterioso</option>
+          </select>
+          <button onclick="guardarPerfil()" style="width:100%;margin-top:10px;background:linear-gradient(135deg,rgba(0,229,255,0.15),rgba(0,229,255,0.05));border:1px solid rgba(0,229,255,0.35);border-radius:7px;color:var(--cyan);padding:8px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.06em;">💾 GUARDAR PERFIL</button>
+        </div>
+
+        <!-- Lista de perfiles -->
+        <div id="perfilesList">
+          <div style="text-align:center;padding:20px;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;">Sin perfiles guardados aún</div>
+        </div>
+      </div>
+
+      <!-- ── TAB: CLIENTES / STATS ── -->
       <div class="tab-panel" id="panel-clientes">
-        <div class="field-label" style="margin-top:0">Clientes registrados</div>
+        <div class="field-label" style="margin-top:0">📊 Stats e Insights</div>
         <div id="clientesList">
           <!-- filled dynamically -->
         </div>
+        <div class="field-label" style="margin-top:14px;">📈 Insights Instagram</div>
+        <button onclick="cargarInsights()" style="width:100%;background:rgba(157,78,255,0.1);border:1px solid rgba(157,78,255,0.3);border-radius:7px;color:var(--purple);padding:8px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">📡 Cargar desde Instagram API</button>
+        <div id="insightsBox" style="margin-top:10px;"></div>
       </div>
 
     </div><!-- /tab-panels -->
@@ -1045,10 +1089,11 @@ function closeSidebar() {
 
 // ── Tab switching ────────────────────────────────────────
 function switchTab(name) {
-  ['ciclo','publicar','clientes'].forEach(t => {
+  ['ciclo','publicar','perfiles','clientes'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t === name);
     document.getElementById('panel-'+t).classList.toggle('active', t === name);
   });
+  if (name === 'perfiles') cargarPerfiles();
 }
 
 // ── Search input mode indicator ───────────────────────────
@@ -1144,10 +1189,10 @@ function renderCaptions() {
   }
   list.innerHTML = `<div class="caption-grid">${captions.map((c,i) => {
     const tipo = c.tipo_publicacion === 'reel' ? '🎬 Reel' : '📸 Post';
-    const estado = c.publicado ? '✅ Publicado en Instagram' : '📝 Borrador pendiente';
-    const estadoClass = c.publicado ? 'yes' : 'no';
+    const estado = c.publicado ? '✅ Publicado' : (c.estado === 'error_publicacion' ? '❌ Error al publicar' : '📝 Borrador');
+    const estadoClass = c.publicado ? 'yes' : (c.estado === 'error_publicacion' ? 'no' : 'no');
     return `
-    <div class="caption-card">
+    <div class="caption-card" id="card_${i}">
       <div class="caption-card-header">
         <span class="caption-tag">${c.cliente}</span>
         <span class="caption-date">${c.fecha}</span>
@@ -1160,16 +1205,18 @@ function renderCaptions() {
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;">
           <div class="published-badge ${estadoClass}">${estado}</div>
           <div class="published-badge no" style="background:rgba(0,229,255,0.08);color:var(--cyan);border-color:rgba(0,229,255,0.22);">${tipo}</div>
-          ${c.reel_generado?`<div class="published-badge yes" style="background:rgba(157,111,255,0.1);color:var(--purple);border-color:rgba(157,111,255,0.3);">🎬 Reel generado</div>`:''}
+          ${c.reel_generado?`<div class="published-badge yes" style="background:rgba(157,111,255,0.1);color:var(--purple);border-color:rgba(157,111,255,0.3);">🎬 Reel</div>`:''}
+          ${c.con_referencia?`<div class="published-badge yes" style="background:rgba(0,232,122,0.06);color:var(--green);border-color:rgba(0,232,122,0.2);">🖼️ Ref</div>`:''}
         </div>
         <div class="caption-field-label">Caption editable</div>
         <textarea class="caption-ta" rows="5" id="caption_${i}">${c.caption}</textarea>
         <div class="caption-field-label">Prompt imagen</div>
         <textarea class="caption-ta prompt-ta" rows="2" id="prompt_${i}">${c.prompt_imagen||'No generado'}</textarea>
         <div class="caption-actions">
-          ${(!c.publicado && c.id && c.imagen_url) ? `<button class="action-btn approve" onclick="publicarBorrador(${i})">🚀 Aprobar y publicar</button>` : ''}
-          <button class="action-btn"        onclick="copiarCaption(${i})">📋 Copiar</button>
-          <button class="action-btn"        onclick="copiarPrompt(${i})">🎨 Prompt</button>
+          ${(!c.publicado && c.id && c.imagen_url) ? `<button class="action-btn approve" onclick="publicarBorrador(${i})">🚀 Publicar</button>` : ''}
+          ${c.id ? `<button class="action-btn" onclick="regenerarCaption(${i})" title="Genera un nuevo caption para este producto">🔄 Regen</button>` : ''}
+          <button class="action-btn" onclick="copiarCaption(${i})">📋 Copiar</button>
+          <button class="action-btn" onclick="copiarPrompt(${i})">🎨 Prompt</button>
           ${c.imagen_url?`<button class="action-btn view" onclick="window.open('${c.imagen_url}','_blank')">🔗 Ver</button>`:''}
           <button class="action-btn danger" onclick="borrarCaption(${i})">🗑</button>
         </div>
@@ -1567,7 +1614,7 @@ function ejecutarCiclo() {
 }
 
 // ── Scheduler ────────────────────────────────────────────
-let schedInterval = 15;
+let schedInterval = 120;
 let schedTimer    = null;
 let schedCount    = 0;
 let schedNextIn   = 0;
@@ -1620,6 +1667,198 @@ fetch('/api/captions').then(r=>r.json()).then(data => { captions=data; renderCap
 
 // Listener para texto overlay en tiempo real
 document.getElementById('overlayTexto').addEventListener('input', renderOverlayCanvas);
+
+// ── Socket: caption regenerado ───────────────────────────
+socket.on('caption_regenerado', d => {
+  const idx = captions.findIndex(c => c.id === d.id);
+  if (idx >= 0) {
+    captions[idx].caption = d.caption;
+    const ta = document.getElementById('caption_' + idx);
+    if (ta) { ta.value = d.caption; ta.style.border = '1px solid var(--green)'; setTimeout(()=>ta.style.border='',2000); }
+  }
+  agregarLog('✅ Caption regenerado ✅', 'success');
+});
+
+// ── Regenerar caption ────────────────────────────────────
+function regenerarCaption(i) {
+  const c = captions[i];
+  if (!c || !c.id) return;
+  agregarLog(`🔄 Regenerando caption para "${c.cliente}"...`, 'info');
+  fetch('/api/regenerar_caption', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ id: c.id })
+  }).then(r=>r.json()).then(d => {
+    if (!d.ok) agregarLog(d.msg, 'warning');
+  });
+}
+
+// ── Export CSV ───────────────────────────────────────────
+function exportarCSV() {
+  window.location.href = '/api/captions/export';
+  agregarLog('⬇ Exportando historial CSV...', 'info');
+}
+
+// ── Verificar token Meta ─────────────────────────────────
+function verificarToken() {
+  agregarLog('🔑 Verificando token Meta...', 'info');
+  fetch('/api/token_check').then(r=>r.json()).then(data => {
+    const warn = document.getElementById('tokenWarning');
+    const txt  = document.getElementById('tokenWarningText');
+    let hayProblema = false;
+    let msgs = [];
+    for (const [cid, info] of Object.entries(data)) {
+      if (!info.valido) {
+        hayProblema = true;
+        msgs.push(`${cid}: ${info.msg}`);
+        agregarLog(`❌ Token ${cid}: ${info.msg}`, 'error');
+      } else if (info.dias_restantes !== undefined && info.dias_restantes < 10) {
+        hayProblema = true;
+        msgs.push(`${cid}: ${info.msg}`);
+        agregarLog(`⚠️ Token ${cid}: ${info.msg}`, 'warning');
+      } else {
+        agregarLog(`✅ Token ${cid}: ${info.msg || 'OK'}`, 'success');
+      }
+    }
+    warn.style.display = hayProblema ? 'block' : 'none';
+    if (hayProblema) txt.textContent = msgs.join(' | ');
+  }).catch(e => agregarLog(`❌ Error verificando token: ${e}`, 'error'));
+}
+
+// ── Insights ─────────────────────────────────────────────
+function cargarInsights() {
+  const clienteId = document.getElementById('select-cliente')?.value || 'aurakey';
+  const box = document.getElementById('insightsBox');
+  box.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);padding:8px;">⏳ Cargando desde Instagram...</div>`;
+  fetch(`/api/insights/${clienteId}`).then(r=>r.json()).then(d => {
+    if (!d.ok) {
+      box.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--red);padding:8px;">❌ ${d.error}</div>`;
+      return;
+    }
+    const p = d.perfil || {};
+    const media = d.media_reciente || [];
+    const totalLikes = media.reduce((s,m) => s + (m.like_count||0), 0);
+    const totalComent = media.reduce((s,m) => s + (m.comments_count||0), 0);
+    box.innerHTML = `
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:11px;margin-top:4px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--neon);margin-bottom:8px;">@${p.username||'—'}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;">
+            <div style="font-family:'Orbitron',monospace;font-size:16px;color:#fff;">${(p.followers_count||0).toLocaleString()}</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);">SEGUIDORES</div>
+          </div>
+          <div style="text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;">
+            <div style="font-family:'Orbitron',monospace;font-size:16px;color:#fff;">${p.media_count||0}</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);">POSTS TOTAL</div>
+          </div>
+          <div style="text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;">
+            <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--green);">${totalLikes}</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);">LIKES (ult.10)</div>
+          </div>
+          <div style="text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;">
+            <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--cyan);">${totalComent}</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);">COMENT. (ult.10)</div>
+          </div>
+        </div>
+        ${media.length ? `<div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);margin-top:8px;">${media.map(m=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px solid var(--border);"><span>${m.timestamp?.slice(0,10)||'—'} ${m.media_type||''}</span><span>❤️${m.like_count||0} 💬${m.comments_count||0}</span></div>`).join('')}</div>` : ''}
+      </div>`;
+    agregarLog(`📊 Insights cargados: ${p.followers_count||0} seguidores, ${p.media_count||0} posts`, 'success');
+  }).catch(e => {
+    box.innerHTML = `<div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--red);padding:8px;">❌ Error: ${e}</div>`;
+  });
+}
+
+// ── Perfiles de producto ─────────────────────────────────
+function cargarPerfiles() {
+  fetch('/api/profiles').then(r=>r.json()).then(perfiles => {
+    const el = document.getElementById('perfilesList');
+    if (!perfiles.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;">Sin perfiles guardados aún</div>`;
+      return;
+    }
+    el.innerHTML = perfiles.map(p => `
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:#fff;">${p.nombre}</span>
+          <div style="display:flex;gap:4px;">
+            <button onclick="cargarPerfil('${p.id}')" style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);border-radius:5px;color:var(--cyan);font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;">⚡ Usar</button>
+            <button onclick="eliminarPerfil('${p.id}')" style="background:rgba(255,45,107,0.08);border:1px solid rgba(255,45,107,0.25);border-radius:5px;color:var(--red);font-size:10px;padding:3px 7px;cursor:pointer;">🗑</button>
+          </div>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);line-height:1.8;">
+          ${p.titulo_producto ? `<div>📦 ${p.titulo_producto}</div>` : ''}
+          ${p.busqueda ? `<div>🔍 ${p.busqueda}</div>` : ''}
+          ${p.precio ? `<div>💰 ${p.precio}</div>` : ''}
+          <div>🎵 ${p.mood} · ${p.fecha}</div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function guardarPerfil() {
+  const nombre = document.getElementById('perfil-nombre').value.trim();
+  if (!nombre) { agregarLog('⚠️ El perfil necesita un nombre', 'warning'); return; }
+  const payload = {
+    nombre,
+    busqueda:       document.getElementById('perfil-busqueda').value.trim(),
+    titulo_producto:document.getElementById('perfil-titulo').value.trim(),
+    precio:         document.getElementById('perfil-precio').value.trim(),
+    mood:           document.getElementById('perfil-mood').value,
+    cliente_id:     document.getElementById('select-cliente').value,
+  };
+  fetch('/api/profiles', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
+    .then(r=>r.json()).then(d => {
+      if (d.ok) {
+        agregarLog(`💾 Perfil "${nombre}" guardado ✅`, 'success');
+        ['perfil-nombre','perfil-busqueda','perfil-titulo','perfil-precio'].forEach(id => document.getElementById(id).value='');
+        cargarPerfiles();
+      } else { agregarLog(d.msg || 'Error guardando perfil', 'error'); }
+    });
+}
+
+function cargarPerfil(profileId) {
+  fetch('/api/profiles').then(r=>r.json()).then(perfiles => {
+    const p = perfiles.find(x => x.id === profileId);
+    if (!p) return;
+    if (p.busqueda)        document.getElementById('input-busqueda').value = p.busqueda;
+    if (p.titulo_producto) document.getElementById('ciclo-titulo').value   = p.titulo_producto;
+    if (p.precio)          document.getElementById('input-precio').value   = p.precio;
+    if (p.mood)            document.getElementById('select-mood').value    = p.mood;
+    if (p.cliente_id)      { document.getElementById('select-cliente').value = p.cliente_id; actualizarClienteSeleccionado(); }
+    // Actualizar indicador de modo
+    const val = p.busqueda || p.titulo_producto;
+    if (val) {
+      document.getElementById('modeIndicator').className = 'mode-tag libre';
+      document.getElementById('modeLabel').textContent   = `Perfil: "${p.nombre}"`;
+    }
+    switchTab('ciclo');
+    agregarLog(`✅ Perfil "${p.nombre}" cargado — listo para ejecutar ciclo`, 'success');
+  });
+}
+
+function eliminarPerfil(profileId) {
+  if (!confirm('¿Eliminar este perfil?')) return;
+  fetch(`/api/profiles/${profileId}`, { method:'DELETE' })
+    .then(r=>r.json()).then(d => {
+      if (d.ok) { agregarLog('🗑 Perfil eliminado', 'warning'); cargarPerfiles(); }
+    });
+}
+
+// Verificar token al cargar (silencioso — solo muestra banner si hay problema)
+setTimeout(() => {
+  fetch('/api/token_check').then(r=>r.json()).then(data => {
+    let hayProblema = false; let msgs = [];
+    for (const [cid, info] of Object.entries(data)) {
+      if (!info.valido || (info.dias_restantes !== undefined && info.dias_restantes < 10)) {
+        hayProblema = true; msgs.push(`${cid}: ${info.msg}`);
+      }
+    }
+    if (hayProblema) {
+      document.getElementById('tokenWarning').style.display = 'block';
+      document.getElementById('tokenWarningText').textContent = msgs.join(' | ');
+    }
+  }).catch(() => {});
+}, 3000);
 </script>
 </body>
 </html>
