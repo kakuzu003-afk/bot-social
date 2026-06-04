@@ -220,7 +220,10 @@ def log(msg, tipo='info'):
     if len(logs_global) > 100:
         logs_global.pop(0)
     socketio.emit('log', entrada)
-    print(f"[{tipo.upper()}] {msg}")
+    try:
+        print(f"[{tipo.upper()}] {msg}")
+    except UnicodeEncodeError:
+        print(f"[{tipo.upper()}] {msg}".encode('ascii', errors='replace').decode('ascii'))
 
 # ============================================
 # TENDENCIAS
@@ -919,7 +922,8 @@ def _only_lower_third_video(input_path, output_path, lower_third):
 # ============================================
 
 def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
-                       color_grade="none", watermark_path=None, lower_third=None):
+                       color_grade="none", watermark_path=None, lower_third=None,
+                       usar_watermark=True):
     """
     Genera un Reel cinematográfico premium usando ffmpeg (gratis).
     - 6 moods con animaciones únicas (zoom, Ken Burns, pan, drift)
@@ -1029,7 +1033,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         return subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
     try:
-        wm_log = "+ wm" if (watermark_path or os.path.exists(LOGO_PATH_DEFAULT)) else ""
+        wm_log = "+ wm" if usar_watermark and (watermark_path or os.path.exists(LOGO_PATH_DEFAULT)) else ""
         lt_log = "+ lower3rd" if (lower_third and lower_third.get('texto')) else ""
         cg_log = f"+ {color_grade}" if cg else ""
         log(f"🎬 Generando Reel premium — mood:{mood}{cg_log}{wm_log}{lt_log} ({duracion}s)...", "info")
@@ -1045,7 +1049,7 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
             return None
 
         # ── Segunda pasada: watermark + lower-third ──────────────────────────
-        lpath = watermark_path or (LOGO_PATH_DEFAULT if os.path.exists(LOGO_PATH_DEFAULT) else None)
+        lpath = watermark_path or (LOGO_PATH_DEFAULT if (usar_watermark and os.path.exists(LOGO_PATH_DEFAULT)) else None)
         use_wm = bool(lpath and os.path.exists(lpath))
         use_lt = bool(lower_third and lower_third.get('texto') and DRAWTEXT_FONT)
 
