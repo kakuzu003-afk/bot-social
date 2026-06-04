@@ -1352,17 +1352,13 @@ function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]
 // ── Publicar imagen propia ───────────────────────────────
 let urlImagenPropia  = null;
 let modoPublicacion  = 'post';
-let overlayPosicion  = 'center';
 let overlayGlowColor = '#00e5ff';
-let overlayGlowKey   = 'cyan';
-// Posición libre: fracción 0-1 de la imagen
 let overlayX = 0.5;
 let overlayY = 0.5;
 
 // ── Variables ciclo overlay ───────────────────────────────
 let cicloPosicion  = 'center';
 let cicloGlowColor = '#00e5ff';
-let cicloGlowKey   = 'cyan';
 
 const dropZone = document.getElementById('uploadDropZone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -1493,13 +1489,8 @@ function toggleOverlayControls(checked) {
   if (dragHint) dragHint.style.display = checked ? 'block' : 'none';
   renderOverlayCanvas();
 }
-function setPosicion(pos) {
-  overlayPosicion = pos;
-  ['top','center','bottom'].forEach(p => document.getElementById('pos-'+p).classList.toggle('sel', p===pos));
-  renderOverlayCanvas();
-}
 function setGlow(key, hex) {
-  overlayGlowKey = key; overlayGlowColor = hex;
+  overlayGlowColor = hex;
   document.querySelectorAll('.glow-swatch').forEach(s => s.classList.remove('sel'));
   document.getElementById('glow-'+key).classList.add('sel');
   renderOverlayCanvas();
@@ -1515,7 +1506,7 @@ function setCicloPosicion(pos, el) {
   if (el) el.classList.add('ciclo-pos-sel');
 }
 function setCicloGlow(key, hex) {
-  cicloGlowKey = key; cicloGlowColor = hex;
+  cicloGlowColor = hex;
   document.querySelectorAll('#cicloOverlayControls .glow-swatch').forEach(s => s.classList.remove('sel'));
   document.getElementById('ciclo-glow-'+key).classList.add('sel');
 }
@@ -1585,7 +1576,6 @@ async function cargarImagenPropia(input) {
       uploadDropZone.classList.add('has-image');
       uploadDropZone.querySelector('.upload-drop-text').innerHTML = 'Toca para <strong>cambiar imagen</strong>';
       renderOverlayCanvas();
-      initCanvasDrag();
     };
     img.src = e.target.result;
   };
@@ -1627,7 +1617,6 @@ async function generarImagenPropia() {
     mood:   modoPublicacion==='reel' ? document.getElementById('upload-mood').value : null,
     overlay: overlayActivo && textoOverlay ? {
       texto: textoOverlay,
-      posicion: overlayPosicion,
       x: overlayX,
       y: overlayY,
       font_size: fontSize,
@@ -1797,6 +1786,9 @@ fetch('/api/captions').then(r=>r.json()).then(data => { captions=data; renderCap
 // Listener para texto overlay en tiempo real
 document.getElementById('overlayTexto').addEventListener('input', renderOverlayCanvas);
 
+// Inicializar drag del canvas una sola vez (no dentro del loop de carga)
+initCanvasDrag();
+
 // ── Socket: caption regenerado ───────────────────────────
 socket.on('caption_regenerado', d => {
   const idx = captions.findIndex(c => c.id === d.id);
@@ -1818,9 +1810,7 @@ function setColorGrade(grade) {
 }
 
 // ── Watermark / Logo ─────────────────────────────────────
-let wmPos = 'br';
 function setWmPos(pos) {
-  wmPos = pos;
   ['tl','tr','bl','br'].forEach(p => document.getElementById('wm-'+p).classList.toggle('sel', p===pos));
 }
 
