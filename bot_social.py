@@ -28,7 +28,16 @@ except ImportError:
 app = Flask(__name__)
 _fallback_secret = "social-bot-manager-default-secret-key-2026"
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", _fallback_secret)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode='gevent',
+    manage_session=False,
+    ping_timeout=60,
+    ping_interval=25,
+    logger=False,
+    engineio_logger=False,
+)
 
 # ============================================
 # PERSISTENCIA SQLite
