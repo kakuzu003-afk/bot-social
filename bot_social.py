@@ -744,39 +744,100 @@ def _esc_dt(text):
 
 def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
     """
-    Construye el filtro ffmpeg de diseño en movimiento para reels.
-    Adaptable a cualquier imagen — todos los elementos son relativos a iw/ih o
-    posicionados para salida 1080x1920 (resolución fija del zoompan).
+    Sistema de diseño en movimiento cinematográfico — 6 capas sobre 1080x1920.
 
-    Capas que siempre se aplican:
-      • Corner accents cyan en esquinas superiores (marcos del encuadre)
-
-    Capas adicionales cuando hay lower_third (titulo configurado):
-      • Barra oscura inferior + separador cyan
-      • Título con slide-in desde izquierda + fade-in
-      • Precio con slide-in retardado + pulso de alpha
+    CAPA 1 · Scan Line     — línea de luz barre la imagen de arriba abajo (0-1.5s)
+    CAPA 2 · Corner Accents— marcos cyan en esquinas superiores
+    CAPA 3 · Price Badge   — tarjeta de precio pulsante (esquina superior, si hay precio)
+    CAPA 4 · Lower Third   — barra inferior + separador + título slide-in (si hay titulo)
+    CAPA 5 · Arrow Bounce  — flecha animada antes del lower-third
+    CAPA 6 · CTA Blink     — llamada a acción parpadeante
     """
     parts = []
 
-    # ── Corner accents — siempre visibles, output siempre 1080x1920 ──────
-    # Esquina superior izquierda
-    parts.append("drawbox=x=22:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill")
-    parts.append("drawbox=x=22:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill")
-    # Esquina superior derecha  (1080-22-90=968 | 1080-26=1054)
-    parts.append("drawbox=x=968:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill")
-    parts.append("drawbox=x=1054:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill")
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 1 — SCAN LINE
+    # 12 franjas de 160px, cada una activa 0.125s + overlap
+    # Resultado: línea de luz cyan barre el frame completo en 1.5s
+    # ══════════════════════════════════════════════════════════════════
+    _STRIPS = 12
+    _STRIP_H = 160        # 12 × 160 = 1920 px
+    _SCAN_DUR = 1.5
+    _step = _SCAN_DUR / _STRIPS
+    for _i in range(_STRIPS):
+        _t0 = round(_i * _step, 3)
+        _t1 = round(_t0 + _step + 0.05, 3)
+        _y  = _i * _STRIP_H
+        parts.append(
+            f"drawbox=x=0:y={_y}:w=1080:h=8:color=0x00E5FF@0.9:t=fill:"
+            f"enable='between(t\\,{_t0}\\,{_t1})'"
+        )
 
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 2 — CORNER ACCENTS
+    # Aparecen a los 0.3s (durante el scan), desaparecen con fade-out
+    # ══════════════════════════════════════════════════════════════════
+    parts.append("drawbox=x=22:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.3)'")
+    parts.append("drawbox=x=22:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.4)'")
+    parts.append("drawbox=x=968:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.3)'")
+    parts.append("drawbox=x=1054:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.4)'")
+
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 3 — PRICE BADGE  (solo si hay precio Y fuente disponible)
+    # Tarjeta naranja en esquina superior izquierda con precio pulsante
+    # x=22..282 (260px), y=115..211 (96px) — debajo de los corner accents
+    # ══════════════════════════════════════════════════════════════════
+    if fa and precio:
+        # Sombra/profundidad del badge
+        parts.append(
+            "drawbox=x=26:y=120:w=260:h=96:color=black@0.55:t=fill:"
+            "enable='gte(t\\,1.6)'"
+        )
+        # Fondo naranja
+        parts.append(
+            "drawbox=x=22:y=115:w=260:h=96:color=0xCC4400@0.88:t=fill:"
+            "enable='gte(t\\,1.6)'"
+        )
+        # Borde superior dorado
+        parts.append(
+            "drawbox=x=22:y=115:w=260:h=4:color=0xFFCC00@0.95:t=fill:"
+            "enable='gte(t\\,1.6)'"
+        )
+        # Borde izquierdo dorado
+        parts.append(
+            "drawbox=x=22:y=115:w=4:h=96:color=0xFFCC00@0.95:t=fill:"
+            "enable='gte(t\\,1.6)'"
+        )
+        # Label "PRECIO" (fade-in)
+        parts.append(
+            f"drawtext={fa}text='PRECIO':fontsize=21:fontcolor=0xFFCC00:"
+            f"x=38:y=130:"
+            f"shadowcolor=black@0.85:shadowx=1:shadowy=1:"
+            f"alpha='if(lt(t\\,1.6)\\,0\\,if(lt(t\\,2.1)\\,(t-1.6)/0.5\\,1))'"
+        )
+        # Precio grande con pulso suave (sin contínuo)
+        parts.append(
+            f"drawtext={fa}text='{precio}':fontsize=40:fontcolor=white:"
+            f"x=32:y=158:"
+            f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
+            f"alpha='if(lt(t\\,1.6)\\,0\\,if(lt(t\\,2.2)\\,(t-1.6)/0.6\\,0.65+0.35*sin(t*PI*1.8)))'"
+        )
+
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 4 — LOWER THIRD  (solo si hay titulo Y fuente disponible)
+    # Barra oscura + separador cyan + título slide-in + precio pulsante
+    # ══════════════════════════════════════════════════════════════════
     if titulo and fa:
-        # ── Barra inferior semitransparente ──────────────────────────────
+        # Barra oscura inferior (cubre y=1421-1920)
         parts.append(
-            "drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.26:color=black@0.72:t=fill"
+            "drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.26:color=black@0.76:t=fill"
         )
-        # ── Línea separadora cyan (top del lower-third) ───────────────────
+        # Separador cyan — aparece al empezar el slide-in
         parts.append(
-            "drawbox=x=0:y=ih*0.74:w=iw:h=4:color=0x00E5FF@0.95:t=fill"
+            "drawbox=x=0:y=ih*0.74:w=iw:h=4:color=0x00E5FF@0.95:t=fill:"
+            "enable='gte(t\\,0.5)'"
         )
-        # ── Título: slide-in desde izquierda ─────────────────────────────
-        # drawtext usa w/h (no iw/ih)
+        # Título: slide-in lateral + fade
         parts.append(
             f"drawtext={fa}text='{titulo}':fontsize=66:fontcolor={color}:"
             f"x='if(lt(t\\,0.7)\\,-w\\,if(lt(t\\,1.2)\\,-w+(w+30)*(t-0.7)/0.5\\,30))':y=h*0.775:"
@@ -784,13 +845,39 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
             f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.2)\\,(t-0.7)/0.5\\,1))'"
         )
         if precio:
-            # ── Precio: slide-in con delay + pulso de alpha ───────────────
+            # Precio: slide-in con delay + pulso continuo
             parts.append(
                 f"drawtext={fa}text='{precio}':fontsize=84:fontcolor=yellow:"
-                f"x='if(lt(t\\,1.0)\\,-w\\,if(lt(t\\,1.5)\\,-w+(w+30)*(t-1.0)/0.5\\,30))':y=h*0.865:"
+                f"x='if(lt(t\\,1.0)\\,-w\\,if(lt(t\\,1.5)\\,-w+(w+30)*(t-1.0)/0.5\\,30))':y=h*0.862:"
                 f"shadowcolor=black@0.9:shadowx=4:shadowy=4:"
-                f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.5)\\,(t-1.0)/0.5\\,0.75+0.25*sin(t*3.14)))'"
+                f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.5)\\,(t-1.0)/0.5\\,0.75+0.25*sin(t*PI*1.6)))'"
             )
+
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 5 — ARROW BOUNCE  (solo con lower-third activo)
+    # Tres chevrons "v" centrados que rebotan sobre el separador
+    # Aparecen a los 2.0s, rebotan a 2.5 ciclos por segundo
+    # ══════════════════════════════════════════════════════════════════
+    if titulo and fa:
+        parts.append(
+            f"drawtext={fa}text='v   v   v':fontsize=32:fontcolor=0x00E5FF:"
+            f"x=(w-text_w)/2:y='h*0.718+9*sin(t*PI*2.5)':"
+            f"shadowcolor=0x003366@0.6:shadowx=0:shadowy=5:"
+            f"alpha='if(lt(t\\,2.0)\\,0\\,if(lt(t\\,2.6)\\,(t-2.0)/0.6\\,0.88))'"
+        )
+
+    # ══════════════════════════════════════════════════════════════════
+    # CAPA 6 — CTA BLINK  (solo con lower-third activo)
+    # ">> CONSULTAR AHORA" centrado en la barra inferior
+    # Aparece a los 3.0s, parpadea suavemente a ~0.7Hz
+    # ══════════════════════════════════════════════════════════════════
+    if titulo and fa:
+        parts.append(
+            f"drawtext={fa}text='>> CONSULTAR AHORA':fontsize=32:fontcolor=0x00FF9F:"
+            f"x=(w-text_w)/2:y=h*0.928:"
+            f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
+            f"alpha='if(lt(t\\,3.0)\\,0\\,if(lt(t\\,3.6)\\,(t-3.0)/0.6\\,0.45+0.55*sin(t*PI*1.4)))'"
+        )
 
     return ",".join(parts)
 
