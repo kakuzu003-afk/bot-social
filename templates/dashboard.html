@@ -1907,9 +1907,9 @@ async function cargarReelRef(input) {
   const STATUS = document.getElementById('reelRefStatus');
   STATUS.textContent = 'Subiendo...';
   const formData = new FormData();
-  formData.append('image', file);
+  formData.append('imagen', file);
   try {
-    const res  = await fetch('/api/subir_imagen', { method:'POST', body: formData });
+    const res  = await fetch('/api/subir_referencia', { method:'POST', body: formData });
     const data = await res.json();
     if (data.url) {
       urlReelRef = data.url;
