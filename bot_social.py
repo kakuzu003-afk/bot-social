@@ -1139,7 +1139,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
                 "Ultra-clean premium commercial design only."
             ),
             "negative_prompt": negative_prompt,
-            "resolution": "1024x1792",   # Máximo 9:16 disponible — 2x calidad vs 768x1344
+            "resolution": "768x1344",   # 9:16 válido para Ideogram v3 en Replicate
             "style_type": "Realistic",   # Realismo comercial premium
             "magic_prompt_option": "Auto",  # Ideogram mejora el prompt internamente
             "num_outputs": 1,
@@ -1161,7 +1161,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
             except Exception as ref_err:
                 log(f"⚠️ Error cargando referencia: {ref_err}. Continuando sin referencia.", "warning")
 
-        modo_log = "+ referencia de estilo" if imagen_referencia_url else "— calidad máxima 1024x1792"
+        modo_log = "+ referencia de estilo" if imagen_referencia_url else "— 768x1344 9:16"
         log(f"🖼️ Generando con Ideogram v3 Balanced {modo_log}...", "info")
 
         output = client.run(
@@ -1177,7 +1177,7 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
             f.write(img_bytes)
 
         size_kb = len(img_bytes) / 1024
-        log(f"🖼️ Imagen generada ✅ — {size_kb:.0f} KB | resolución: 1024x1792", "success")
+        log(f"🖼️ Imagen generada ✅ — {size_kb:.0f} KB | resolución: 768x1344", "success")
         return filepath
 
     except Exception as e:
@@ -1194,32 +1194,39 @@ def generar_imagen_dalle(prompt_imagen, imagen_referencia_url=None, style_weight
 
 
 def _generar_imagen_fallback(prompt_imagen, replicate_token):
-    """Fallback seguro si Ideogram rechaza parámetros avanzados."""
-    try:
-        import replicate
-        client = replicate.Client(api_token=replicate_token)
-        log("🔄 Reintentando con configuración base...", "info")
-        output = client.run(
-            "ideogram-ai/ideogram-v3-balanced",
-            input={
-                "prompt": prompt_imagen + " Clean premium commercial design. No background text.",
-                "negative_prompt": "text, watermark, blurry, low quality, amateur",
-                "resolution": "768x1344",
-                "style_type": "Design",
-                "magic_prompt_option": "Off",
-            }
-        )
-        image_url = str(output)
-        img_bytes = req.get(image_url, timeout=30).content
-        os.makedirs("static", exist_ok=True)
-        filepath = f"static/img_{int(time.time())}_fb.png"
-        with open(filepath, "wb") as f:
-            f.write(img_bytes)
-        log("🖼️ Imagen generada con fallback ✅", "success")
-        return filepath
-    except Exception as e2:
-        log(f"❌ Fallback también falló: {e2}", "error")
-        return None
+    """Fallback seguro si Ideogram rechaza parámetros avanzados. Reintenta 1 vez en 429."""
+    import replicate
+    client = replicate.Client(api_token=replicate_token)
+    params = {
+        "prompt": prompt_imagen + " Clean premium commercial design. No background text.",
+        "negative_prompt": "text, watermark, blurry, low quality, amateur",
+        "resolution": "768x1344",
+        "style_type": "Design",
+        "magic_prompt_option": "Off",
+    }
+    for intento in range(2):
+        try:
+            if intento > 0:
+                log("⏳ Rate limit — esperando 15s antes de reintentar...", "warning")
+                time.sleep(15)
+            log(f"🔄 Reintentando con configuración base (intento {intento+1}/2)...", "info")
+            output = client.run("ideogram-ai/ideogram-v3-balanced", input=params)
+            image_url = str(output)
+            img_bytes = req.get(image_url, timeout=30).content
+            os.makedirs("static", exist_ok=True)
+            filepath = f"static/img_{int(time.time())}_fb.png"
+            with open(filepath, "wb") as f:
+                f.write(img_bytes)
+            log("🖼️ Imagen generada con fallback ✅", "success")
+            return filepath
+        except Exception as e2:
+            if "429" in str(e2) and intento == 0:
+                continue
+            log(f"❌ Fallback falló: {e2}", "error")
+            if "429" in str(e2):
+                log("💳 Rate limit activo — recarga créditos en replicate.com/account/billing para aumentar el límite.", "warning")
+            return None
+    return None
 
 # ============================================
 # CLOUDINARY — SUBIR VIDEO
