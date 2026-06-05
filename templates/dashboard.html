@@ -1907,17 +1907,16 @@ async function cargarReelRef(input) {
   const STATUS = document.getElementById('reelRefStatus');
   const prev   = document.getElementById('reelRefPreview');
 
-  // Mostrar preview local inmediatamente sin esperar el upload
+  // Preview local inmediata — ocultar drop zone, mostrar imagen
   const reader = new FileReader();
   reader.onload = e => {
     prev.src = e.target.result;
     prev.style.display = 'block';
-    document.getElementById('reelRefIcon').textContent = '⏳';
-    document.getElementById('reelRefText').innerHTML = '<strong>Subiendo imagen…</strong>';
+    document.getElementById('reelRefDropZone').style.display = 'none';
+    STATUS.textContent = '⏳ Subiendo…';
   };
   reader.readAsDataURL(file);
 
-  STATUS.textContent = 'Subiendo a servidor…';
   const formData = new FormData();
   formData.append('imagen', file);
   try {
@@ -1925,17 +1924,34 @@ async function cargarReelRef(input) {
     const data = await res.json();
     if (data.url) {
       urlReelRef = data.url;
-      document.getElementById('reelRefIcon').textContent = '✅';
-      document.getElementById('reelRefText').innerHTML = '<strong>Imagen de referencia lista</strong>';
-      STATUS.textContent = '';
+      STATUS.textContent = '✅ Lista — ';
+      // Botón para cambiar imagen
+      const btn = document.createElement('button');
+      btn.textContent = 'cambiar';
+      btn.style.cssText = 'background:none;border:none;color:var(--cyan);font-family:"Space Mono",monospace;font-size:9px;cursor:pointer;padding:0;text-decoration:underline;';
+      btn.onclick = () => {
+        urlReelRef = null;
+        prev.style.display = 'none'; prev.src = '';
+        document.getElementById('reelRefDropZone').style.display = '';
+        STATUS.textContent = '';
+        document.getElementById('inputReelRef').value = '';
+      };
+      STATUS.appendChild(btn);
       agregarLog('🎨 Imagen de referencia cargada', 'success');
     } else {
-      document.getElementById('reelRefIcon').textContent = '❌';
-      STATUS.textContent = 'Error al subir imagen';
+      STATUS.textContent = '❌ Error al subir — ';
+      const btn = document.createElement('button');
+      btn.textContent = 'reintentar';
+      btn.style.cssText = 'background:none;border:none;color:var(--red,#ff4560);font-family:"Space Mono",monospace;font-size:9px;cursor:pointer;padding:0;text-decoration:underline;';
+      btn.onclick = () => {
+        prev.style.display = 'none';
+        document.getElementById('reelRefDropZone').style.display = '';
+        STATUS.textContent = '';
+      };
+      STATUS.appendChild(btn);
     }
   } catch(e) {
-    document.getElementById('reelRefIcon').textContent = '❌';
-    STATUS.textContent = 'Error de conexión';
+    STATUS.textContent = '❌ Error de conexión';
   }
 }
 
