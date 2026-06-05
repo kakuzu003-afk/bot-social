@@ -344,164 +344,91 @@ Reglas:
 
 
 def generar_post_estricto(prod_info, tendencias_reales, precio):
-    import random
     tendencias_filtradas = filtrar_tendencias_con_llm(tendencias_reales, prod_info)
-    ficha = prod_info.get("ficha") or {}
+    ficha     = prod_info.get("ficha") or {}
     nombre    = ficha.get("nombre")    or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "")
     beneficio = ficha.get("beneficio") or ""
     audiencia = ficha.get("audiencia") or "público general en Chile"
     categoria = ficha.get("categoria") or "digital"
-
-    # ── Ángulo de venta aleatorio — fuerza variedad real entre generaciones ──
-    ANGULOS = [
-        "Ahorro de dinero concreto vs precio oficial o de tienda",
-        "Tiempo que el comprador gana: cuántas horas o días le ahorras",
-        "Comparación brutal con competidores o tiendas conocidas (Falabella, Steam, Microsoft Store, etc.)",
-        "Urgencia de stock limitado o precio por tiempo acotado",
-        "Resultado específico que lograrán en X minutos o días",
-        "Pregunta directa que los hace reflexionar sobre su problema actual sin el producto",
-        "Humor o sorpresa de precio que los detiene en el scroll",
-        "FOMO: qué pierden exactamente si NO lo compran hoy",
-        "Historia micro: situación problema → solución → precio como remate",
-        "Revelación de precio al final del gancho como climax sorpresivo",
-        "Testimonio implícito: cuántos clientes ya lo tienen o cuánto llevan vendiéndolo",
-        "Ángulo técnico específico: una feature puntual que nadie más menciona",
-    ]
-    angulo = random.choice(ANGULOS)
-
-    # ── 3 ejemplos por categoría — se elige uno al azar ─────────────────────
-    estrategias = {
-        "software": {
-            "estrategia": "Golpea directamente en el PRECIO vs el oficial. El usuario ahorra ahora mismo y activa al instante.",
-            "ejemplos": [
-                "Gancho: 'Adobe Acrobat Pro te cuesta $27.000 al mes oficial. Nosotros: $8.900, activación en 5 minutos.'\nCuerpo: 'Edita, firma y convierte PDFs como los pros. Licencia original, sin suscripción interminable. Te ahorras $18.100 mensual desde hoy.'\nCTA: 'WhatsApp ahora — stock acotado esta semana.'",
-                "Gancho: '¿Cuánto llevas pagando por Photoshop? Porque en Adobe son $35.000 al mes y aquí son $9.500 con licencia original. 🤯'\nCuerpo: 'Mismas funciones, mismo archivo de instalación, activación en menos de 3 minutos. Para diseñadores, fotógrafos y cualquiera que cree contenido profesional.'\nCTA: 'Stock limitado — escríbenos al WA antes que se acabe.'",
-                "Gancho: 'Spotify Premium Individual vale $4.990 al mes en App Store. Aquí te lo dejamos en $1.200. No, no es broma. 🎵'\nCuerpo: 'Sin anuncios, descarga offline, calidad máxima. Mismo servicio, mismo catálogo, precio que se nota en el bolsillo todos los meses.'\nCTA: 'Activa al tiro — DM o WhatsApp.'",
-            ]
-        },
-        "licencia": {
-            "estrategia": "Precio vs oficial + activación inmediata. El valor está en cuánto ahorran HOY.",
-            "ejemplos": [
-                "Gancho: 'Windows 11 Pro cuesta $130.000 en Microsoft Store. Te lo dejamos en $12.000 — sí, original y legal.'\nCuerpo: 'Licencia genuine, activación por clave en menos de 2 minutos. Sin trucos, sin vencimiento, sin sorpresas. Tu PC al máximo por el precio de un almuerzo.'\nCTA: 'DM o WhatsApp y en 10 minutos tienes tu PC lista.'",
-                "Gancho: '¿Todavía con Windows sin activar? La marca de agua ya cansa. Activación original por $8.900 y se fue para siempre.'\nCuerpo: 'Clave genuine de Microsoft, todas las actualizaciones habilitadas, sin errores ni restricciones. Funciona en cualquier PC, lo hacemos nosotros si necesitas ayuda.'\nCTA: 'Escríbenos al WA — en 5 minutos está listo.'",
-                "Gancho: 'Office 365 por $130.000 en tiendas vs $14.900 acá. Word, Excel, PowerPoint y Teams — mismo paquete, precio distinto.'\nCuerpo: 'Licencia para 1 usuario, activación remota incluida, soporte post-venta. Lleva años de respaldo con miles de clientes activos en Chile.'\nCTA: 'Stock disponible hoy — WhatsApp para activar al tiro.'",
-            ]
-        },
-        "cuenta_juego": {
-            "estrategia": "Hype máximo + comunidad + urgencia de stock. Tono gamer, informal, con energía.",
-            "ejemplos": [
-                "Gancho: 'Fortnite Crew + 1.000 V-Bucks + pase de batalla por $4.500. Te lo juro que no es broma. 🎮'\nCuerpo: 'Cuenta verificada, acceso completo, costumiza tu personaje desde cero. El stock se acaba rápido porque los precios no mienten.'\nCTA: 'Sólo quedan 8 unidades — escríbenos ya.'",
-                "Gancho: 'Game Pass Ultimate — más de 400 juegos incluidos Xbox + PC por $7.900 al mes acá. En Microsoft son $17.900. El doble por lo mismo. 🎯'\nCuerpo: 'Activación en 10 minutos, funciona en tu cuenta existente, no perdes nada. Forza, Halo, FIFA y todo el catálogo desde mañana.'\nCTA: 'DM o WA — los de ayer ya están jugando.'",
-                "Gancho: 'PS Plus Extra por $8.500 mensual acá vs $18.990 en PlayStation Store Chile. Mismo servicio, mismos juegos, distinto bolsillo. 🕹️'\nCuerpo: 'Multijugador online habilitado, catálogo de 400+ títulos disponibles, descuentos exclusivos en tienda. Llevamos 2 años activando cuentas sin un solo problema.'\nCTA: 'Escríbenos al WA — activación en el día.'",
-            ]
-        },
-        "suscripcion": {
-            "estrategia": "Valor por tiempo: cuánto contenido/servicio obtienen por muy poco. Lo que pierden si no lo tienen hoy.",
-            "ejemplos": [
-                "Gancho: 'Netflix Premium — 4 pantallas, Ultra HD, sin anuncios. ¿Cuánto estás pagando tú por lo mismo? 🤔'\nCuerpo: 'Acceso completo al catálogo mundial, descarga offline, calidad 4K. Divide el costo con quien quieras. Por $5.900 al mes, prácticamente gratis si lo compartes.'\nCTA: 'Activa hoy — el primer mes lo recuperas en la primera semana.'",
-                "Gancho: 'Duolingo Max por $1.500 vs $9.990 en App Store. Practicas inglés con IA, sin límite de lecciones, sin corazones. 🌎'\nCuerpo: 'Explicaciones con IA, práctica de conversación real y desbloqueo de todo el contenido premium. El idioma que cambia tu CV en 6 meses de práctica constante.'\nCTA: 'Stock acotado — DM o WhatsApp.'",
-                "Gancho: 'YouTube Premium sin anuncios + música offline por $2.900 al mes. En Google te cobran $6.490. La diferencia la sientes todos los días. 🎬'\nCuerpo: 'Videos sin interrupciones, Picture-in-Picture, descarga para ver sin internet. Para el que vive con YouTube puesto de fondo o en transporte.'\nCTA: 'Activa hoy — escríbenos al WA.'",
-            ]
-        },
-        "producto_fisico": {
-            "estrategia": "Calidad tangible + utilidad práctica + precio vs retail. Envío como ventaja real.",
-            "ejemplos": [
-                "Gancho: 'Teclado mecánico RGB, switches red, wrist rest y cable trenzado incluidos. $32.000. En Falabella te cobran $79.000 por menos.'\nCuerpo: 'Cada tecla diferente cuando escribes horas seguidas. Para gamers, programadores o cualquiera pegado al teclado. Calidad que se nota desde el primer día.'\nCTA: 'Envío 24-48h a todo Chile — escríbenos para ver stock.'",
-                "Gancho: '¿Cuánto llevas mirando ese monitor en Sodimac? Tenemos el mismo modelo en $189.000, 15% menos. Stock físico, despacho inmediato.'\nCuerpo: 'Garantía de fábrica incluida, factura disponible, embalaje seguro. No compramos cajas abiertas ni refurbished — mismo producto que en tienda, precio honesto.'\nCTA: 'Escríbenos al WA — enviamos a regiones también.'",
-                "Gancho: 'Auriculares noise-cancelling con 40h de batería y estuche incluido. $42.000 vs $89.990 de precio oficial. Llegan en 48h. 🎧'\nCuerpo: 'Cancelación activa de ruido real, conectividad multipoint, micrófono para llamadas. Para home office, estudio o viajes — el silencio que te roba la concentración.'\nCTA: 'Stock limitado — DM o WhatsApp hoy.'",
-            ]
-        },
-        "servicio_digital": {
-            "estrategia": "Resultado concreto + tiempo ahorrado. El cliente compra tiempo y tranquilidad, no el servicio en sí.",
-            "ejemplos": [
-                "Gancho: 'Tu web lista en 5 días hábiles, diseño profesional, dominio + hosting 1 año incluido. $89.000 todo.'\nCuerpo: 'Presencia digital real sin meses de espera. Formulario de contacto, galería y Google-ready desde el primer día. El negocio listo para vender esta semana.'\nCTA: 'Cotiza gratis — 3 clientes del mes tienen descuento.'",
-                "Gancho: '¿Cuánto tiempo llevas sin subir contenido por falta de diseños? Packs de 10 publicaciones Instagram desde $25.000, entrega en 48h. 🎨'\nCuerpo: 'Diseños editables en Canva, adaptados a tu marca y tono. Incluye stories, posts y portada de perfil. Para el que quiere consistencia sin gastar el día en diseño.'\nCTA: 'WhatsApp ahora — elige tu pack y empezamos hoy.'",
-                "Gancho: 'Chatbot para tu WhatsApp Business configurado y funcionando en 24h. Responde consultas, filtra clientes y agenda citas solo. $59.000.'\nCuerpo: 'Conectado a tu catálogo de productos, respuestas automáticas personalizadas y traspaso a humano cuando lo necesita. Clientes atendidos 24/7 sin que lo veas.'\nCTA: 'Demo gratis — escríbenos al WA.'",
-            ]
-        },
-        "curso": {
-            "estrategia": "Transformación concreta. Qué habilidad adquieren y cómo cambia su vida o trabajo.",
-            "ejemplos": [
-                "Gancho: 'En 8 semanas: de no saber nada de Excel a automatizar el trabajo de 3 horas en 15 minutos. 📊'\nCuerpo: 'Curso 100% online, a tu ritmo, ejercicios reales del trabajo diario. Más de 1.200 alumnos — muchos consiguieron trabajo o ascenso usando lo aprendido.'\nCTA: 'Inscripción abierta — próximo grupo parte el lunes.'",
-                "Gancho: '¿Cuánto tiempo llevas queriendo aprender a editar video y posponiendo? Curso básico a avanzado por $29.000, con CapCut y Premiere. 🎬'\nCuerpo: 'Desde cortar clips hasta color grading profesional. Aprende con proyectos reales, comunidad activa y acceso de por vida al material actualizado.'\nCTA: 'Cupos limitados por cohorte — asegura el tuyo hoy.'",
-                "Gancho: 'Python desde cero hasta automatizar tareas repetitivas de trabajo. 6 semanas, 100% online, $45.000. Muchos lo pagaron con el primer proyecto freelance.'\nCuerpo: 'Proyectos reales desde la semana 2 — nada de teoría sin práctica. Más de 800 egresados, la mitad consiguió trabajo en tech en menos de 6 meses.'\nCTA: 'Siguiente cohorte parte pronto — DM o WhatsApp.'",
-            ]
-        },
-        "otro": {
-            "estrategia": "Beneficio concreto e inmediato. Qué ganan HOY si compran, sin abstracciones.",
-            "ejemplos": [
-                "Gancho: 'Si todavía no sabes para qué sirve esto, probablemente lo necesitas y no lo sabías.'\nCuerpo: 'Diseñado para resolver un problema específico de forma inmediata. Sin curva de aprendizaje, sin instalaciones raras.'\nCTA: 'Pregunta por WhatsApp — te explicamos en 2 minutos si es para ti.'",
-                "Gancho: 'El producto que tus colegas ya tienen y tú sigues evitando porque creías que era caro. No lo es.'\nCuerpo: 'Resultado visible desde el primer uso. Precio directo sin intermediarios ni markups de retail. Lo usas hoy, lo ves funcionar mañana.'\nCTA: 'Escríbenos al WA — te mandamos los detalles al tiro.'",
-                "Gancho: '¿Cuánto vale para ti resolver esto de una vez? Porque acá el precio es honesto y el resultado es real.'\nCuerpo: 'Sin garantías vacías ni promesas de marketing. Funciona o te explicamos por qué y lo resolvemos. Respaldo real de clientes reales.'\nCTA: 'DM o WhatsApp — respuesta en menos de 10 minutos.'",
-            ]
-        },
-    }
-
-    cat_data   = estrategias.get(categoria, estrategias["otro"])
-    estrategia = cat_data["estrategia"]
-    ejemplo    = random.choice(cat_data["ejemplos"])
-
     tendencias_str = ', '.join(tendencias_filtradas) if tendencias_filtradas else '—'
     año_actual = datetime.now().year
 
-    system_prompt = (
-        "Eres el mejor copywriter de ventas digitales de Latinoamérica, especializado en Instagram Chile. "
-        "Tu escritura genera ventas reales porque suena exactamente como habla la gente chilena: directo, sin adornos, con personalidad. "
-        "Nunca usas frases genéricas. Cada caption es único — diferente estructura, diferente apertura, diferente tono al anterior. "
-        "Escribes para personas reales, no para algoritmos. Tu métrica es la venta, no el like."
+    # ── PASO 1: El agente analiza el producto y elige su estrategia ──────────
+    analisis_prompt = f"""Eres un agente de ventas senior especializado en el mercado chileno.
+Te entrego un producto. Antes de escribir el caption de Instagram, analízalo como lo haría un vendedor experto:
+
+PRODUCTO: {nombre}
+BENEFICIO: {beneficio or '(analiza tú)'}
+AUDIENCIA: {audiencia}
+PRECIO: {precio}
+CATEGORÍA: {categoria}
+TENDENCIAS HOY ({año_actual}): {tendencias_str}
+
+Responde SOLO con este formato (3 líneas, sin explicaciones extra):
+DOLOR: [el problema o frustración más real que tiene el comprador sin este producto]
+GANCHO: [la cosa más irresistible de este producto — el dato, precio, resultado o feature que detiene el scroll]
+TÁCTICA: [elige UNA: precio_shock | comparacion_tienda | historia_micro | pregunta_directa | fomo | humor_precio | urgencia_stock | resultado_especifico | testimonio_implicito | feature_tecnica | tiempo_ahorrado | revelacion_final]"""
+
+    r1 = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": analisis_prompt}],
+        max_tokens=120,
+        temperature=0.9,
+    )
+    analisis = r1.choices[0].message.content.strip()
+    log(f"🧠 Análisis de ventas: {analisis[:120]}...", "info")
+
+    # ── PASO 2: El agente escribe el caption con total libertad creativa ─────
+    system_agente = (
+        "Eres un agente de ventas top de Chile — no un copywriter que sigue plantillas. "
+        "Piensas como vendedor: entiendes el dolor del cliente, sabes qué lo mueve a comprar y escribes "
+        "para que actúe AHORA. Cada publicación que escribes es diferente porque cada producto y cada momento son diferentes. "
+        "Usas el lenguaje chileno natural: directo, con personalidad, sin frases de marketing vacías. "
+        "Tu métrica no es el like — es la conversación de venta que se inicia después de publicar."
     )
 
-    user_prompt = f"""PRODUCTO A VENDER:
-- Nombre exacto: {nombre}
-- Beneficio central: {beneficio or 'detectar de la categoría'}
-- Audiencia objetivo: {audiencia}
-- Precio de venta: {precio}
-- Categoría: {categoria}
-- Tendencias activas hoy ({año_actual}): {tendencias_str}
+    user_agente = f"""PRODUCTO: {nombre}
+PRECIO: {precio}
+AUDIENCIA: {audiencia}
+TENDENCIAS HOY: {tendencias_str}
 
-ÁNGULO DE VENTA PARA ESTE CAPTION (OBLIGATORIO usarlo como eje central):
-→ {angulo}
+TU ANÁLISIS DE VENTAS:
+{analisis}
 
-ESTRATEGIA DE CATEGORÍA:
-{estrategia}
+Ahora escribe el caption de Instagram. Reglas mínimas:
+- El nombre del producto debe aparecer en el texto
+- El precio {precio} debe estar presente
+- Tono chileno real — puedes usar "al tiro", "weón", "bacán", "la raja" si el producto lo pide
+- Estructura LIBRE: tú decides si empiezas con pregunta, afirmación, precio, historia, dato, humor — lo que venda más para ESTE producto específico
+- Entre 80 y 130 palabras
+- 4 a 7 emojis, solo donde tienen sentido real
+- NO uses: "esto cambia tu vida", "no te lo pierdas", "oportunidad única", "increíble oferta", "aprovecha"
+- El cierre siempre termina con la llamada a WhatsApp
 
-EJEMPLO DE REFERENCIA (estructura, no copies las palabras):
-{ejemplo}
-
-REGLAS ABSOLUTAS:
-1. GANCHO (línea 1): Menciona "{nombre}" de forma concreta. El ángulo de venta debe ser evidente desde la primera línea.
-2. CUERPO (2-3 líneas): Beneficios concretos, números, comparaciones reales. Nada de adjetivos vacíos.
-3. PRECIO: Aparece como revelación, comparación o dato sorpresivo: "{precio}".
-4. CTA: Específica, directa, con urgencia real. Sin "¡no te lo pierdas!" ni "¡aprovecha ya!".
-5. TONO: Chileno natural — "al tiro", "al toque" si es informal. Formal si es corporativo/curso.
-6. EMOJIS: 4-7 máximo, con intención real, no decorativos.
-7. LARGO: Entre 80 y 120 palabras. Ni una más, ni una menos.
-8. PROHIBIDO empezar el gancho con: "¿Sabías", "Imagina", "Hoy", "¿Qué", "¿Ya", "Descubre", "Presentamos", "Estamos".
-
-ESTRUCTURA FINAL OBLIGATORIA:
-[Caption completo]
+FORMATO OBLIGATORIO DE SALIDA:
+[caption completo, creativo, en español chileno]
 
 📲 WhatsApp: +56946557876
 
 #hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5
 
-HASHTAGS: exactamente 5 — 2 del producto/marca, 2 de audiencia/tendencia, 1 comercial (#Oferta #Deal #Precio). Sin hashtags compuestos de más de 2 palabras.
+Los 5 hashtags: 2 del producto/marca, 2 de audiencia o tendencia, 1 comercial (#Oferta #Deal #Precio o similar).
 
-RESPONDE ÚNICAMENTE CON EL CAPTION FINAL — sin explicaciones, sin prefijos:"""
+RESPONDE SOLO CON EL CAPTION — sin explicaciones previas ni etiquetas:"""
 
-    response = groq_client.chat.completions.create(
+    r2 = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_prompt},
+            {"role": "system", "content": system_agente},
+            {"role": "user",   "content": user_agente},
         ],
-        max_tokens=600,
-        temperature=1.15,
+        max_tokens=650,
+        temperature=1.2,
         top_p=0.92,
-        frequency_penalty=0.55,
-        presence_penalty=0.45,
+        frequency_penalty=0.6,
+        presence_penalty=0.5,
     )
-    return response.choices[0].message.content.strip()
+    return r2.choices[0].message.content.strip()
 
 
 def analizar_imagen_referencia(imagen_referencia_url):
