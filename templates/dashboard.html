@@ -2095,6 +2095,7 @@ async function generarReel() {
         mood, hacer_reel: true,
         color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
         usar_watermark: true,
+        lower_third: getLowerThird(),
       };
       agregarLog(`🧠 Generando Reel desde texto: "${titulo}" | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
       const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2113,6 +2114,7 @@ async function generarReel() {
           precio, modo: 'reel', mood,
           movimiento: reelMovimiento, color_grade: reelColorGrade, duracion: reelDuracion,
           overlay: null,
+          lower_third: getLowerThird(),
         };
         agregarLog('🎨 Influencia 100% → usando imagen tal cual (sin generación IA)…', 'info');
         const res  = await fetch('/api/generar_imagen_propia', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2129,6 +2131,7 @@ async function generarReel() {
           imagen_referencia_url: urlReelRef, style_weight: styleWeight,
           color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
           usar_watermark: true,
+          lower_third: getLowerThird(),
         };
         agregarLog(`🎨 Generando Reel con referencia al ${reelInfluencia}% de influencia | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
         const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });

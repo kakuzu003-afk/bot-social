@@ -2006,7 +2006,7 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
 
 
 def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None,
-                                color_grade="none", movimiento=None, duracion=15):
+                                color_grade="none", movimiento=None, duracion=15, lower_third=None):
     """Analiza imagen con visión, aplica overlay opcional, genera caption y publica."""
     global bot_activo
     with _bot_lock:
@@ -2114,12 +2114,17 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
             audio_path = buscar_musica_pixabay(mood or "energico")
             video_path = None
             if audio_path:
+                lt = lower_third or (
+                    {'texto': titulo_producto, 'precio': precio, 'color': 'white'}
+                    if titulo_producto else None
+                )
                 video_path = generar_video_reel(
                     img_path, audio_path,
                     duracion=int(duracion or 15),
                     mood=mood or "energico",
                     color_grade=color_grade or "none",
                     movimiento=movimiento or None,
+                    lower_third=lt,
                 )
                 reel_generado = bool(video_path)
             if video_path and meta_token and ig_user_id:
@@ -2292,6 +2297,7 @@ def api_publicar_imagen_propia():
     color_grade = data.get('color_grade', 'none')
     movimiento = data.get('movimiento') or None
     duracion = int(data.get('duracion', 15))
+    lower_third = data.get('lower_third', None)
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2302,7 +2308,7 @@ def api_publicar_imagen_propia():
     hilo = threading.Thread(
         target=publicar_imagen_propia_task,
         args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto,
-              color_grade, movimiento, duracion),
+              color_grade, movimiento, duracion, lower_third),
         daemon=True
     )
     hilo.start()
