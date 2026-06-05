@@ -1021,9 +1021,13 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
     final_path = f"static/reel_{ts}.mp4"
 
     def _run_ffmpeg(filter_complex, out_path):
+        # Sin -loop ni -framerate: la imagen se pasa como un único frame.
+        # zoompan con d=TOTAL_FRAMES genera todos los frames animados desde ese
+        # único frame, y la variable n va de 0 a TOTAL_FRAMES-1 sin resetear.
+        # Con -loop 1 -framerate 30 el input era un stream continuo y n se
+        # reseteaba a 0 en cada frame nuevo, rompiendo pan/diagonal/impacto.
         cmd = [
             "ffmpeg", "-y",
-            "-loop", "1", "-framerate", str(ZOOM_FPS),
             "-i", imagen_path,
             "-i", audio_path,
             "-t", str(duracion),
