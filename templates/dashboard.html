@@ -1378,15 +1378,15 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
               <span class="motion-icon">↗</span><span class="motion-name">Diagonal</span>
               <span class="motion-desc">Movimiento diagonal dinámico</span>
             </button>
-            <button class="motion-btn" data-motion="zoom_out" onclick="setMovimiento('zoom_out')">
-              <span class="motion-icon">🔍−</span><span class="motion-name">Zoom Out</span>
-              <span class="motion-desc">Revelador grandioso</span>
+            <button class="motion-btn" data-motion="impacto" onclick="setMovimiento('impacto')">
+              <span class="motion-icon">💥</span><span class="motion-name">Impacto</span>
+              <span class="motion-desc">Arranca cerrado y abre el plano</span>
             </button>
           </div>
 
           <!-- PALETA VISUAL -->
           <div class="pub-section-label" style="margin-top:10px;">🎨 Paleta visual</div>
-          <div class="grade-grid">
+          <div class="grade-grid" id="reelGradeGrid">
             <button class="grade-btn" data-grade="none" onclick="setReelGrade('none')">
               <span class="grade-swatch" style="background:linear-gradient(135deg,#888,#ccc)"></span><span>Sin filtro</span>
             </button>
@@ -1690,7 +1690,7 @@ function setMovimiento(m) {
 }
 function setReelGrade(g) {
   reelColorGrade = g;
-  document.querySelectorAll('#uploadMoodRow .grade-btn').forEach(b => {
+  document.querySelectorAll('#reelGradeGrid .grade-btn').forEach(b => {
     b.classList.toggle('activo', b.dataset.grade === g);
   });
 }

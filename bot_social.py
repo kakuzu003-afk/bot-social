@@ -412,7 +412,17 @@ FORMATO OBLIGATORIO DE SALIDA:
 
 #hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5
 
-Los 5 hashtags: 2 del producto/marca, 2 de audiencia o tendencia, 1 comercial (#Oferta #Deal #Precio o similar).
+REGLAS DE HASHTAGS (obligatorio):
+- UNA sola palabra por hashtag, sin guiones ni palabras pegadas
+- Siempre incluye #chile y #oferta
+- Los otros 3 son específicos al producto: nombre del producto, categoría y público
+- Ejemplos reales:
+  Minecraft Java → #chile #oferta #minecraft #gaming #juegos
+  Photoshop → #chile #oferta #photoshop #diseño #adobe
+  Netflix → #chile #oferta #netflix #streaming #peliculas
+  Spotify → #chile #oferta #spotify #musica #streaming
+  Fortnite → #chile #oferta #fortnite #gaming #vbucks
+- Usa el nombre exacto del producto y palabras simples en español o del nicho
 
 RESPONDE SOLO CON EL CAPTION — sin explicaciones previas ni etiquetas:"""
 
@@ -930,11 +940,12 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
             "eq=saturation=1.20:contrast=1.10:brightness=0.02,"
             "unsharp=5:5:1.2:5:5:0"
         ),
-        "zoom_out": (
-            f"zoompan=z='max(zoom-0.0014,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
-            f"fade=t=in:st=0:d=1.2,"
-            "eq=saturation=1.10:contrast=1.05:brightness=0.01,"
-            "unsharp=3:3:0.8:3:3:0"
+        "impacto": (
+            f"zoompan=z='max(1.55-0.0030*n,1.05)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
+            f"fade=t=in:st=0:d=0.5,"
+            "vignette=angle=PI/2.8:mode=backward,"
+            "eq=saturation=1.30:contrast=1.20:brightness=0.03,"
+            "unsharp=5:5:1.8:5:5:0"
         ),
     }
 
