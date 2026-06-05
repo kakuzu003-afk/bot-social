@@ -1714,9 +1714,23 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         imagen_filepath = None
         imagen_url_publica = None
         reel_generado = False
-        
-        # Generación directa con Ideogram Turbo
-        imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
+
+        # Influencia 100% → usar la imagen de referencia directamente, sin IA
+        if imagen_referencia_url and style_weight >= 1.0:
+            log("🖼️ Influencia 100% — usando imagen de referencia tal cual (sin generar nueva)...", "info")
+            try:
+                img_bytes = req.get(imagen_referencia_url, timeout=20).content
+                os.makedirs("static", exist_ok=True)
+                imagen_filepath = f"static/img_ref_{int(time.time())}.jpg"
+                with open(imagen_filepath, "wb") as _f:
+                    _f.write(img_bytes)
+                log(f"✅ Imagen de referencia descargada ({len(img_bytes)//1024} KB)", "success")
+            except Exception as e_ref:
+                log(f"⚠️ No se pudo descargar la referencia ({e_ref}). Generando con IA...", "warning")
+                imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=0.99)
+        else:
+            # Generación con Ideogram — referencia como guía de estilo parcial
+            imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
 
         # Aplicar watermark a la imagen (si está configurado)
         if imagen_filepath and usar_watermark and os.path.exists(LOGO_PATH_DEFAULT):
