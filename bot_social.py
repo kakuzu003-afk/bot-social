@@ -937,67 +937,52 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
     ZOOM_FPS = 30
     TOTAL_FRAMES = duracion * ZOOM_FPS
 
-    # ── Filtros de movimiento cinemático (independientes del mood musical) ─
+    # ── Filtros de movimiento (sin scale — se maneja en filter_complex) ────
+    # El scale lo hace el filter_complex con fondo blur para preservar AR.
     MOTION_FILTERS = {
-        # Zoom-in potente + viñeta pulsante — impacto inmediato
         "zoom_dramatico": (
-            "scale=2160:3840,"
             f"zoompan=z='min(zoom+0.0022,1.40)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             "vignette=angle=PI/3.5:mode=backward,"
             "eq=saturation=1.30:contrast=1.12:brightness=0.02,"
             "unsharp=5:5:1.5:5:5:0"
         ),
-        # Ken Burns diagonal ascendente — clásico cinematográfico
         "ken_burns": (
-            "scale=2160:3840,"
             f"zoompan=z='min(zoom+0.0012,1.25)':x='(iw/2-(iw/zoom/2))+{TOTAL_FRAMES}*0.15-n*0.15':y='ih/2-(ih/zoom/2)-n*0.08':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             "eq=saturation=1.15:brightness=0.03,"
             "unsharp=3:3:0.8:3:3:0"
         ),
-        # Paneo lateral suave izquierda→derecha — look documental
         "pan_lateral": (
-            "scale=2160:3840,"
             f"zoompan=z='1.18':x='(iw/2-(iw/zoom/2))+n*0.45':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             f"fade=t=in:st=0:d=0.8,"
             "eq=saturation=0.95:contrast=1.05:brightness=0.01,"
             "unsharp=3:3:0.6:3:3:0"
         ),
-        # Paneo vertical ascendente — revealing shot premium
         "pan_vertical": (
-            "scale=2160:3840,"
             f"zoompan=z='1.18':x='iw/2-(iw/zoom/2)':y='(ih-(ih/zoom))-n*0.40':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             f"fade=t=in:st=0:d=1.0,"
             "eq=saturation=1.05:contrast=1.08,"
             "unsharp=3:3:0.7:3:3:0"
         ),
-        # Drift flotante sinusoidal — calma hipnótica
         "drift_flotante": (
-            "scale=2160:3840,"
             f"zoompan=z='1.12+0.06*sin(2*PI*n/{TOTAL_FRAMES})':x='iw/2-(iw/zoom/2)+25*sin(2*PI*n/{TOTAL_FRAMES}/1.5)':y='ih/2-(ih/zoom/2)-18*cos(2*PI*n/{TOTAL_FRAMES}/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             "vignette=angle=PI/5,"
             "eq=saturation=0.90:contrast=1.02:brightness=0.01,"
             "gblur=sigma=0.5"
         ),
-        # Revelado desde negro + zoom lento — suspense cinematográfico
         "revelado": (
-            "scale=2160:3840,"
             f"zoompan=z='min(zoom+0.0010,1.20)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             f"fade=t=in:st=0:d=2.5,"
             "vignette=angle=PI/3:mode=backward,"
             "eq=saturation=0.72:contrast=1.20:brightness=-0.05,"
             "unsharp=5:5:1.5:5:5:0"
         ),
-        # Diagonal dinámica — energía y movimiento
         "diagonal": (
-            "scale=2160:3840,"
             f"zoompan=z='min(zoom+0.0016,1.30)':x='(iw/2-(iw/zoom/2))+n*0.28':y='ih/2-(ih/zoom/2)-n*0.18':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             "vignette=angle=PI/4:mode=backward,"
             "eq=saturation=1.20:contrast=1.10:brightness=0.02,"
             "unsharp=5:5:1.2:5:5:0"
         ),
-        # Zoom-out revelador — grandiosidad visual
         "zoom_out": (
-            "scale=2160:3840,"
             f"zoompan=z='max(zoom-0.0014,1.10)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
             f"fade=t=in:st=0:d=1.2,"
             "eq=saturation=1.10:contrast=1.05:brightness=0.01,"
@@ -1005,7 +990,6 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         ),
     }
 
-    # Compatibilidad: si no hay movimiento explícito, mapear desde mood
     _MOOD_TO_MOTION = {
         "energico":    "zoom_dramatico",
         "motivador":   "ken_burns",
@@ -1015,38 +999,49 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         "alegre":      "diagonal",
     }
 
-    # Fallback universal: Ken Burns estándar
-    FALLBACK_FILTER = (
-        "scale=2160:3840,"
+    FALLBACK_MOTION = (
         f"zoompan=z='min(zoom+0.0010,1.20)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={TOTAL_FRAMES}:s=1080x1920:fps={ZOOM_FPS},"
         "eq=saturation=1.10:contrast=1.04"
     )
 
-    # ── Seleccionar filtro de movimiento ────────────────────────────────────
-    motion_key = movimiento or _MOOD_TO_MOTION.get(mood, "ken_burns")
-    vf = MOTION_FILTERS.get(motion_key, FALLBACK_FILTER)
+    # ── Seleccionar movimiento y preparar cadena de filtros ─────────────────
+    motion_key    = movimiento or _MOOD_TO_MOTION.get(mood, "ken_burns")
+    motion_filter = MOTION_FILTERS.get(motion_key, FALLBACK_MOTION)
 
-    # Inyectar color grade (si no es "none")
-    cg = COLOR_GRADES.get(color_grade or "none", "")
-    if cg:
-        vf = vf + "," + cg
+    cg     = COLOR_GRADES.get(color_grade or "none", "")
+    cg_str = "," + cg if cg else ""
+    fade_str = f",fade=t=out:st={max(0, duracion-1.2):.1f}:d=1.2"
 
-    # Fade-out final suave para cierre premium
-    vf = vf + f",fade=t=out:st={max(0, duracion-1.2):.1f}:d=1.2"
+    def _build_fc(motion_vf):
+        """
+        filter_complex con fondo blur para preservar el aspect ratio original.
+        - bg: imagen escalada para cubrir 2160x3840 (fill) + desenfoque fuerte
+        - fg: imagen escalada para caber en 2160x3840 (fit, sin deformar)
+        - overlay centrado de fg sobre bg
+        - zoompan + color grade + fade aplicado al compuesto
+        """
+        return (
+            "[0:v]scale=2160:3840:force_original_aspect_ratio=increase,"
+            "crop=2160:3840,gblur=sigma=45[bg];"
+            "[0:v]scale=2160:3840:force_original_aspect_ratio=decrease[fg];"
+            "[bg][fg]overlay=(W-w)/2:(H-h)/2[composed];"
+            f"[composed]{motion_vf}{cg_str}{fade_str}[out]"
+        )
 
     os.makedirs("static", exist_ok=True)
     ts = int(time.time())
     tmp_path   = f"static/reel_tmp_{ts}.mp4"
     final_path = f"static/reel_{ts}.mp4"
 
-    def _run_ffmpeg(vf_filter, out_path):
+    def _run_ffmpeg(filter_complex, out_path):
         cmd = [
             "ffmpeg", "-y",
             "-loop", "1", "-framerate", str(ZOOM_FPS),
             "-i", imagen_path,
             "-i", audio_path,
             "-t", str(duracion),
-            "-vf", vf_filter,
+            "-filter_complex", filter_complex,
+            "-map", "[out]", "-map", "1:a",
             "-c:v", "libx264", "-preset", "medium", "-crf", "18",
             "-profile:v", "high", "-level", "4.0",
             "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-ac", "2",
@@ -1061,11 +1056,11 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         cg_log = f"+ {color_grade}" if cg else ""
         log(f"🎬 Generando Reel — mov:{motion_key} | música:{mood}{cg_log}{wm_log}{lt_log} ({duracion}s)...", "info")
 
-        result = _run_ffmpeg(vf, tmp_path)
+        result = _run_ffmpeg(_build_fc(motion_filter), tmp_path)
 
         if result.returncode != 0:
             log(f"⚠️ Filtro '{motion_key}' falló. Reintentando con Ken Burns estándar...", "warning")
-            result = _run_ffmpeg(FALLBACK_FILTER, tmp_path)
+            result = _run_ffmpeg(_build_fc(FALLBACK_MOTION), tmp_path)
 
         if result.returncode != 0:
             log(f"❌ ffmpeg error (fallback): {result.stderr[-300:]}", "error")
