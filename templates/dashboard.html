@@ -1905,7 +1905,19 @@ async function cargarReelRef(input) {
   const file = input.files[0];
   if (!file) return;
   const STATUS = document.getElementById('reelRefStatus');
-  STATUS.textContent = 'Subiendo...';
+  const prev   = document.getElementById('reelRefPreview');
+
+  // Mostrar preview local inmediatamente sin esperar el upload
+  const reader = new FileReader();
+  reader.onload = e => {
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+    document.getElementById('reelRefIcon').textContent = '⏳';
+    document.getElementById('reelRefText').innerHTML = '<strong>Subiendo imagen…</strong>';
+  };
+  reader.readAsDataURL(file);
+
+  STATUS.textContent = 'Subiendo a servidor…';
   const formData = new FormData();
   formData.append('imagen', file);
   try {
@@ -1913,16 +1925,18 @@ async function cargarReelRef(input) {
     const data = await res.json();
     if (data.url) {
       urlReelRef = data.url;
-      const prev = document.getElementById('reelRefPreview');
-      prev.src = data.url; prev.style.display = 'block';
       document.getElementById('reelRefIcon').textContent = '✅';
       document.getElementById('reelRefText').innerHTML = '<strong>Imagen de referencia lista</strong>';
       STATUS.textContent = '';
       agregarLog('🎨 Imagen de referencia cargada', 'success');
     } else {
+      document.getElementById('reelRefIcon').textContent = '❌';
       STATUS.textContent = 'Error al subir imagen';
     }
-  } catch(e) { STATUS.textContent = 'Error de conexión'; }
+  } catch(e) {
+    document.getElementById('reelRefIcon').textContent = '❌';
+    STATUS.textContent = 'Error de conexión';
+  }
 }
 
 async function convertirAJpeg(archivo) {
