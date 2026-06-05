@@ -733,6 +733,59 @@ def _esc_dt(text):
                 .replace('%', '\\%'))
 
 
+def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
+    """
+    Construye el filtro ffmpeg de diseño en movimiento para reels.
+    Adaptable a cualquier imagen — todos los elementos son relativos a iw/ih o
+    posicionados para salida 1080x1920 (resolución fija del zoompan).
+
+    Capas que siempre se aplican:
+      • Corner accents cyan en esquinas superiores (marcos del encuadre)
+
+    Capas adicionales cuando hay lower_third (titulo configurado):
+      • Barra oscura inferior + separador cyan
+      • Título con slide-in desde izquierda + fade-in
+      • Precio con slide-in retardado + pulso de alpha
+    """
+    parts = []
+
+    # ── Corner accents — siempre visibles, output siempre 1080x1920 ──────
+    # Esquina superior izquierda
+    parts.append("drawbox=x=22:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill")
+    parts.append("drawbox=x=22:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill")
+    # Esquina superior derecha  (1080-22-90=968 | 1080-26=1054)
+    parts.append("drawbox=x=968:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill")
+    parts.append("drawbox=x=1054:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill")
+
+    if titulo and fa:
+        # ── Barra inferior semitransparente ──────────────────────────────
+        parts.append(
+            "drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.26:color=black@0.72:t=fill"
+        )
+        # ── Línea separadora cyan (top del lower-third) ───────────────────
+        parts.append(
+            "drawbox=x=0:y=ih*0.74:w=iw:h=4:color=0x00E5FF@0.95:t=fill"
+        )
+        # ── Título: slide-in desde izquierda ─────────────────────────────
+        # drawtext usa w/h (no iw/ih)
+        parts.append(
+            f"drawtext={fa}text='{titulo}':fontsize=66:fontcolor={color}:"
+            f"x='if(lt(t\\,0.7)\\,-w\\,if(lt(t\\,1.2)\\,-w+(w+30)*(t-0.7)/0.5\\,30))':y=h*0.775:"
+            f"shadowcolor=black@0.9:shadowx=3:shadowy=3:"
+            f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.2)\\,(t-0.7)/0.5\\,1))'"
+        )
+        if precio:
+            # ── Precio: slide-in con delay + pulso de alpha ───────────────
+            parts.append(
+                f"drawtext={fa}text='{precio}':fontsize=84:fontcolor=yellow:"
+                f"x='if(lt(t\\,1.0)\\,-w\\,if(lt(t\\,1.5)\\,-w+(w+30)*(t-1.0)/0.5\\,30))':y=h*0.865:"
+                f"shadowcolor=black@0.9:shadowx=4:shadowy=4:"
+                f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.5)\\,(t-1.0)/0.5\\,0.75+0.25*sin(t*3.14)))'"
+            )
+
+    return ",".join(parts)
+
+
 def aplicar_watermark_imagen(imagen_path, logo_path=None, opacidad=0.75, posicion='br', margen=25):
     """Aplica logo PNG como watermark sobre imagen usando Pillow. Gratis."""
     lpath = logo_path or LOGO_PATH_DEFAULT
@@ -773,48 +826,25 @@ def aplicar_watermark_imagen(imagen_path, logo_path=None, opacidad=0.75, posicio
 
 def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=None):
     """
-    Segunda pasada ffmpeg: aplica watermark + lower-third sobre un video ya generado.
-    - Watermark: filter_complex overlay (logo PNG en esquina)
-    - Lower-third: drawtext animado con fade-in (nombre + precio)
+    Segunda pasada ffmpeg: aplica motion overlay + watermark sobre un video ya generado.
+    Siempre incluye corner accents; si lower_third tiene texto agrega barra + slide-in.
     """
     os.makedirs("static", exist_ok=True)
 
-    # Construir lower-third
-    lt_filters = ""
-    if lower_third and lower_third.get('texto') and DRAWTEXT_FONT:
-        titulo = _esc_dt(lower_third['texto'].upper())
-        precio  = _esc_dt(lower_third.get('precio', ''))
-        color   = lower_third.get('color', 'white')
-        fa = f"fontfile={DRAWTEXT_FONT}:"
-        lt_parts = [
-            f"drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.22:color=black@0.60:t=fill",
-            f"drawtext={fa}text='{titulo}':fontsize=72:fontcolor={color}:"
-            f"x=(w-text_w)/2:y=h*0.79:shadowcolor=black@0.8:shadowx=3:shadowy=3:"
-            f"alpha='if(lt(t\\,0.8)\\,0\\,if(lt(t\\,1.5)\\,(t-0.8)/0.7\\,1))'",
-        ]
-        if precio:
-            lt_parts.append(
-                f"drawtext={fa}text='{precio}':fontsize=56:fontcolor=yellow:"
-                f"x=(w-text_w)/2:y=h*0.88:shadowcolor=black@0.8:shadowx=2:shadowy=2:"
-                f"alpha='if(lt(t\\,1.1)\\,0\\,if(lt(t\\,1.8)\\,(t-1.1)/0.7\\,1))'"
-            )
-        lt_filters = ",".join(lt_parts)
+    fa     = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
+    titulo = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
+    precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
+    color  = lower_third.get('color', 'white') if lower_third else 'white'
 
-    wm_w = 220  # ancho del logo en píxeles
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color)
+    wm_w = 220
 
     try:
-        if lt_filters:
-            filter_complex = (
-                f"[0:v]{lt_filters}[vlt];"
-                f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa=0.72[vwm];"
-                f"[vlt][vwm]overlay=main_w-overlay_w-30:main_h-overlay_h-30[vout]"
-            )
-        else:
-            filter_complex = (
-                f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa=0.72[vwm];"
-                f"[0:v][vwm]overlay=main_w-overlay_w-30:main_h-overlay_h-30[vout]"
-            )
-
+        filter_complex = (
+            f"[0:v]{motion_filters}[vlt];"
+            f"[1:v]scale={wm_w}:-1,format=rgba,colorchannelmixer=aa=0.72[vwm];"
+            f"[vlt][vwm]overlay=main_w-overlay_w-30:main_h-overlay_h-30[vout]"
+        )
         cmd = [
             "ffmpeg", "-y", "-i", input_path, "-i", logo_path,
             "-filter_complex", filter_complex,
@@ -825,52 +855,41 @@ def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=Non
         ]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         if res.returncode != 0:
-            log(f"⚠️ Watermark video falló ({res.stderr[-150:].strip()}). Usando sin watermark.", "warning")
-            import shutil
-            shutil.copy2(input_path, output_path)
+            log(f"⚠️ Motion+watermark falló ({res.stderr[-150:].strip()}). Copiando sin overlay.", "warning")
+            import shutil; shutil.copy2(input_path, output_path)
         else:
-            log(f"✅ Watermark + lower-third aplicados al Reel ✅", "success")
+            log("✅ Motion overlay + watermark aplicados al Reel ✅", "success")
     except Exception as e:
         log(f"⚠️ Error overlay video: {e}", "warning")
-        import shutil
-        shutil.copy2(input_path, output_path)
+        import shutil; shutil.copy2(input_path, output_path)
 
     return output_path
 
 
 def _only_lower_third_video(input_path, output_path, lower_third):
-    """Aplica solo lower-third (sin watermark) vía -vf."""
-    if not lower_third or not lower_third.get('texto') or not DRAWTEXT_FONT:
-        import shutil; shutil.copy2(input_path, output_path); return output_path
-    titulo = _esc_dt(lower_third['texto'].upper())
-    precio  = _esc_dt(lower_third.get('precio', ''))
-    color   = lower_third.get('color', 'white')
-    fa = f"fontfile={DRAWTEXT_FONT}:"
-    lt = (
-        f"drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.22:color=black@0.60:t=fill,"
-        f"drawtext={fa}text='{titulo}':fontsize=72:fontcolor={color}:"
-        f"x=(w-text_w)/2:y=h*0.79:shadowcolor=black@0.8:shadowx=3:shadowy=3:"
-        f"alpha='if(lt(t\\,0.8)\\,0\\,if(lt(t\\,1.5)\\,(t-0.8)/0.7\\,1))'"
-    )
-    if precio:
-        lt += (
-            f",drawtext={fa}text='{precio}':fontsize=56:fontcolor=yellow:"
-            f"x=(w-text_w)/2:y=h*0.88:shadowcolor=black@0.8:shadowx=2:shadowy=2:"
-            f"alpha='if(lt(t\\,1.1)\\,0\\,if(lt(t\\,1.8)\\,(t-1.1)/0.7\\,1))'"
-        )
+    """Aplica motion overlay (corner accents + lower-third opcional) sin watermark."""
+    fa     = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
+    titulo = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
+    precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
+    color  = lower_third.get('color', 'white') if lower_third else 'white'
+
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color)
+
     try:
         cmd = [
             "ffmpeg", "-y", "-i", input_path,
-            "-vf", lt, "-c:v", "libx264", "-preset", "fast", "-crf", "17",
+            "-vf", motion_filters,
+            "-c:v", "libx264", "-preset", "fast", "-crf", "17",
             "-c:a", "copy", "-movflags", "+faststart", output_path
         ]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
         if res.returncode != 0:
+            log(f"⚠️ Motion overlay falló ({res.stderr[-150:].strip()}). Copiando sin motion.", "warning")
             import shutil; shutil.copy2(input_path, output_path)
         else:
-            log("✅ Lower-third aplicado ✅", "success")
+            log("✅ Motion overlay aplicado ✅", "success")
     except Exception as e:
-        log(f"⚠️ Error lower-third: {e}", "warning")
+        log(f"⚠️ Error motion overlay: {e}", "warning")
         import shutil; shutil.copy2(input_path, output_path)
     return output_path
 
@@ -1025,23 +1044,19 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
             log(f"❌ ffmpeg error (fallback): {result.stderr[-300:]}", "error")
             return None
 
-        # ── Segunda pasada: watermark + lower-third ──────────────────────────
-        lpath = watermark_path or (LOGO_PATH_DEFAULT if (usar_watermark and os.path.exists(LOGO_PATH_DEFAULT)) else None)
+        # ── Segunda pasada: motion overlay + watermark opcional ─────────────
+        # El motion overlay (corner accents + lower-third) SIEMPRE se aplica.
+        lpath  = watermark_path or (LOGO_PATH_DEFAULT if (usar_watermark and os.path.exists(LOGO_PATH_DEFAULT)) else None)
         use_wm = bool(lpath and os.path.exists(lpath))
-        use_lt = bool(lower_third and lower_third.get('texto') and DRAWTEXT_FONT)
 
         if use_wm:
             _overlay_watermark_video(tmp_path, final_path,
                                      logo_path=lpath,
-                                     lower_third=lower_third if use_lt else None)
-            try: os.remove(tmp_path)
-            except: pass
-        elif use_lt:
-            _only_lower_third_video(tmp_path, final_path, lower_third)
-            try: os.remove(tmp_path)
-            except: pass
+                                     lower_third=lower_third)
         else:
-            os.rename(tmp_path, final_path)
+            _only_lower_third_video(tmp_path, final_path, lower_third)
+        try: os.remove(tmp_path)
+        except: pass
 
         size_mb = os.path.getsize(final_path) / (1024 * 1024)
         log(f"✅ Reel generado → {final_path} ({size_mb:.1f} MB) | mov:{motion_key} | música:{mood}{wm_log}{lt_log}", "success")
