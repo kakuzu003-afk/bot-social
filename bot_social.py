@@ -847,47 +847,73 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
         parts.append("drawbox=x=0:y=1898:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
         parts.append("drawbox=x=1058:y=1898:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
 
-    # GLITCH CYBERPUNK — flashes blancos + aberración cromática RGB + bloques corrupción
+    # GLITCH CYBERPUNK — 4 bursts dramáticos con flashes largos + aberración RGB intensa
     if 'glitch' in _ex:
-        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.55:t=fill:enable='between(t\\,0.05\\,0.09)'")
-        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.35:t=fill:enable='between(t\\,0.48\\,0.51)'")
-        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.50:t=fill:enable='between(t\\,2.88\\,2.91)'")
-        parts.append("drawbox=x=0:y=240:w=1080:h=10:color=0xFF00CC@0.72:t=fill:enable='between(t\\,0.04\\,0.10)'")
-        parts.append("drawbox=x=0:y=780:w=1080:h=7:color=0x00FF33@0.62:t=fill:enable='between(t\\,0.47\\,0.52)'")
-        parts.append("drawbox=x=0:y=1350:w=1080:h=14:color=0xFF3300@0.55:t=fill:enable='between(t\\,1.28\\,1.32)'")
-        parts.append("drawbox=x=0:y=520:w=1080:h=8:color=0x0033FF@0.68:t=fill:enable='between(t\\,2.87\\,2.92)'")
-        parts.append("drawbox=x=80:y=290:w=130:h=18:color=black@0.96:t=fill:enable='between(t\\,0.05\\,0.09)'")
-        parts.append("drawbox=x=640:y=800:w=170:h=10:color=black@0.92:t=fill:enable='between(t\\,0.47\\,0.52)'")
-        parts.append("drawbox=x=260:y=1355:w=240:h=15:color=black@0.96:t=fill:enable='between(t\\,1.28\\,1.32)'")
-        parts.append("drawbox=x=490:y=530:w=100:h=12:color=black@0.90:t=fill:enable='between(t\\,2.87\\,2.92)'")
+        # Burst 1 (t≈0.1s) — doble flash
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.70:t=fill:enable='between(t\\,0.08\\,0.16)'")
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.45:t=fill:enable='between(t\\,0.20\\,0.25)'")
+        # Burst 2 (t≈1.2s)
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.60:t=fill:enable='between(t\\,1.18\\,1.28)'")
+        # Burst 3 (t≈3.5s)
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.65:t=fill:enable='between(t\\,3.48\\,3.58)'")
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.40:t=fill:enable='between(t\\,3.65\\,3.70)'")
+        # Burst 4 mid-video (t≈7s)
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.55:t=fill:enable='between(t\\,6.95\\,7.08)'")
+        # Aberración cromática RGB — barras anchas y vistosas
+        parts.append("drawbox=x=0:y=180:w=1080:h=22:color=0xFF00CC@0.80:t=fill:enable='between(t\\,0.07\\,0.17)'")
+        parts.append("drawbox=x=0:y=620:w=1080:h=16:color=0x00FFCC@0.75:t=fill:enable='between(t\\,0.08\\,0.17)'")
+        parts.append("drawbox=x=0:y=1100:w=1080:h=20:color=0xFF3300@0.70:t=fill:enable='between(t\\,0.09\\,0.16)'")
+        parts.append("drawbox=x=0:y=320:w=1080:h=18:color=0x0055FF@0.78:t=fill:enable='between(t\\,1.17\\,1.29)'")
+        parts.append("drawbox=x=0:y=900:w=1080:h=24:color=0xFF00AA@0.72:t=fill:enable='between(t\\,1.18\\,1.28)'")
+        parts.append("drawbox=x=0:y=1500:w=1080:h=16:color=0x00FF55@0.68:t=fill:enable='between(t\\,1.19\\,1.27)'")
+        parts.append("drawbox=x=0:y=480:w=1080:h=20:color=0xFF4400@0.75:t=fill:enable='between(t\\,3.47\\,3.59)'")
+        parts.append("drawbox=x=0:y=1200:w=1080:h=18:color=0x00CCFF@0.80:t=fill:enable='between(t\\,3.48\\,3.58)'")
+        parts.append("drawbox=x=0:y=750:w=1080:h=22:color=0xFF0066@0.72:t=fill:enable='between(t\\,6.94\\,7.09)'")
+        parts.append("drawbox=x=0:y=1400:w=1080:h=16:color=0x66FF00@0.68:t=fill:enable='between(t\\,6.95\\,7.08)'")
+        # Bloques negros de corrupción
+        parts.append("drawbox=x=60:y=200:w=200:h=24:color=black@0.98:t=fill:enable='between(t\\,0.08\\,0.16)'")
+        parts.append("drawbox=x=700:y=640:w=260:h=16:color=black@0.95:t=fill:enable='between(t\\,0.08\\,0.17)'")
+        parts.append("drawbox=x=200:y=1120:w=300:h=22:color=black@0.98:t=fill:enable='between(t\\,0.09\\,0.16)'")
+        parts.append("drawbox=x=400:y=340:w=180:h=20:color=black@0.96:t=fill:enable='between(t\\,1.17\\,1.29)'")
+        parts.append("drawbox=x=100:y=920:w=350:h=18:color=black@0.95:t=fill:enable='between(t\\,1.18\\,1.28)'")
+        parts.append("drawbox=x=550:y=490:w=220:h=22:color=black@0.97:t=fill:enable='between(t\\,3.47\\,3.59)'")
+        parts.append("drawbox=x=80:y=1210:w=280:h=18:color=black@0.96:t=fill:enable='between(t\\,6.94\\,7.09)'")
 
-    # TICKER SCROLLEANTE — banda roja inferior con texto desplazante de oferta
-    if 'ticker' in _ex and fa:
-        _tk_titulo = titulo if titulo else 'PRECIO ESPECIAL'
-        _tk_precio = _esc_dt(precio) if precio else 'CONSULTAR'
-        _tk_content = f"{_tk_titulo} · {_tk_precio} · SOLO POR HOY · PEDILO YA · "
-        _tk_text = (_tk_content * 4)
+    # TICKER SCROLLEANTE — banda roja siempre visible + texto si hay fuente
+    if 'ticker' in _ex:
+        # Banda y decoración siempre visibles (no necesitan fuente)
         parts.append("drawbox=x=0:y=1804:w=1080:h=56:color=0xBB2000@0.96:t=fill:enable='gte(t\\,1.0)'")
         parts.append("drawbox=x=0:y=1804:w=1080:h=3:color=0xFFCC00@1.0:t=fill:enable='gte(t\\,1.0)'")
-        parts.append("drawbox=x=0:y=1804:w=136:h=56:color=black@0.94:t=fill:enable='gte(t\\,1.0)'")
-        parts.append(
-            f"drawtext={fa}text='OFERTA':fontsize=22:fontcolor=0xFFCC00:"
-            f"x=10:y=1820:"
-            f"shadowcolor=black@0.9:shadowx=1:shadowy=1:"
-            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
-        )
-        parts.append(
-            f"drawtext={fa}text='●':fontsize=16:fontcolor=0xFF3300:"
-            f"x=10:y=1842:"
-            f"shadowcolor=black@0.8:shadowx=0:shadowy=0:"
-            f"alpha='if(lt(t\\,1.0)\\,0\\,0.55+0.45*sin(t*PI*2.5))'"
-        )
-        parts.append(
-            f"drawtext={fa}text='{_tk_text}':fontsize=24:fontcolor=white:"
-            f"x='1080-140*(t-1.0)':y=1818:"
-            f"shadowcolor=black@0.8:shadowx=1:shadowy=1:"
-            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
-        )
+        parts.append("drawbox=x=0:y=1855:w=1080:h=3:color=0xFF6600@0.6:t=fill:enable='gte(t\\,1.0)'")
+        # Badge izquierdo: fondo negro + 3 "puntos" pulsantes simulados con boxes
+        parts.append("drawbox=x=0:y=1804:w=130:h=56:color=black@0.94:t=fill:enable='gte(t\\,1.0)'")
+        parts.append("drawbox=x=10:y=1820:w=18:h=18:color=0xFFCC00@0.9:t=fill:enable='gt(sin(t*PI*2.5)\\,0.1)'")
+        parts.append("drawbox=x=36:y=1820:w=18:h=18:color=0xFFCC00@0.7:t=fill:enable='gt(sin(t*PI*2.5+1)\\,0.1)'")
+        parts.append("drawbox=x=62:y=1820:w=18:h=18:color=0xFFCC00@0.5:t=fill:enable='gt(sin(t*PI*2.5+2)\\,0.1)'")
+        # Separador vertical
+        parts.append("drawbox=x=130:y=1807:w=3:h=50:color=0xFFCC00@0.8:t=fill:enable='gte(t\\,1.0)'")
+        # Líneas decorativas "de velocidad" que simulan texto en movimiento
+        for _li, (_lx, _lw, _la) in enumerate([(140,180,0.6),(330,220,0.5),(560,160,0.55),(730,180,0.5),(920,140,0.45)]):
+            parts.append(f"drawbox=x={_lx}:y=1820:w={_lw}:h=14:color=white@{_la}:t=fill:enable='gte(t\\,1.0)'")
+            parts.append(f"drawbox=x={_lx}:y=1838:w={_lw//2}:h=8:color=0xFFCC00@{round(_la-0.1,2)}:t=fill:enable='gte(t\\,1.0)'")
+        # Texto scrolleante si hay fuente
+        if fa:
+            _tk_titulo = titulo if titulo else 'PRECIO ESPECIAL'
+            _tk_precio = _esc_dt(precio) if precio else 'CONSULTAR'
+            _tk_content = f"{_tk_titulo} · {_tk_precio} · SOLO POR HOY · PEDILO YA · "
+            _tk_text = (_tk_content * 4)
+            parts.append(
+                f"drawtext={fa}text='OFERTA':fontsize=22:fontcolor=0xFFCC00:"
+                f"x=10:y=1815:"
+                f"shadowcolor=black@0.9:shadowx=1:shadowy=1:"
+                f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
+            )
+            parts.append(
+                f"drawtext={fa}text='{_tk_text}':fontsize=24:fontcolor=white:"
+                f"x='1080-140*(t-1.0)':y=1818:"
+                f"shadowcolor=black@0.8:shadowx=1:shadowy=1:"
+                f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
+            )
 
     # INTRO CINEMATICO — overlay oscuro escalonado + título central + precio centrado
     if 'intro_cine' in _ex:
@@ -896,8 +922,11 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
             (0.42, 1.5, 2.0), (0.16, 2.0, 2.5)
         ]:
             parts.append(f"drawbox=x=0:y=0:w=1080:h=1920:color=black@{_ic_a}:t=fill:enable='between(t\\,{_ic_t0}\\,{_ic_t1})'")
+        # Líneas separadoras cyan siempre visibles (no necesitan fuente)
         parts.append("drawbox=x=60:y=915:w=960:h=2:color=0x00E5FF@0.85:t=fill:enable='between(t\\,0.4\\,2.7)'")
         parts.append("drawbox=x=60:y=1005:w=960:h=2:color=0x00E5FF@0.85:t=fill:enable='between(t\\,0.4\\,2.7)'")
+        # Bloque central decorativo (visible sin fuente)
+        parts.append("drawbox=x=200:y=920:w=680:h=82:color=0x00E5FF@0.08:t=fill:enable='between(t\\,0.4\\,2.7)'")
         if fa:
             _ic_titulo = titulo or 'EXCLUSIVO'
             parts.append(
@@ -914,23 +943,27 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
                     f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.4)\\,(t-0.7)/0.7\\,if(lt(t\\,2.2)\\,1\\,if(lt(t\\,2.8)\\,(2.8-t)/0.6\\,0))))'"
                 )
 
-    # BADGE VIRAL — badge pulsante esquina superior derecha con estrellas doradas
-    if 'badge_viral' in _ex and fa:
+    # BADGE VIRAL — siempre visible con boxes; texto "VIRAL" si hay fuente
+    if 'badge_viral' in _ex:
+        # Marco exterior e interior (siempre visible, sin fuente)
         parts.append("drawbox=x=774:y=146:w=292:h=128:color=0xFF4400@0.95:t=fill:enable='gte(t\\,0.7)'")
-        parts.append("drawbox=x=778:y=150:w=284:h=120:color=black@0.80:t=fill:enable='gte(t\\,0.7)'")
-        parts.append("drawbox=x=774:y=146:w=292:h=4:color=0xFFCC00@1.0:t=fill:enable='gte(t\\,0.7)'")
-        parts.append(
-            f"drawtext={fa}text='VIRAL':fontsize=58:fontcolor=0xFF4400:"
-            f"x=810:y=163:"
-            f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
-            f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.3)\\,(t-0.7)/0.6\\,0.75+0.25*sin(t*PI*2.2)))'"
-        )
-        parts.append(
-            f"drawtext={fa}text='* * * * *':fontsize=28:fontcolor=0xFFCC00:"
-            f"x=800:y=232:"
-            f"shadowcolor=black@0.8:shadowx=1:shadowy=1:"
-            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.6)\\,(t-1.0)/0.6\\,0.92))'"
-        )
+        parts.append("drawbox=x=778:y=150:w=284:h=120:color=black@0.82:t=fill:enable='gte(t\\,0.7)'")
+        parts.append("drawbox=x=774:y=146:w=292:h=5:color=0xFFCC00@1.0:t=fill:enable='gte(t\\,0.7)'")
+        parts.append("drawbox=x=774:y=268:w=292:h=5:color=0xFFCC00@0.8:t=fill:enable='gte(t\\,0.7)'")
+        # Barra de color pulsante dentro del badge (simula energía aunque no haya texto)
+        parts.append("drawbox=x=778:y=150:w=284:h=8:color=0xFF4400@0.8:t=fill:enable='gt(sin(t*PI*2.2)\\,0.0)'")
+        # 5 cuadraditos dorados simulando estrellas (siempre visible)
+        for _si in range(5):
+            _sx = 786 + _si * 52
+            parts.append(f"drawbox=x={_sx}:y=228:w=34:h=34:color=0xFFCC00@0.88:t=fill:enable='gte(t\\,1.0)'")
+            parts.append(f"drawbox=x={_sx+4}:y=232:w=26:h=26:color=0xFF8800@0.60:t=fill:enable='gte(t\\,1.0)'")
+        if fa:
+            parts.append(
+                f"drawtext={fa}text='VIRAL':fontsize=58:fontcolor=0xFF4400:"
+                f"x=812:y=163:"
+                f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
+                f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.3)\\,(t-0.7)/0.6\\,0.75+0.25*sin(t*PI*2.2)))'"
+            )
 
     return ",".join(parts)
 
