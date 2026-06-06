@@ -62,6 +62,39 @@ def init_db():
         data TEXT NOT NULL,
         fecha TEXT
     );
+    CREATE TABLE IF NOT EXISTS productos (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        precio TEXT,
+        precio_anterior TEXT,
+        duracion TEXT,
+        categoria TEXT DEFAULT 'streaming',
+        descripcion TEXT,
+        imagen_ref_url TEXT,
+        motion TEXT DEFAULT 'zoom_dramatico',
+        color_grade TEXT DEFAULT 'cinematico',
+        extra_effects TEXT DEFAULT '[]',
+        hashtags TEXT DEFAULT '[]',
+        lower_third_color TEXT DEFAULT 'white',
+        mood TEXT DEFAULT 'energico',
+        duracion_reel INTEGER DEFAULT 15,
+        veces_usado INTEGER DEFAULT 0,
+        ultimo_uso TEXT,
+        fecha_creacion TEXT
+    );
+    CREATE TABLE IF NOT EXISTS post_analytics (
+        id TEXT PRIMARY KEY,
+        borrador_id TEXT,
+        ig_media_id TEXT,
+        reach INTEGER DEFAULT 0,
+        impressions INTEGER DEFAULT 0,
+        likes INTEGER DEFAULT 0,
+        comments INTEGER DEFAULT 0,
+        saves INTEGER DEFAULT 0,
+        shares INTEGER DEFAULT 0,
+        fecha_publicacion TEXT,
+        ultima_sync TEXT
+    );
     """)
     con.commit()
     con.close()
@@ -155,6 +188,193 @@ def _db_delete_profile(profile_id):
     except Exception as e:
         print(f"[DB] Error eliminando perfil: {e}")
         return False
+
+# ============================================
+# CATÁLOGO DE PRODUCTOS
+# ============================================
+
+def _db_save_producto(p):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute("""
+            INSERT OR REPLACE INTO productos
+            (id,nombre,precio,precio_anterior,duracion,categoria,descripcion,
+             imagen_ref_url,motion,color_grade,extra_effects,hashtags,
+             lower_third_color,mood,duracion_reel,veces_usado,ultimo_uso,fecha_creacion)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            p['id'], p['nombre'], p.get('precio',''), p.get('precio_anterior',''),
+            p.get('duracion',''), p.get('categoria','streaming'), p.get('descripcion',''),
+            p.get('imagen_ref_url',''), p.get('motion','zoom_dramatico'),
+            p.get('color_grade','cinematico'),
+            json.dumps(p.get('extra_effects',[])), json.dumps(p.get('hashtags',[])),
+            p.get('lower_third_color','white'), p.get('mood','energico'),
+            int(p.get('duracion_reel',15)), int(p.get('veces_usado',0)),
+            p.get('ultimo_uso',''), p.get('fecha_creacion', datetime.now().strftime('%d/%m/%Y'))
+        ))
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error guardando producto: {e}")
+
+def _db_load_productos():
+    try:
+        con = sqlite3.connect(DB_PATH)
+        rows = con.execute("SELECT * FROM productos ORDER BY veces_usado DESC, fecha_creacion DESC").fetchall()
+        cols = ['id','nombre','precio','precio_anterior','duracion','categoria','descripcion',
+                'imagen_ref_url','motion','color_grade','extra_effects','hashtags',
+                'lower_third_color','mood','duracion_reel','veces_usado','ultimo_uso','fecha_creacion']
+        con.close()
+        result = []
+        for row in rows:
+            d = dict(zip(cols, row))
+            d['extra_effects'] = json.loads(d['extra_effects'] or '[]')
+            d['hashtags']      = json.loads(d['hashtags'] or '[]')
+            result.append(d)
+        return result
+    except Exception as e:
+        print(f"[DB] Error cargando productos: {e}")
+        return []
+
+def _db_update_producto(pid, updates):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        row = con.execute("SELECT * FROM productos WHERE id=?", (pid,)).fetchone()
+        if not row:
+            con.close(); return
+        cols = ['id','nombre','precio','precio_anterior','duracion','categoria','descripcion',
+                'imagen_ref_url','motion','color_grade','extra_effects','hashtags',
+                'lower_third_color','mood','duracion_reel','veces_usado','ultimo_uso','fecha_creacion']
+        d = dict(zip(cols, row))
+        for k, v in updates.items():
+            if k in ('extra_effects','hashtags') and isinstance(v, list):
+                d[k] = json.dumps(v)
+            else:
+                d[k] = v
+        con.execute("""
+            UPDATE productos SET nombre=?,precio=?,precio_anterior=?,duracion=?,categoria=?,
+            descripcion=?,imagen_ref_url=?,motion=?,color_grade=?,extra_effects=?,hashtags=?,
+            lower_third_color=?,mood=?,duracion_reel=?,veces_usado=?,ultimo_uso=?,fecha_creacion=?
+            WHERE id=?
+        """, (d['nombre'],d['precio'],d['precio_anterior'],d['duracion'],d['categoria'],
+              d['descripcion'],d['imagen_ref_url'],d['motion'],d['color_grade'],
+              d['extra_effects'],d['hashtags'],d['lower_third_color'],d['mood'],
+              d['duracion_reel'],d['veces_usado'],d['ultimo_uso'],d['fecha_creacion'],pid))
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error actualizando producto: {e}")
+
+def _db_delete_producto(pid):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute("DELETE FROM productos WHERE id=?", (pid,))
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error eliminando producto: {e}")
+
+def _db_producto_usado(pid):
+    """Incrementa el contador de uso y actualiza ultimo_uso."""
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute(
+            "UPDATE productos SET veces_usado=veces_usado+1, ultimo_uso=? WHERE id=?",
+            (datetime.now().strftime('%d/%m %H:%M'), pid)
+        )
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error actualizando uso de producto: {e}")
+
+def _db_save_analytics(data):
+    try:
+        con = sqlite3.connect(DB_PATH)
+        con.execute("""
+            INSERT OR REPLACE INTO post_analytics
+            (id,borrador_id,ig_media_id,reach,impressions,likes,comments,saves,shares,fecha_publicacion,ultima_sync)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        """, (data['id'], data.get('borrador_id',''), data.get('ig_media_id',''),
+              data.get('reach',0), data.get('impressions',0), data.get('likes',0),
+              data.get('comments',0), data.get('saves',0), data.get('shares',0),
+              data.get('fecha_publicacion',''), datetime.now().strftime('%d/%m %H:%M')))
+        con.commit()
+        con.close()
+    except Exception as e:
+        print(f"[DB] Error guardando analytics: {e}")
+
+# ============================================
+# HASHTAGS POR CATEGORÍA CON ROTACIÓN
+# ============================================
+
+HASHTAGS_PRESET = {
+    "streaming": [
+        ["#amazontv","#primevideo","#streaming","#peliculas","#series","#chile","#oferta"],
+        ["#netflix","#disneyplus","#hbo","#contenido","#entretenimiento","#chile","#oferta"],
+        ["#streaminglatam","#peliculasonline","#seriesonline","#ocio","#chile","#oferta","#digital"],
+    ],
+    "gaming": [
+        ["#xbox","#gamepass","#gaming","#videojuegos","#gamers","#chile","#oferta"],
+        ["#gamer","#xboxlatam","#gaminglatam","#juegosonline","#xboxgamepass","#chile","#oferta"],
+        ["#videogames","#gamingcommunity","#xboxone","#juegos","#chile","#oferta","#digital"],
+    ],
+    "software": [
+        ["#software","#microsoft","#office","#productividad","#tech","#chile","#oferta"],
+        ["#office365","#microsoft365","#windows","#antivirus","#herramientas","#chile","#oferta"],
+        ["#productividad","#trabajoremoto","#homeoffice","#apps","#digital","#chile","#oferta"],
+    ],
+    "musica": [
+        ["#spotify","#musica","#streaming","#playlist","#chile","#oferta","#digital"],
+        ["#apple","#applemusic","#musica","#podcast","#entretenimiento","#chile","#oferta"],
+        ["#youtubemusic","#musicalatam","#streaming","#chile","#oferta","#digital","#audio"],
+    ],
+    "educacion": [
+        ["#educacion","#cursos","#online","#aprendizaje","#chile","#oferta","#digital"],
+        ["#udemy","#coursera","#educaciondigital","#aprender","#chile","#oferta","#tech"],
+        ["#capacitacion","#certificacion","#skill","#professional","#chile","#oferta","#futuro"],
+    ],
+    "general": [
+        ["#oferta","#descuento","#precio","#compras","#digital","#chile","#ahorra"],
+        ["#promocion","#ofertadigital","#ahorra","#deal","#latam","#chile","#descuento"],
+        ["#exclusivo","#limitado","#especial","#recomendado","#calidad","#chile","#oferta"],
+    ]
+}
+
+def _get_hashtags_rotados(categoria="general", veces_usado=0):
+    """Rota sets de hashtags para evitar shadowban de Instagram."""
+    sets = HASHTAGS_PRESET.get(categoria, HASHTAGS_PRESET["general"])
+    return sets[veces_usado % len(sets)]
+
+# ============================================
+# SMART SCHEDULER — SLOTS ÓPTIMOS LATAM
+# ============================================
+
+SLOTS_OPTIMOS_LATAM = {
+    0: ["12:00", "20:00"],   # lunes
+    1: ["12:30", "20:30"],   # martes
+    2: ["13:00", "19:30"],   # miércoles
+    3: ["12:00", "20:30"],   # jueves
+    4: ["13:00", "21:00"],   # viernes
+    5: ["11:00", "20:00"],   # sábado
+    6: ["19:30", "21:30"],   # domingo (mejor día LATAM)
+}
+
+def _proximo_slot_latam():
+    """Devuelve el próximo slot óptimo de publicación para LATAM (próximos 8 días)."""
+    ahora = datetime.now()
+    for dias in range(8):
+        fecha = ahora + timedelta(days=dias)
+        dia = fecha.weekday()
+        for slot_str in SLOTS_OPTIMOS_LATAM[dia]:
+            h, m = map(int, slot_str.split(':'))
+            slot_dt = fecha.replace(hour=h, minute=m, second=0, microsecond=0)
+            if slot_dt > ahora + timedelta(minutes=5):
+                return slot_dt
+    return ahora + timedelta(hours=2)
+
+def _segundos_para_proximo_slot():
+    """Segundos que faltan para el próximo slot óptimo."""
+    return max(60, int((_proximo_slot_latam() - datetime.now()).total_seconds()))
 
 # ============================================
 # AUTENTICACIÓN BÁSICA
@@ -352,7 +572,24 @@ Reglas:
         }
 
 
-def generar_post_estricto(prod_info, tendencias_reales, precio):
+def _get_top_captions_producto(titulo, limit=3):
+    """Obtiene los mejores captions históricos de un producto similar (few-shot para Groq)."""
+    try:
+        keyword = titulo.split()[0].lower() if titulo else ''
+        if not keyword:
+            return []
+        con = sqlite3.connect(DB_PATH)
+        rows = con.execute(
+            "SELECT data FROM captions WHERE lower(data) LIKE ? AND data LIKE '%\"publicado\": true%' ORDER BY fecha DESC LIMIT ?",
+            [f"%{keyword}%", limit]
+        ).fetchall()
+        con.close()
+        return [json.loads(r[0]).get('caption','') for r in rows if json.loads(r[0]).get('caption','')]
+    except Exception as e:
+        print(f"[DB] Error obteniendo captions históricos: {e}")
+        return []
+
+def generar_post_estricto(prod_info, tendencias_reales, precio, hashtags_override=None):
     tendencias_filtradas = filtrar_tendencias_con_llm(tendencias_reales, prod_info)
     ficha     = prod_info.get("ficha") or {}
     nombre    = ficha.get("nombre")    or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "")
@@ -361,6 +598,16 @@ def generar_post_estricto(prod_info, tendencias_reales, precio):
     categoria = ficha.get("categoria") or "digital"
     tendencias_str = ', '.join(tendencias_filtradas) if tendencias_filtradas else '—'
     año_actual = datetime.now().year
+
+    # ── MEMORIA: few-shot de captions exitosos anteriores ────────────────────
+    captions_anteriores = _get_top_captions_producto(nombre, limit=2)
+    few_shot_block = ""
+    if captions_anteriores:
+        ejemplos_str = "\n\n---\n".join(captions_anteriores[:2])
+        few_shot_block = f"""
+REFERENCIA — Captions anteriores que funcionaron para este producto (NO los copies, solo úsalos como referencia de tono y estructura que resonó):
+{ejemplos_str}
+"""
 
     # ── PASO 1: El agente analiza el producto y elige su estrategia ──────────
     analisis_prompt = f"""Eres un agente de ventas senior especializado en el mercado chileno.
@@ -387,6 +634,22 @@ TÁCTICA: [elige UNA: precio_shock | comparacion_tienda | historia_micro | pregu
     analisis = r1.choices[0].message.content.strip()
     log(f"🧠 Análisis de ventas: {analisis[:120]}...", "info")
 
+    # ── Hashtags: override del catálogo o reglas por defecto ─────────────────
+    if hashtags_override and isinstance(hashtags_override, list) and len(hashtags_override) > 0:
+        hashtag_line = ' '.join(hashtags_override)
+        hashtag_instruccion = f"USA EXACTAMENTE ESTOS HASHTAGS (no los cambies): {hashtag_line}"
+    else:
+        hashtag_line = "#chile #oferta #hashtag3 #hashtag4 #hashtag5"
+        hashtag_instruccion = """REGLAS DE HASHTAGS (obligatorio):
+- UNA sola palabra por hashtag, sin guiones ni palabras pegadas
+- Siempre incluye #chile y #oferta
+- Los otros 3 son específicos al producto: nombre del producto, categoría y público
+- Ejemplos reales:
+  Minecraft Java → #chile #oferta #minecraft #gaming #juegos
+  Netflix → #chile #oferta #netflix #streaming #peliculas
+  Spotify → #chile #oferta #spotify #musica #streaming
+- Usa el nombre exacto del producto y palabras simples en español o del nicho"""
+
     # ── PASO 2: El agente escribe el caption con total libertad creativa ─────
     system_agente = (
         "Eres un agente de ventas top de Chile — no un copywriter que sigue plantillas. "
@@ -400,7 +663,7 @@ TÁCTICA: [elige UNA: precio_shock | comparacion_tienda | historia_micro | pregu
 PRECIO: {precio}
 AUDIENCIA: {audiencia}
 TENDENCIAS HOY: {tendencias_str}
-
+{few_shot_block}
 TU ANÁLISIS DE VENTAS:
 {analisis}
 
@@ -419,19 +682,9 @@ FORMATO OBLIGATORIO DE SALIDA:
 
 📲 WhatsApp: +56946557876
 
-#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5
+{hashtag_line if hashtags_override else '#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5'}
 
-REGLAS DE HASHTAGS (obligatorio):
-- UNA sola palabra por hashtag, sin guiones ni palabras pegadas
-- Siempre incluye #chile y #oferta
-- Los otros 3 son específicos al producto: nombre del producto, categoría y público
-- Ejemplos reales:
-  Minecraft Java → #chile #oferta #minecraft #gaming #juegos
-  Photoshop → #chile #oferta #photoshop #diseño #adobe
-  Netflix → #chile #oferta #netflix #streaming #peliculas
-  Spotify → #chile #oferta #spotify #musica #streaming
-  Fortnite → #chile #oferta #fortnite #gaming #vbucks
-- Usa el nombre exacto del producto y palabras simples en español o del nicho
+{hashtag_instruccion}
 
 RESPONDE SOLO CON EL CAPTION — sin explicaciones previas ni etiquetas:"""
 
@@ -742,7 +995,7 @@ def _esc_dt(text):
                 .replace('%', '\\%'))
 
 
-def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effects=None):
+def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effects=None, precio_anterior=None):
     """
     Sistema de diseño en movimiento cinematográfico — 6 capas base + efectos extra.
 
@@ -793,7 +1046,22 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
             f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.2)\\,(t-0.7)/0.5\\,1))'"
         )
         if precio:
-            # Precio: slide-in con delay + pulso continuo
+            # Precio anterior tachado (si existe) — encima del precio actual
+            if precio_anterior and fa:
+                _pa_esc = _esc_dt(precio_anterior)
+                _pa_w   = max(80, len(precio_anterior) * 24)
+                parts.append(
+                    f"drawtext={fa}text='{_pa_esc}':fontsize=46:fontcolor=0x999999:"
+                    f"x=30:y=h*0.840:"
+                    f"shadowcolor=black@0.5:shadowx=1:shadowy=1:"
+                    f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,0.70))'"
+                )
+                # Línea roja de tachado sobre el precio anterior
+                parts.append(
+                    f"drawbox=x=28:y=ih*0.858:w={_pa_w}:h=4:color=0xFF3333@0.92:t=fill:"
+                    f"enable='gte(t\\,1.0)'"
+                )
+            # Precio actual: slide-in con delay + pulso continuo
             parts.append(
                 f"drawtext={fa}text='{precio}':fontsize=84:fontcolor=yellow:"
                 f"x='if(lt(t\\,1.0)\\,-w\\,if(lt(t\\,1.5)\\,-w+(w+30)*(t-1.0)/0.5\\,30))':y=h*0.862:"
@@ -1013,12 +1281,13 @@ def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=Non
     """
     os.makedirs("static", exist_ok=True)
 
-    fa     = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
-    titulo = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
-    precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
-    color  = lower_third.get('color', 'white') if lower_third else 'white'
+    fa              = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
+    titulo          = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
+    precio          = _esc_dt(lower_third.get('precio', '')) if lower_third else None
+    precio_anterior = _esc_dt(lower_third.get('precio_anterior', '')) if lower_third else None
+    color           = lower_third.get('color', 'white') if lower_third else 'white'
 
-    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects)
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects, precio_anterior=precio_anterior)
     wm_w = 220
 
     try:
@@ -1050,12 +1319,13 @@ def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=Non
 
 def _only_lower_third_video(input_path, output_path, lower_third, extra_effects=None):
     """Aplica motion overlay (corner accents + lower-third opcional) sin watermark."""
-    fa     = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
-    titulo = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
-    precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
-    color  = lower_third.get('color', 'white') if lower_third else 'white'
+    fa              = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
+    titulo          = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
+    precio          = _esc_dt(lower_third.get('precio', '')) if lower_third else None
+    precio_anterior = _esc_dt(lower_third.get('precio_anterior', '')) if lower_third else None
+    color           = lower_third.get('color', 'white') if lower_third else 'white'
 
-    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects)
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects, precio_anterior=precio_anterior)
 
     try:
         cmd = [
@@ -1739,7 +2009,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico",
                 hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None,
                 color_grade="none", lower_third=None, usar_watermark=True, duracion_reel=15,
-                movimiento=None, extra_effects=None):
+                movimiento=None, extra_effects=None, hashtags_override=None, producto_id=None):
     global bot_activo
 
     # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
@@ -1778,7 +2048,10 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         prod_info['ficha'] = ficha
         prod_info['titulo_producto'] = ficha.get("nombre") or prod_info['titulo_producto']
         log(f'✍️ Redactando post para "{prod_info["titulo_producto"]}"...', 'info')
-        caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual)
+        # Incrementar uso del producto si viene desde el catálogo
+        if producto_id:
+            _db_producto_usado(producto_id)
+        caption_completo = generar_post_estricto(prod_info, tendencias_reales, precio_manual, hashtags_override=hashtags_override)
         log(f'🎨 Generando prompt visual para "{busqueda}"...', 'info')
 
         # Si hay imagen de referencia válida, Groq la analiza con visión primero
@@ -2441,13 +2714,14 @@ def api_ciclo():
     usar_watermark = bool(data.get('usar_watermark', True))
     duracion_reel = int(data.get('duracion_reel', 15))
     movimiento = data.get('movimiento') or None
-    extra_effects = data.get('extra_effects') or []
+    extra_effects     = data.get('extra_effects') or []
+    hashtags_override = data.get('hashtags_override') or None
+    producto_id       = data.get('producto_id') or None
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     with _bot_lock:
         if bot_activo:
             return jsonify({'msg': '⚠️ Ya hay un ciclo corriendo. Esperá que termine antes de iniciar otro.'})
-    modo_img = "con referencia" if imagen_referencia_url else "solo texto"
     hilo = threading.Thread(
         target=ciclo_libre,
         kwargs={
@@ -2457,7 +2731,8 @@ def api_ciclo():
             'titulo_producto': titulo_producto, 'color_grade': color_grade,
             'lower_third': lower_third, 'usar_watermark': usar_watermark,
             'duracion_reel': duracion_reel, 'movimiento': movimiento,
-            'extra_effects': extra_effects,
+            'extra_effects': extra_effects, 'hashtags_override': hashtags_override,
+            'producto_id': producto_id,
         }
     )
     hilo.daemon = True
@@ -2627,6 +2902,155 @@ def api_profiles_delete(profile_id):
     ok = _db_delete_profile(profile_id)
     return jsonify({'ok': ok})
 
+
+# ============================================
+# CATÁLOGO DE PRODUCTOS — CRUD
+# ============================================
+
+@app.route('/api/productos', methods=['GET'])
+@requiere_auth
+def api_productos_get():
+    return jsonify(_db_load_productos())
+
+@app.route('/api/productos', methods=['POST'])
+@requiere_auth
+def api_productos_post():
+    data = request.get_json() or {}
+    nombre = (data.get('nombre') or '').strip()
+    if not nombre:
+        return jsonify({'ok': False, 'msg': 'Nombre requerido'})
+    pid = f"prod_{int(time.time())}_{random.randint(100,999)}"
+    producto = {
+        'id': pid,
+        'nombre': nombre,
+        'precio': data.get('precio',''),
+        'precio_anterior': data.get('precio_anterior',''),
+        'duracion': data.get('duracion',''),
+        'categoria': data.get('categoria','streaming'),
+        'descripcion': data.get('descripcion',''),
+        'imagen_ref_url': data.get('imagen_ref_url',''),
+        'motion': data.get('motion','zoom_dramatico'),
+        'color_grade': data.get('color_grade','cinematico'),
+        'extra_effects': data.get('extra_effects',[]),
+        'hashtags': data.get('hashtags',[]),
+        'lower_third_color': data.get('lower_third_color','white'),
+        'mood': data.get('mood','energico'),
+        'duracion_reel': int(data.get('duracion_reel',15)),
+        'veces_usado': 0,
+        'ultimo_uso': '',
+        'fecha_creacion': datetime.now().strftime('%d/%m/%Y'),
+    }
+    _db_save_producto(producto)
+    log(f"🗂 Producto guardado: {nombre}", "success")
+    return jsonify({'ok': True, 'producto': producto})
+
+@app.route('/api/productos/<pid>', methods=['PUT'])
+@requiere_auth
+def api_productos_put(pid):
+    data = request.get_json() or {}
+    _db_update_producto(pid, data)
+    return jsonify({'ok': True})
+
+@app.route('/api/productos/<pid>', methods=['DELETE'])
+@requiere_auth
+def api_productos_delete(pid):
+    _db_delete_producto(pid)
+    return jsonify({'ok': True})
+
+@app.route('/api/productos/<pid>/prefill', methods=['GET'])
+@requiere_auth
+def api_productos_prefill(pid):
+    """Devuelve todos los settings de un producto para pre-llenar el formulario de ciclo."""
+    productos = _db_load_productos()
+    p = next((x for x in productos if x['id'] == pid), None)
+    if not p:
+        return jsonify({'ok': False, 'msg': 'Producto no encontrado'})
+    # Construir hashtags rotados para este producto
+    hashtags = p.get('hashtags') or _get_hashtags_rotados(p.get('categoria','general'), p.get('veces_usado',0))
+    # Construir lower_third con precio anterior si existe
+    lower_third = None
+    if p.get('nombre'):
+        lower_third = {
+            'texto': p['nombre'].upper(),
+            'precio': p.get('precio',''),
+            'precio_anterior': p.get('precio_anterior',''),
+            'color': p.get('lower_third_color','white'),
+        }
+    return jsonify({
+        'ok': True,
+        'producto': p,
+        'lower_third': lower_third,
+        'hashtags_override': hashtags,
+    })
+
+# ============================================
+# PREVIEW RÁPIDO DE DISEÑO (Pillow — sin FFmpeg)
+# ============================================
+
+@app.route('/api/preview', methods=['POST'])
+@requiere_auth
+def api_preview():
+    """Genera una imagen de preview del Lower-Third sobre la imagen de referencia."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        data       = request.get_json() or {}
+        img_url    = data.get('imagen_url','')
+        titulo     = (data.get('titulo') or '').upper()
+        precio     = data.get('precio','')
+        precio_ant = data.get('precio_anterior','')
+        color_map  = {'white':'#ffffff','yellow':'#ffc040','cyan':'#00e5ff','green':'#00e87a','red':'#ff4560'}
+        color_hex  = color_map.get(data.get('color','white'),'#ffffff')
+
+        # Descargar imagen
+        if img_url.startswith('http'):
+            img_bytes = req.get(img_url, timeout=15).content
+        else:
+            return jsonify({'ok': False, 'msg': 'Se necesita URL de imagen'})
+
+        img = Image.open(__import__('io').BytesIO(img_bytes)).convert('RGBA')
+        # Escalar a 540x960 para preview rápido
+        img = img.resize((540, 960), Image.LANCZOS)
+        W, H = img.size
+        draw = ImageDraw.Draw(img)
+
+        # Barra inferior
+        bar_y = int(H * 0.74)
+        draw.rectangle([(0, bar_y), (W, H)], fill=(0,0,0,190))
+        draw.rectangle([(0, bar_y), (W, bar_y+2)], fill=(0,229,255,242))
+
+        # Intentar fuente del sistema
+        try:
+            fnt_big   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
+            fnt_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
+            fnt_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 18)
+        except:
+            fnt_big = fnt_title = fnt_small = ImageFont.load_default()
+
+        y_title = bar_y + 18
+        if titulo:
+            draw.text((15, y_title), titulo[:28], font=fnt_title, fill=color_hex)
+        if precio_ant:
+            draw.text((15, y_title + 32), precio_ant, font=fnt_small, fill='#888888')
+            # Línea de tachado
+            bb = draw.textbbox((15, y_title+32), precio_ant, font=fnt_small)
+            draw.line([(15, (bb[1]+bb[3])//2), (bb[2], (bb[1]+bb[3])//2)], fill='#ff3333', width=2)
+        if precio:
+            draw.text((15, y_title + (60 if precio_ant else 32)), precio, font=fnt_big, fill='#ffc040')
+
+        # Corner accents
+        draw.rectangle([(10,15),(50,17)], fill='#00e5ff')
+        draw.rectangle([(10,15),(12,45)], fill='#00e5ff')
+        draw.rectangle([(W-50,15),(W-10,17)], fill='#00e5ff')
+        draw.rectangle([(W-12,15),(W-10,45)], fill='#00e5ff')
+
+        # Guardar y devolver como base64
+        import io as _io, base64 as _b64
+        buf = _io.BytesIO()
+        img.convert('RGB').save(buf, 'JPEG', quality=85)
+        b64 = _b64.b64encode(buf.getvalue()).decode()
+        return jsonify({'ok': True, 'preview_b64': f'data:image/jpeg;base64,{b64}'})
+    except Exception as e:
+        return jsonify({'ok': False, 'msg': str(e)})
 
 @app.route('/api/regenerar_caption', methods=['POST'])
 @requiere_auth

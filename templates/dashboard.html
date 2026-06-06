@@ -951,10 +951,11 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 
     <!-- tab nav -->
     <nav class="tab-nav" role="tablist">
-      <button class="tab-btn active" id="tab-ciclo"    onclick="switchTab('ciclo')"    role="tab"><span class="tb-icon">⚡</span> Ciclo</button>
-      <button class="tab-btn"        id="tab-publicar" onclick="switchTab('publicar')" role="tab"><span class="tb-icon">📤</span> Publicar</button>
-      <button class="tab-btn"        id="tab-perfiles" onclick="switchTab('perfiles')" role="tab"><span class="tb-icon">💾</span> Perfiles</button>
-      <button class="tab-btn"        id="tab-clientes" onclick="switchTab('clientes')" role="tab"><span class="tb-icon">📊</span> Stats</button>
+      <button class="tab-btn active" id="tab-ciclo"     onclick="switchTab('ciclo')"     role="tab"><span class="tb-icon">⚡</span> Ciclo</button>
+      <button class="tab-btn"        id="tab-publicar"  onclick="switchTab('publicar')"  role="tab"><span class="tb-icon">📤</span> Publicar</button>
+      <button class="tab-btn"        id="tab-catalogo"  onclick="switchTab('catalogo');cargarCatalogo()"  role="tab"><span class="tb-icon">🗂</span> Catálogo</button>
+      <button class="tab-btn"        id="tab-perfiles"  onclick="switchTab('perfiles')"  role="tab"><span class="tb-icon">💾</span> Perfiles</button>
+      <button class="tab-btn"        id="tab-clientes"  onclick="switchTab('clientes')"  role="tab"><span class="tb-icon">📊</span> Stats</button>
     </nav>
 
     <!-- tab panels -->
@@ -1469,6 +1470,141 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
         </div><!-- /subpanel-reel -->
 
       </div><!-- /panel-publicar -->
+
+      <!-- ── TAB: CATÁLOGO ── -->
+      <div class="tab-panel" id="panel-catalogo">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--neon);font-weight:700;">🗂 Mi Catálogo</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:2px;">Lanzá cualquier producto con 1 clic</div>
+          </div>
+          <button onclick="toggleFormProducto()" id="btnNuevoProducto" style="background:rgba(191,0,255,0.15);border:1px solid rgba(191,0,255,0.4);border-radius:8px;color:var(--neon);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;">＋ Nuevo</button>
+        </div>
+
+        <!-- Buscador rápido -->
+        <input type="text" id="catalogoBuscar" placeholder="🔍 Buscar producto..." oninput="filtrarCatalogo(this.value)"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;padding:8px 12px;margin-bottom:10px;outline:none;">
+
+        <!-- Grid de tarjetas -->
+        <div id="catalogoGrid" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+        <!-- Formulario nuevo/editar producto (colapsable) -->
+        <div id="formProducto" style="display:none;margin-top:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:14px;">
+          <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--amber);margin-bottom:12px;" id="formProductoTitulo">✦ NUEVO PRODUCTO</div>
+          <input type="hidden" id="prod-id">
+
+          <div class="field-label">Nombre del producto *</div>
+          <input type="text" class="text-input" id="prod-nombre" placeholder="Ej: Amazon Prime 12 meses" style="font-weight:700;">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div>
+              <div class="field-label">Precio actual</div>
+              <input type="text" class="text-input" id="prod-precio" placeholder="Ej: $8.000">
+            </div>
+            <div>
+              <div class="field-label">Precio anterior (tachar)</div>
+              <input type="text" class="text-input" id="prod-precio-ant" placeholder="Ej: $12.000">
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div>
+              <div class="field-label">Duración</div>
+              <input type="text" class="text-input" id="prod-duracion" placeholder="Ej: 12 meses">
+            </div>
+            <div>
+              <div class="field-label">Categoría</div>
+              <select class="text-input" id="prod-categoria" style="cursor:pointer;">
+                <option value="streaming">📺 Streaming</option>
+                <option value="gaming">🎮 Gaming</option>
+                <option value="software">💻 Software</option>
+                <option value="musica">🎵 Música</option>
+                <option value="educacion">📚 Educación</option>
+                <option value="general">📦 General</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-label" style="margin-top:8px;">Descripción / notas internas</div>
+          <input type="text" class="text-input" id="prod-descripcion" placeholder="Ej: incluye envío de credenciales por WA">
+
+          <div class="field-label" style="margin-top:8px;">URL imagen de referencia</div>
+          <input type="text" class="text-input" id="prod-img-url" placeholder="https://... (imgbb, etc.)">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div>
+              <div class="field-label">Motion style</div>
+              <select class="text-input" id="prod-motion" style="cursor:pointer;">
+                <option value="zoom_dramatico">🔍 Zoom Dramático</option>
+                <option value="ken_burns">🎥 Ken Burns</option>
+                <option value="pan_lateral">↔ Pan Lateral</option>
+                <option value="pan_vertical">↕ Pan Vertical</option>
+                <option value="drift_flotante">🌊 Drift Flotante</option>
+                <option value="revelado">✨ Revelado</option>
+                <option value="diagonal">↗ Diagonal</option>
+                <option value="impacto">💥 Impacto</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Color grade</div>
+              <select class="text-input" id="prod-grade" style="cursor:pointer;">
+                <option value="cinematico">🎬 Cinemático</option>
+                <option value="calido">🌅 Cálido</option>
+                <option value="frio">❄ Frío</option>
+                <option value="dramatico">⚡ Dramático</option>
+                <option value="vibrante">🌈 Vibrante</option>
+                <option value="vintage">📷 Vintage</option>
+                <option value="neon">💜 Neon</option>
+                <option value="none">⬜ Sin grado</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div>
+              <div class="field-label">Mood musical</div>
+              <select class="text-input" id="prod-mood" style="cursor:pointer;">
+                <option value="energico">⚡ Enérgico</option>
+                <option value="corporativo">💼 Corporativo</option>
+                <option value="romantico">💕 Romántico</option>
+                <option value="epico">🎖 Épico</option>
+                <option value="relajado">🍃 Relajado</option>
+                <option value="festivo">🎉 Festivo</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Duración reel</div>
+              <select class="text-input" id="prod-dur-reel" style="cursor:pointer;">
+                <option value="7">7 segundos</option>
+                <option value="15" selected>15 segundos</option>
+                <option value="30">30 segundos</option>
+                <option value="60">60 segundos</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-label" style="margin-top:8px;">Hashtags (uno por línea o separados por espacio)</div>
+          <textarea id="prod-hashtags" rows="3" placeholder="#chile #oferta #amazon #streaming #primevideo"
+            style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:11px;padding:8px;resize:vertical;outline:none;"></textarea>
+
+          <div class="field-label" style="margin-top:8px;">Efectos extra del reel</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;"><input type="checkbox" id="prod-fx-neon_frame"> Neon Frame</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;"><input type="checkbox" id="prod-fx-glitch"> Glitch</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;"><input type="checkbox" id="prod-fx-ticker"> Ticker</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;"><input type="checkbox" id="prod-fx-intro_cine"> Intro Cine</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;"><input type="checkbox" id="prod-fx-badge_viral"> Badge Viral</label>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button onclick="guardarProducto()" style="flex:1;background:linear-gradient(135deg,rgba(191,0,255,0.25),rgba(124,58,237,0.2));border:1px solid rgba(191,0,255,0.5);border-radius:10px;color:var(--neon);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;padding:10px;cursor:pointer;">💾 Guardar producto</button>
+            <button onclick="toggleFormProducto(false)" style="background:rgba(255,45,107,0.08);border:1px solid rgba(255,45,107,0.25);border-radius:10px;color:var(--red);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;padding:10px 14px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+      </div><!-- /panel-catalogo -->
 
       <!-- ── TAB: PERFILES ── -->
       <div class="tab-panel" id="panel-perfiles">
@@ -2247,6 +2383,8 @@ function ejecutarCiclo() {
   const usar_watermark     = document.getElementById('toggleWatermark').checked;
   const lower_third        = getLowerThird();
   const extra_effects      = getExtraEffects();
+  const hashtags_override  = window._hashtagsOverride || null;
+  const producto_id        = window._productoIdActivo || null;
 
   const body = {
     busqueda_libre: titulo || busqueda,
@@ -2259,11 +2397,16 @@ function ejecutarCiclo() {
     usar_watermark,
     lower_third,
     extra_effects,
+    hashtags_override,
+    producto_id,
     overlay: cicloOverlayActivo && cicloTextoOverlay ? {
       texto: cicloTextoOverlay, posicion: cicloPosicion,
       font_size: cicloFontSize, glow_color: cicloGlowColor
     } : null
   };
+  // Limpiar referencia de producto tras lanzar
+  window._productoIdActivo = null;
+  window._hashtagsOverride  = null;
 
   const nombreCliente = document.getElementById('select-cliente').options[document.getElementById('select-cliente').selectedIndex]?.text || cliente_id;
   const refInfo  = modoImagen==='referencia'&&urlReferencia ? ` | ref:✅` : '';
@@ -2420,10 +2563,12 @@ function getLowerThird() {
   if (!document.getElementById('toggleLowerThird').checked) return null;
   const texto  = document.getElementById('ltTexto').value.trim();
   if (!texto) return null;
+  const precioEl = document.getElementById('ltPrecio');
   return {
     texto,
-    precio: document.getElementById('ltPrecio').value.trim(),
-    color:  ltColor,
+    precio:          precioEl.value.trim(),
+    precio_anterior: precioEl.dataset.precioAnterior || '',
+    color:           ltColor,
   };
 }
 
@@ -2433,6 +2578,247 @@ function getExtraEffects() {
     const el = document.getElementById('fx-' + id);
     return el && el.checked;
   });
+}
+
+// ══════════════════════════════════════════════
+// CATÁLOGO DE PRODUCTOS
+// ══════════════════════════════════════════════
+
+let catalogoData = [];
+let prodEditando = null;
+
+async function cargarCatalogo() {
+  try {
+    const r = await fetch('/api/productos');
+    catalogoData = await r.json();
+    renderCatalogo(catalogoData);
+  } catch(e) { console.error('Error cargando catálogo:', e); }
+}
+
+function filtrarCatalogo(q) {
+  const filtrado = q ? catalogoData.filter(p =>
+    p.nombre.toLowerCase().includes(q.toLowerCase()) ||
+    (p.categoria||'').toLowerCase().includes(q.toLowerCase())
+  ) : catalogoData;
+  renderCatalogo(filtrado);
+}
+
+function renderCatalogo(productos) {
+  const grid = document.getElementById('catalogoGrid');
+  if (!productos.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-family:'Share Tech Mono',monospace;font-size:10px;">
+      Sin productos. Creá el primero con el botón ＋ Nuevo</div>`;
+    return;
+  }
+  const cats = {'streaming':'📺','gaming':'🎮','software':'💻','musica':'🎵','educacion':'📚','general':'📦'};
+  grid.innerHTML = productos.map(p => {
+    const cat_icon = cats[p.categoria] || '📦';
+    const precio_html = p.precio_anterior
+      ? `<span style="color:#888;text-decoration:line-through;font-size:11px;margin-right:6px;">${p.precio_anterior}</span><span style="color:var(--amber);font-weight:700;">${p.precio}</span>`
+      : `<span style="color:var(--amber);font-weight:700;">${p.precio||'—'}</span>`;
+    return `
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--neon),var(--purple));"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="font-size:14px;">${cat_icon}</span>
+            <span style="font-weight:700;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.nombre}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:'Share Tech Mono',monospace;font-size:10px;">
+            ${precio_html}
+            ${p.duracion ? `<span style="background:rgba(191,0,255,0.15);border:1px solid rgba(191,0,255,0.3);border-radius:4px;padding:1px 6px;color:var(--neon);font-size:9px;">${p.duracion}</span>` : ''}
+          </div>
+          ${p.descripcion ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:4px;">${p.descripcion}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text3);">
+            <span>🚀 ${p.veces_usado||0} usos</span>
+            ${p.ultimo_uso ? `<span>🕐 ${p.ultimo_uso}</span>` : ''}
+            <span style="color:var(--text3);">${p.motion||'zoom_dramatico'} · ${p.color_grade||'cinematico'}</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          <button onclick="lanzarProducto('${p.id}')" style="background:linear-gradient(135deg,rgba(191,0,255,0.3),rgba(124,58,237,0.2));border:1px solid rgba(191,0,255,0.5);border-radius:8px;color:var(--neon);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;white-space:nowrap;">⚡ Lanzar</button>
+          <button onclick="previewProducto('${p.id}')" style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:8px;color:var(--cyan);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;">👁 Preview</button>
+          <div style="display:flex;gap:3px;">
+            <button onclick="editarProducto('${p.id}')" style="flex:1;background:rgba(255,192,64,0.08);border:1px solid rgba(255,192,64,0.2);border-radius:6px;color:var(--amber);font-size:10px;padding:4px;cursor:pointer;">✏️</button>
+            <button onclick="eliminarProducto('${p.id}')" style="flex:1;background:rgba(255,45,107,0.06);border:1px solid rgba(255,45,107,0.2);border-radius:6px;color:var(--red);font-size:10px;padding:4px;cursor:pointer;">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFormProducto(show) {
+  const form = document.getElementById('formProducto');
+  const visible = show !== undefined ? show : form.style.display === 'none';
+  form.style.display = visible ? 'block' : 'none';
+  if (visible && !prodEditando) limpiarFormProducto();
+}
+
+function limpiarFormProducto() {
+  prodEditando = null;
+  document.getElementById('prod-id').value = '';
+  document.getElementById('formProductoTitulo').textContent = '✦ NUEVO PRODUCTO';
+  ['prod-nombre','prod-precio','prod-precio-ant','prod-duracion','prod-descripcion','prod-img-url'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('prod-hashtags').value = '';
+  document.getElementById('prod-categoria').value = 'streaming';
+  document.getElementById('prod-motion').value = 'zoom_dramatico';
+  document.getElementById('prod-grade').value = 'cinematico';
+  document.getElementById('prod-mood').value = 'energico';
+  document.getElementById('prod-dur-reel').value = '15';
+  ['neon_frame','glitch','ticker','intro_cine','badge_viral'].forEach(id => {
+    const el = document.getElementById('prod-fx-'+id); if(el) el.checked = false;
+  });
+}
+
+function editarProducto(pid) {
+  const p = catalogoData.find(x => x.id === pid);
+  if (!p) return;
+  prodEditando = pid;
+  document.getElementById('formProductoTitulo').textContent = '✏️ EDITAR PRODUCTO';
+  document.getElementById('prod-id').value = pid;
+  document.getElementById('prod-nombre').value = p.nombre || '';
+  document.getElementById('prod-precio').value = p.precio || '';
+  document.getElementById('prod-precio-ant').value = p.precio_anterior || '';
+  document.getElementById('prod-duracion').value = p.duracion || '';
+  document.getElementById('prod-descripcion').value = p.descripcion || '';
+  document.getElementById('prod-img-url').value = p.imagen_ref_url || '';
+  document.getElementById('prod-categoria').value = p.categoria || 'streaming';
+  document.getElementById('prod-motion').value = p.motion || 'zoom_dramatico';
+  document.getElementById('prod-grade').value = p.color_grade || 'cinematico';
+  document.getElementById('prod-mood').value = p.mood || 'energico';
+  document.getElementById('prod-dur-reel').value = String(p.duracion_reel || 15);
+  document.getElementById('prod-hashtags').value = (p.hashtags||[]).join(' ');
+  const fx = p.extra_effects || [];
+  ['neon_frame','glitch','ticker','intro_cine','badge_viral'].forEach(id => {
+    const el = document.getElementById('prod-fx-'+id);
+    if (el) el.checked = fx.includes(id);
+  });
+  toggleFormProducto(true);
+  document.getElementById('formProducto').scrollIntoView({behavior:'smooth'});
+}
+
+async function guardarProducto() {
+  const nombre = document.getElementById('prod-nombre').value.trim();
+  if (!nombre) { agregarLog('⚠️ El producto necesita un nombre','warning'); return; }
+  const hashtags_raw = document.getElementById('prod-hashtags').value.trim();
+  const hashtags = hashtags_raw ? hashtags_raw.split(/[\s,]+/).filter(h => h.startsWith('#')) : [];
+  const fx = ['neon_frame','glitch','ticker','intro_cine','badge_viral'].filter(id => {
+    const el = document.getElementById('prod-fx-'+id); return el && el.checked;
+  });
+  const payload = {
+    nombre,
+    precio:          document.getElementById('prod-precio').value.trim(),
+    precio_anterior: document.getElementById('prod-precio-ant').value.trim(),
+    duracion:        document.getElementById('prod-duracion').value.trim(),
+    categoria:       document.getElementById('prod-categoria').value,
+    descripcion:     document.getElementById('prod-descripcion').value.trim(),
+    imagen_ref_url:  document.getElementById('prod-img-url').value.trim(),
+    motion:          document.getElementById('prod-motion').value,
+    color_grade:     document.getElementById('prod-grade').value,
+    mood:            document.getElementById('prod-mood').value,
+    duracion_reel:   parseInt(document.getElementById('prod-dur-reel').value),
+    hashtags, extra_effects: fx,
+  };
+  const pid = document.getElementById('prod-id').value;
+  const url    = pid ? `/api/productos/${pid}` : '/api/productos';
+  const method = pid ? 'PUT' : 'POST';
+  try {
+    const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    const d = await r.json();
+    if (d.ok !== false) {
+      agregarLog(`✅ Producto "${nombre}" guardado`, 'success');
+      limpiarFormProducto();
+      toggleFormProducto(false);
+      cargarCatalogo();
+    } else { agregarLog(d.msg || 'Error guardando','error'); }
+  } catch(e) { agregarLog('❌ Error: ' + e, 'error'); }
+}
+
+async function eliminarProducto(pid) {
+  const p = catalogoData.find(x => x.id === pid);
+  if (!confirm(`¿Eliminar "${p?.nombre}"?`)) return;
+  await fetch(`/api/productos/${pid}`, {method:'DELETE'});
+  agregarLog('🗑 Producto eliminado','warning');
+  cargarCatalogo();
+}
+
+async function lanzarProducto(pid) {
+  try {
+    const r  = await fetch(`/api/productos/${pid}/prefill`);
+    const d  = await r.json();
+    if (!d.ok) { agregarLog(d.msg,'error'); return; }
+    const p  = d.producto;
+    // Pre-llenar tab Ciclo
+    if (p.nombre) {
+      const busqEl = document.getElementById('input-busqueda'); if(busqEl) busqEl.value = p.nombre;
+      const titEl  = document.getElementById('ciclo-titulo');  if(titEl)  titEl.value  = p.nombre;
+    }
+    if (p.precio) { const el = document.getElementById('input-precio'); if(el) el.value = p.precio; }
+    if (p.mood)   { const el = document.getElementById('select-mood');  if(el) el.value = p.mood; }
+    // Color grade del ciclo (si existe selector)
+    if (p.motion)      reelMovimiento  = p.motion;
+    if (p.color_grade) { colorGrade = p.color_grade; }
+    if (p.duracion_reel) cicloDuracion = p.duracion_reel;
+    // Lower third con precio anterior
+    if (d.lower_third) {
+      document.getElementById('toggleLowerThird').checked = true;
+      toggleLTControls(true);
+      document.getElementById('ltTexto').value  = d.lower_third.texto || '';
+      document.getElementById('ltPrecio').value = d.lower_third.precio || '';
+      // Guardar precio anterior en data attribute para enviarlo
+      document.getElementById('ltPrecio').dataset.precioAnterior = d.lower_third.precio_anterior || '';
+    }
+    // Efectos extra
+    const fx = p.extra_effects || [];
+    ['neon_frame','glitch','ticker','intro_cine','badge_viral'].forEach(id => {
+      const el = document.getElementById('fx-'+id); if(el) el.checked = fx.includes(id);
+    });
+    // Imagen referencia
+    if (p.imagen_ref_url) {
+      urlReferencia = p.imagen_ref_url;
+      setModoImagen('referencia');
+      const prev = document.getElementById('refPreview');
+      if (prev) { prev.src = p.imagen_ref_url; prev.style.display='block'; }
+    }
+    // producto_id para tracking
+    window._productoIdActivo = pid;
+    window._hashtagsOverride  = d.hashtags_override || [];
+    switchTab('ciclo');
+    agregarLog(`⚡ Producto "${p.nombre}" cargado — listo para ejecutar`, 'success');
+  } catch(e) { agregarLog('❌ Error lanzando producto: '+e, 'error'); }
+}
+
+async function previewProducto(pid) {
+  const p = catalogoData.find(x => x.id === pid);
+  if (!p) return;
+  if (!p.imagen_ref_url) { agregarLog('⚠️ Este producto no tiene imagen de referencia para preview','warning'); return; }
+  agregarLog('👁 Generando preview...','info');
+  try {
+    const r = await fetch('/api/preview', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        imagen_url: p.imagen_ref_url,
+        titulo: p.nombre,
+        precio: p.precio,
+        precio_anterior: p.precio_anterior,
+        color: p.lower_third_color || 'white',
+      })
+    });
+    const d = await r.json();
+    if (d.ok && d.preview_b64) {
+      // Mostrar en modal simple
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      modal.onclick = () => modal.remove();
+      modal.innerHTML = `<div style="position:relative;max-width:320px;"><img src="${d.preview_b64}" style="width:100%;border-radius:12px;box-shadow:0 0 40px rgba(191,0,255,0.4);">
+        <div style="text-align:center;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#888;">Toca para cerrar</div></div>`;
+      document.body.appendChild(modal);
+    } else { agregarLog('⚠️ Preview no disponible: ' + (d.msg||''),'warning'); }
+  } catch(e) { agregarLog('❌ Error en preview: '+e,'error'); }
 }
 
 // ── Regenerar caption ────────────────────────────────────
