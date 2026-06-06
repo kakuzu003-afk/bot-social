@@ -788,46 +788,6 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
     parts.append("drawbox=x=968:y=30:w=90:h=4:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.3)'")
     parts.append("drawbox=x=1054:y=30:w=4:h=70:color=0x00E5FF@0.85:t=fill:enable='gte(t\\,0.4)'")
 
-    # ══════════════════════════════════════════════════════════════════
-    # CAPA 3 — PRICE BADGE  (solo si hay precio Y fuente disponible)
-    # Tarjeta naranja en esquina superior izquierda con precio pulsante
-    # x=22..282 (260px), y=115..211 (96px) — debajo de los corner accents
-    # ══════════════════════════════════════════════════════════════════
-    if fa and precio:
-        # Sombra/profundidad del badge
-        parts.append(
-            "drawbox=x=26:y=120:w=260:h=96:color=black@0.55:t=fill:"
-            "enable='gte(t\\,1.6)'"
-        )
-        # Fondo naranja
-        parts.append(
-            "drawbox=x=22:y=115:w=260:h=96:color=0xCC4400@0.88:t=fill:"
-            "enable='gte(t\\,1.6)'"
-        )
-        # Borde superior dorado
-        parts.append(
-            "drawbox=x=22:y=115:w=260:h=4:color=0xFFCC00@0.95:t=fill:"
-            "enable='gte(t\\,1.6)'"
-        )
-        # Borde izquierdo dorado
-        parts.append(
-            "drawbox=x=22:y=115:w=4:h=96:color=0xFFCC00@0.95:t=fill:"
-            "enable='gte(t\\,1.6)'"
-        )
-        # Label "PRECIO" (fade-in)
-        parts.append(
-            f"drawtext={fa}text='PRECIO':fontsize=21:fontcolor=0xFFCC00:"
-            f"x=38:y=130:"
-            f"shadowcolor=black@0.85:shadowx=1:shadowy=1:"
-            f"alpha='if(lt(t\\,1.6)\\,0\\,if(lt(t\\,2.1)\\,(t-1.6)/0.5\\,1))'"
-        )
-        # Precio grande con pulso suave (sin contínuo)
-        parts.append(
-            f"drawtext={fa}text='{precio}':fontsize=40:fontcolor=white:"
-            f"x=32:y=158:"
-            f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
-            f"alpha='if(lt(t\\,1.6)\\,0\\,if(lt(t\\,2.2)\\,(t-1.6)/0.6\\,0.65+0.35*sin(t*PI*1.8)))'"
-        )
 
     # ══════════════════════════════════════════════════════════════════
     # CAPA 4 — LOWER THIRD  (solo si hay titulo Y fuente disponible)
