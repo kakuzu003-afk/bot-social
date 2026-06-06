@@ -762,24 +762,6 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effect
     parts = []
 
     # ══════════════════════════════════════════════════════════════════
-    # CAPA 1 — SCAN LINE
-    # 12 franjas de 160px, cada una activa 0.125s + overlap
-    # Resultado: línea de luz cyan barre el frame completo en 1.5s
-    # ══════════════════════════════════════════════════════════════════
-    _STRIPS = 12
-    _STRIP_H = 160        # 12 × 160 = 1920 px
-    _SCAN_DUR = 1.5
-    _step = _SCAN_DUR / _STRIPS
-    for _i in range(_STRIPS):
-        _t0 = round(_i * _step, 3)
-        _t1 = round(_t0 + _step + 0.05, 3)
-        _y  = _i * _STRIP_H
-        parts.append(
-            f"drawbox=x=0:y={_y}:w=1080:h=8:color=0x00E5FF@0.9:t=fill:"
-            f"enable='between(t\\,{_t0}\\,{_t1})'"
-        )
-
-    # ══════════════════════════════════════════════════════════════════
     # CAPA 2 — CORNER ACCENTS
     # Aparecen a los 0.3s (durante el scan), desaparecen con fade-out
     # ══════════════════════════════════════════════════════════════════
