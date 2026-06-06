@@ -1104,6 +1104,44 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
           </div>
         </div>
 
+        <!-- EFECTOS EXTRA -->
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--amber);margin:10px 0 5px;letter-spacing:0.05em;">✦ EFECTOS EXTRA (apilables)</div>
+
+        <div class="lt-section">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label" style="color:#00e5ff;">⬛ Neon Frame — marco pulsante 4 lados cyan</span>
+            <input type="checkbox" id="fx-neon_frame">
+          </label>
+        </div>
+
+        <div class="lt-section" style="margin-top:4px;">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label" style="color:#ff00cc;">⚡ Glitch Cyberpunk — destellos RGB + corrupción</span>
+            <input type="checkbox" id="fx-glitch">
+          </label>
+        </div>
+
+        <div class="lt-section" style="margin-top:4px;">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label" style="color:#ffcc00;">📰 Ticker Scrolleante — banda de oferta urgente</span>
+            <input type="checkbox" id="fx-ticker">
+          </label>
+        </div>
+
+        <div class="lt-section" style="margin-top:4px;">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label" style="color:#ffffff;">🎬 Intro Cinemático — overlay oscuro + título centro</span>
+            <input type="checkbox" id="fx-intro_cine">
+          </label>
+        </div>
+
+        <div class="lt-section" style="margin-top:4px;">
+          <label class="lt-toggle">
+            <span class="lt-toggle-label" style="color:#ff4400;">🔥 Badge Viral — sello VIRAL pulsante + estrellas</span>
+            <input type="checkbox" id="fx-badge_viral">
+          </label>
+        </div>
+
         <!-- TEXTO OVERLAY CICLO -->
         <div class="overlay-section" style="margin-top:12px;">
           <label class="overlay-toggle">
@@ -2096,6 +2134,7 @@ async function generarReel() {
         color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
         usar_watermark: true,
         lower_third: getLowerThird(),
+        extra_effects: getExtraEffects(),
       };
       agregarLog(`🧠 Generando Reel desde texto: "${titulo}" | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
       const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2115,6 +2154,7 @@ async function generarReel() {
           movimiento: reelMovimiento, color_grade: reelColorGrade, duracion: reelDuracion,
           overlay: null,
           lower_third: getLowerThird(),
+          extra_effects: getExtraEffects(),
         };
         agregarLog('🎨 Influencia 100% → usando imagen tal cual (sin generación IA)…', 'info');
         const res  = await fetch('/api/generar_imagen_propia', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2132,6 +2172,7 @@ async function generarReel() {
           color_grade: reelColorGrade, movimiento: reelMovimiento, duracion_reel: reelDuracion,
           usar_watermark: true,
           lower_third: getLowerThird(),
+          extra_effects: getExtraEffects(),
         };
         agregarLog(`🎨 Generando Reel con referencia al ${reelInfluencia}% de influencia | mov:${reelMovimiento} | ${reelDuracion}s…`, 'info');
         const res  = await fetch('/api/ciclo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -2205,6 +2246,7 @@ function ejecutarCiclo() {
   const styleWeight        = parseFloat(document.getElementById('styleWeight').value)||0.5;
   const usar_watermark     = document.getElementById('toggleWatermark').checked;
   const lower_third        = getLowerThird();
+  const extra_effects      = getExtraEffects();
 
   const body = {
     busqueda_libre: titulo || busqueda,
@@ -2216,6 +2258,7 @@ function ejecutarCiclo() {
     duracion_reel:         hacer_reel ? cicloDuracion : 15,
     usar_watermark,
     lower_third,
+    extra_effects,
     overlay: cicloOverlayActivo && cicloTextoOverlay ? {
       texto: cicloTextoOverlay, posicion: cicloPosicion,
       font_size: cicloFontSize, glow_color: cicloGlowColor
@@ -2382,6 +2425,14 @@ function getLowerThird() {
     precio: document.getElementById('ltPrecio').value.trim(),
     color:  ltColor,
   };
+}
+
+function getExtraEffects() {
+  const ids = ['neon_frame', 'glitch', 'ticker', 'intro_cine', 'badge_viral'];
+  return ids.filter(id => {
+    const el = document.getElementById('fx-' + id);
+    return el && el.checked;
+  });
 }
 
 // ── Regenerar caption ────────────────────────────────────

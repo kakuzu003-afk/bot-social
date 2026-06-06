@@ -742,9 +742,9 @@ def _esc_dt(text):
                 .replace('%', '\\%'))
 
 
-def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
+def _build_motion_overlay_filter(fa, titulo, precio, color='white', extra_effects=None):
     """
-    Sistema de diseño en movimiento cinematográfico — 6 capas sobre 1080x1920.
+    Sistema de diseño en movimiento cinematográfico — 6 capas base + efectos extra.
 
     CAPA 1 · Scan Line     — línea de luz barre la imagen de arriba abajo (0-1.5s)
     CAPA 2 · Corner Accents— marcos cyan en esquinas superiores
@@ -752,6 +752,12 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
     CAPA 4 · Lower Third   — barra inferior + separador + título slide-in (si hay titulo)
     CAPA 5 · Arrow Bounce  — flecha animada antes del lower-third
     CAPA 6 · CTA Blink     — llamada a acción parpadeante
+
+    EXTRA  · neon_frame    — marco neon pulsante 4 lados
+    EXTRA  · glitch        — glitch cyberpunk: flashes RGB + bloques corrupción
+    EXTRA  · ticker        — ticker scrolleante de oferta en banda inferior
+    EXTRA  · intro_cine    — overlay oscuro + título central cinematográfico
+    EXTRA  · badge_viral   — badge VIRAL pulsante en esquina superior derecha
     """
     parts = []
 
@@ -879,6 +885,111 @@ def _build_motion_overlay_filter(fa, titulo, precio, color='white'):
             f"alpha='if(lt(t\\,3.0)\\,0\\,if(lt(t\\,3.6)\\,(t-3.0)/0.6\\,0.45+0.55*sin(t*PI*1.4)))'"
         )
 
+    # ══════════════════════════════════════════════════════════════════
+    # EFECTOS EXTRA
+    # ══════════════════════════════════════════════════════════════════
+    _ex = extra_effects or []
+
+    # NEON FRAME PULSANTE — marco 4 lados con glow externo + capa interior pulsante ~1.2Hz
+    if 'neon_frame' in _ex:
+        parts.append("drawbox=x=0:y=0:w=1080:h=7:color=0x00E5FF@0.35:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=0:y=1913:w=1080:h=7:color=0x00E5FF@0.35:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=0:y=0:w=7:h=1920:color=0x00E5FF@0.35:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=1073:y=0:w=7:h=1920:color=0x00E5FF@0.35:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=0:y=0:w=1080:h=4:color=0x00E5FF@0.92:t=fill:enable='gt(sin(t*PI*1.2)\\,0.2)'")
+        parts.append("drawbox=x=0:y=1916:w=1080:h=4:color=0x00E5FF@0.92:t=fill:enable='gt(sin(t*PI*1.2)\\,0.2)'")
+        parts.append("drawbox=x=0:y=0:w=4:h=1920:color=0x00E5FF@0.92:t=fill:enable='gt(sin(t*PI*1.2)\\,0.2)'")
+        parts.append("drawbox=x=1076:y=0:w=4:h=1920:color=0x00E5FF@0.92:t=fill:enable='gt(sin(t*PI*1.2)\\,0.2)'")
+        parts.append("drawbox=x=0:y=0:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=1058:y=0:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=0:y=1898:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
+        parts.append("drawbox=x=1058:y=1898:w=22:h=22:color=0x00E5FF@1.0:t=fill:enable='gte(t\\,0.4)'")
+
+    # GLITCH CYBERPUNK — flashes blancos + aberración cromática RGB + bloques corrupción
+    if 'glitch' in _ex:
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.55:t=fill:enable='between(t\\,0.05\\,0.09)'")
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.35:t=fill:enable='between(t\\,0.48\\,0.51)'")
+        parts.append("drawbox=x=0:y=0:w=1080:h=1920:color=white@0.50:t=fill:enable='between(t\\,2.88\\,2.91)'")
+        parts.append("drawbox=x=0:y=240:w=1080:h=10:color=0xFF00CC@0.72:t=fill:enable='between(t\\,0.04\\,0.10)'")
+        parts.append("drawbox=x=0:y=780:w=1080:h=7:color=0x00FF33@0.62:t=fill:enable='between(t\\,0.47\\,0.52)'")
+        parts.append("drawbox=x=0:y=1350:w=1080:h=14:color=0xFF3300@0.55:t=fill:enable='between(t\\,1.28\\,1.32)'")
+        parts.append("drawbox=x=0:y=520:w=1080:h=8:color=0x0033FF@0.68:t=fill:enable='between(t\\,2.87\\,2.92)'")
+        parts.append("drawbox=x=80:y=290:w=130:h=18:color=black@0.96:t=fill:enable='between(t\\,0.05\\,0.09)'")
+        parts.append("drawbox=x=640:y=800:w=170:h=10:color=black@0.92:t=fill:enable='between(t\\,0.47\\,0.52)'")
+        parts.append("drawbox=x=260:y=1355:w=240:h=15:color=black@0.96:t=fill:enable='between(t\\,1.28\\,1.32)'")
+        parts.append("drawbox=x=490:y=530:w=100:h=12:color=black@0.90:t=fill:enable='between(t\\,2.87\\,2.92)'")
+
+    # TICKER SCROLLEANTE — banda roja inferior con texto desplazante de oferta
+    if 'ticker' in _ex and fa:
+        _tk_titulo = titulo if titulo else 'PRECIO ESPECIAL'
+        _tk_precio = _esc_dt(precio) if precio else 'CONSULTAR'
+        _tk_content = f"{_tk_titulo} · {_tk_precio} · SOLO POR HOY · PEDILO YA · "
+        _tk_text = (_tk_content * 4)
+        parts.append("drawbox=x=0:y=1804:w=1080:h=56:color=0xBB2000@0.96:t=fill:enable='gte(t\\,1.0)'")
+        parts.append("drawbox=x=0:y=1804:w=1080:h=3:color=0xFFCC00@1.0:t=fill:enable='gte(t\\,1.0)'")
+        parts.append("drawbox=x=0:y=1804:w=136:h=56:color=black@0.94:t=fill:enable='gte(t\\,1.0)'")
+        parts.append(
+            f"drawtext={fa}text='OFERTA':fontsize=22:fontcolor=0xFFCC00:"
+            f"x=10:y=1820:"
+            f"shadowcolor=black@0.9:shadowx=1:shadowy=1:"
+            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
+        )
+        parts.append(
+            f"drawtext={fa}text='●':fontsize=16:fontcolor=0xFF3300:"
+            f"x=10:y=1842:"
+            f"shadowcolor=black@0.8:shadowx=0:shadowy=0:"
+            f"alpha='if(lt(t\\,1.0)\\,0\\,0.55+0.45*sin(t*PI*2.5))'"
+        )
+        parts.append(
+            f"drawtext={fa}text='{_tk_text}':fontsize=24:fontcolor=white:"
+            f"x='1080-140*(t-1.0)':y=1818:"
+            f"shadowcolor=black@0.8:shadowx=1:shadowy=1:"
+            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.4)\\,(t-1.0)/0.4\\,1))'"
+        )
+
+    # INTRO CINEMATICO — overlay oscuro escalonado + título central + precio centrado
+    if 'intro_cine' in _ex:
+        for _ic_a, _ic_t0, _ic_t1 in [
+            (0.88, 0.0, 0.5), (0.78, 0.5, 1.0), (0.62, 1.0, 1.5),
+            (0.42, 1.5, 2.0), (0.16, 2.0, 2.5)
+        ]:
+            parts.append(f"drawbox=x=0:y=0:w=1080:h=1920:color=black@{_ic_a}:t=fill:enable='between(t\\,{_ic_t0}\\,{_ic_t1})'")
+        parts.append("drawbox=x=60:y=915:w=960:h=2:color=0x00E5FF@0.85:t=fill:enable='between(t\\,0.4\\,2.7)'")
+        parts.append("drawbox=x=60:y=1005:w=960:h=2:color=0x00E5FF@0.85:t=fill:enable='between(t\\,0.4\\,2.7)'")
+        if fa:
+            _ic_titulo = titulo or 'EXCLUSIVO'
+            parts.append(
+                f"drawtext={fa}text='{_ic_titulo}':fontsize=100:fontcolor=white:"
+                f"x=(w-text_w)/2:y=855:"
+                f"shadowcolor=0x00E5FF@0.65:shadowx=5:shadowy=5:"
+                f"alpha='if(lt(t\\,0.3)\\,0\\,if(lt(t\\,1.1)\\,(t-0.3)/0.8\\,if(lt(t\\,2.2)\\,1\\,if(lt(t\\,2.8)\\,(2.8-t)/0.6\\,0))))'"
+            )
+            if precio:
+                parts.append(
+                    f"drawtext={fa}text='{precio}':fontsize=72:fontcolor=0xFFCC00:"
+                    f"x=(w-text_w)/2:y=1025:"
+                    f"shadowcolor=black@0.9:shadowx=3:shadowy=3:"
+                    f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.4)\\,(t-0.7)/0.7\\,if(lt(t\\,2.2)\\,1\\,if(lt(t\\,2.8)\\,(2.8-t)/0.6\\,0))))'"
+                )
+
+    # BADGE VIRAL — badge pulsante esquina superior derecha con estrellas doradas
+    if 'badge_viral' in _ex and fa:
+        parts.append("drawbox=x=774:y=146:w=292:h=128:color=0xFF4400@0.95:t=fill:enable='gte(t\\,0.7)'")
+        parts.append("drawbox=x=778:y=150:w=284:h=120:color=black@0.80:t=fill:enable='gte(t\\,0.7)'")
+        parts.append("drawbox=x=774:y=146:w=292:h=4:color=0xFFCC00@1.0:t=fill:enable='gte(t\\,0.7)'")
+        parts.append(
+            f"drawtext={fa}text='VIRAL':fontsize=58:fontcolor=0xFF4400:"
+            f"x=810:y=163:"
+            f"shadowcolor=black@0.9:shadowx=2:shadowy=2:"
+            f"alpha='if(lt(t\\,0.7)\\,0\\,if(lt(t\\,1.3)\\,(t-0.7)/0.6\\,0.75+0.25*sin(t*PI*2.2)))'"
+        )
+        parts.append(
+            f"drawtext={fa}text='* * * * *':fontsize=28:fontcolor=0xFFCC00:"
+            f"x=800:y=232:"
+            f"shadowcolor=black@0.8:shadowx=1:shadowy=1:"
+            f"alpha='if(lt(t\\,1.0)\\,0\\,if(lt(t\\,1.6)\\,(t-1.0)/0.6\\,0.92))'"
+        )
+
     return ",".join(parts)
 
 
@@ -920,7 +1031,7 @@ def aplicar_watermark_imagen(imagen_path, logo_path=None, opacidad=0.75, posicio
         return imagen_path
 
 
-def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=None):
+def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=None, extra_effects=None):
     """
     Segunda pasada ffmpeg: aplica motion overlay + watermark sobre un video ya generado.
     Siempre incluye corner accents; si lower_third tiene texto agrega barra + slide-in.
@@ -932,7 +1043,7 @@ def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=Non
     precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
     color  = lower_third.get('color', 'white') if lower_third else 'white'
 
-    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color)
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects)
     wm_w = 220
 
     try:
@@ -962,14 +1073,14 @@ def _overlay_watermark_video(input_path, output_path, logo_path, lower_third=Non
     return output_path
 
 
-def _only_lower_third_video(input_path, output_path, lower_third):
+def _only_lower_third_video(input_path, output_path, lower_third, extra_effects=None):
     """Aplica motion overlay (corner accents + lower-third opcional) sin watermark."""
     fa     = f"fontfile={DRAWTEXT_FONT}:" if DRAWTEXT_FONT else ""
     titulo = _esc_dt(lower_third['texto'].upper()) if lower_third and lower_third.get('texto') else None
     precio = _esc_dt(lower_third.get('precio', '')) if lower_third else None
     color  = lower_third.get('color', 'white') if lower_third else 'white'
 
-    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color)
+    motion_filters = _build_motion_overlay_filter(fa, titulo, precio, color, extra_effects=extra_effects)
 
     try:
         cmd = [
@@ -996,7 +1107,7 @@ def _only_lower_third_video(input_path, output_path, lower_third):
 
 def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
                        color_grade="none", watermark_path=None, lower_third=None,
-                       usar_watermark=True, movimiento=None):
+                       usar_watermark=True, movimiento=None, extra_effects=None):
     """
     Genera un Reel cinematográfico premium usando ffmpeg (gratis).
     - movimiento: estilo de animación independiente del mood musical
@@ -1152,9 +1263,10 @@ def generar_video_reel(imagen_path, audio_path, duracion=15, mood="energico",
         if use_wm:
             _overlay_watermark_video(tmp_path, final_path,
                                      logo_path=lpath,
-                                     lower_third=lower_third)
+                                     lower_third=lower_third,
+                                     extra_effects=extra_effects)
         else:
-            _only_lower_third_video(tmp_path, final_path, lower_third)
+            _only_lower_third_video(tmp_path, final_path, lower_third, extra_effects=extra_effects)
         try: os.remove(tmp_path)
         except: pass
 
@@ -1652,7 +1764,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico",
                 hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None,
                 color_grade="none", lower_third=None, usar_watermark=True, duracion_reel=15,
-                movimiento=None):
+                movimiento=None, extra_effects=None):
     global bot_activo
 
     # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
@@ -1758,6 +1870,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'movimiento': movimiento,
             'duracion_reel': int(duracion_reel or 15),
             'lower_third': lower_third or {},
+            'extra_effects': extra_effects or [],
             'usar_watermark': usar_watermark,
             'reel_generado': False,
             'con_referencia': bool(imagen_referencia_url),
@@ -2020,7 +2133,8 @@ def generar_borrador_imagen_propia_task(imagen_url, cliente_id, precio, modo, mo
 
 
 def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto=None,
-                                color_grade="none", movimiento=None, duracion=15, lower_third=None):
+                                color_grade="none", movimiento=None, duracion=15, lower_third=None,
+                                extra_effects=None):
     """Analiza imagen con visión, aplica overlay opcional, genera caption y publica."""
     global bot_activo
     with _bot_lock:
@@ -2139,6 +2253,7 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
                     color_grade=color_grade or "none",
                     movimiento=movimiento or None,
                     lower_third=lt,
+                    extra_effects=extra_effects or [],
                 )
                 reel_generado = bool(video_path)
             if video_path and meta_token and ig_user_id:
@@ -2262,6 +2377,7 @@ def api_publicar_borrador():
                 movimiento=borrador.get('movimiento') or None,
                 lower_third=borrador.get('lower_third') or None,
                 usar_watermark=borrador.get('usar_watermark', True),
+                extra_effects=borrador.get('extra_effects') or [],
             ) if audio_path else None
             reel_generado = bool(video_path)
             publicado = publicar_reel_instagram(video_path, caption_final, cliente_id) if video_path else False
@@ -2312,6 +2428,7 @@ def api_publicar_imagen_propia():
     movimiento = data.get('movimiento') or None
     duracion = int(data.get('duracion', 15))
     lower_third = data.get('lower_third', None)
+    extra_effects = data.get('extra_effects') or []
 
     if not imagen_url:
         return jsonify({'ok': False, 'msg': '⚠️ No se recibió URL de imagen.'})
@@ -2322,7 +2439,7 @@ def api_publicar_imagen_propia():
     hilo = threading.Thread(
         target=publicar_imagen_propia_task,
         args=(imagen_url, cliente_id, precio, modo, mood, overlay, titulo_producto,
-              color_grade, movimiento, duracion, lower_third),
+              color_grade, movimiento, duracion, lower_third, extra_effects),
         daemon=True
     )
     hilo.start()
@@ -2349,6 +2466,7 @@ def api_ciclo():
     usar_watermark = bool(data.get('usar_watermark', True))
     duracion_reel = int(data.get('duracion_reel', 15))
     movimiento = data.get('movimiento') or None
+    extra_effects = data.get('extra_effects') or []
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     with _bot_lock:
@@ -2364,6 +2482,7 @@ def api_ciclo():
             'titulo_producto': titulo_producto, 'color_grade': color_grade,
             'lower_third': lower_third, 'usar_watermark': usar_watermark,
             'duracion_reel': duracion_reel, 'movimiento': movimiento,
+            'extra_effects': extra_effects,
         }
     )
     hilo.daemon = True
