@@ -3930,19 +3930,54 @@ async function ctrlConnectGH() {
 }
 
 var FICONS={py:'🐍',js:'🟨',ts:'🔷',json:'📋',md:'📝',txt:'📄',yml:'⚙️',yaml:'⚙️',sh:'💻',html:'🌐',css:'🎨',toml:'⚙️'};
-function ctrlRenderFiles(files) {
+var ctrlCurrentPath = '';
+
+function ctrlRenderFiles(files, path) {
+  ctrlCurrentPath = path || '';
   var el=document.getElementById('ctrl-file-list'); el.innerHTML='';
+  // Botón volver si estamos dentro de una carpeta
+  if (ctrlCurrentPath) {
+    var back=document.createElement('div');
+    back.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(39,39,42,.5);background:rgba(16,185,129,.05);';
+    back.innerHTML='<span style="font-size:13px">⬅️</span><span style="font-size:11px;color:#10b981;font-family:monospace;flex:1;">.. volver</span><span style="font-size:9px;color:#52525b;">'+ctrlCurrentPath+'</span>';
+    back.onmouseover=function(){back.style.background='rgba(16,185,129,.1)';};
+    back.onmouseout=function(){back.style.background='rgba(16,185,129,.05)';};
+    back.onclick=function(){
+      var parts=ctrlCurrentPath.split('/');
+      parts.pop();
+      var parentPath=parts.join('/');
+      ctrlLoadDir(parentPath);
+    };
+    el.appendChild(back);
+  }
+  // Ordenar: carpetas primero
+  files.sort(function(a,b){ if(a.type===b.type) return a.name.localeCompare(b.name); return a.type==='dir'?-1:1; });
   files.forEach(function(f){
     var ext=(f.name.split('.').pop()||'').toLowerCase();
     var icon=f.type==='dir'?'📁':(FICONS[ext]||'📄');
     var item=document.createElement('div');
     item.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(39,39,42,.5);';
-    item.innerHTML='<span style="font-size:13px">'+icon+'</span><span style="font-size:11px;color:#e4e4e7;font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+f.name+'</span><span style="font-size:9px;color:#52525b;">'+(f.type==='file'?(f.size/1024).toFixed(1)+' KB':'dir')+'</span>';
+    item.innerHTML='<span style="font-size:13px">'+icon+'</span><span style="font-size:11px;color:#e4e4e7;font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+f.name+'</span><span style="font-size:9px;color:#52525b;">'+(f.type==='file'?(f.size/1024).toFixed(1)+' KB':'📂')+'</span>';
     item.onmouseover=function(){item.style.background='rgba(39,39,42,.6)';};
     item.onmouseout=function(){item.style.background='transparent';};
-    item.onclick=function(){ctrlLoadFile(f,item);};
+    item.onclick=function(){
+      if(f.type==='dir') ctrlLoadDir(f.path);
+      else ctrlLoadFile(f,item);
+    };
     el.appendChild(item);
   });
+}
+
+async function ctrlLoadDir(path) {
+  var repo=ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
+  var url='https://api.github.com/repos/'+repo+'/contents'+(path?'/'+path:'');
+  agregarLog('📂 Abriendo: '+(path||'raíz')+'…');
+  try {
+    var r=await fetch(url,{headers:{Authorization:'token '+ctrlCreds.ghToken,Accept:'application/vnd.github.v3+json'}});
+    var files=await r.json();
+    if(!Array.isArray(files)) throw new Error(files.message||'Error');
+    ctrlRenderFiles(files, path);
+  } catch(e){ agregarLog('❌ Dir: '+e.message,'error'); }
 }
 
 async function ctrlLoadFile(f,itemEl) {
