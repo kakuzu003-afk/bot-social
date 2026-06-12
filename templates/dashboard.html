@@ -2071,7 +2071,7 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 
         <!-- STATUS CARDS -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div id="ctrl-card-ig" onclick="ctrlConnectIG()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;">
+          <div id="ctrl-card-ig" onclick="document.getElementById('ctrl-ig-token').focus()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;" title="Llena las credenciales abajo y pulsa Conectar IG">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#a855f7,#ec4899,#fb923c);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">IG</div>
               <span id="ctrl-pill-ig" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Conectar →</span>
@@ -2080,7 +2080,7 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
             <div style="font-size:12px;font-weight:600;color:var(--text1);" id="ctrl-ig-user">—</div>
             <div style="font-size:10px;color:var(--text3);" id="ctrl-ig-stats"></div>
           </div>
-          <div id="ctrl-card-gh" onclick="ctrlConnectGH()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;">
+          <div id="ctrl-card-gh" onclick="document.getElementById('ctrl-gh-token').focus()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;" title="Llena las credenciales abajo y pulsa Conectar GH">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div style="width:28px;height:28px;border-radius:7px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">GH</div>
               <span id="ctrl-pill-gh" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Conectar →</span>
@@ -3829,7 +3829,15 @@ function ctrlSetPill(id, s) {
 }
 
 async function ctrlConnectIG() {
-  if (!ctrlCreds.igToken||!ctrlCreds.igUserId) { agregarLog('❌ Falta token/userID de Instagram','error'); return; }
+  // Leer campos directamente del DOM (no depende de Guardar previo)
+  var tok  = (document.getElementById('ctrl-ig-token')  && document.getElementById('ctrl-ig-token').value.trim())  || ctrlCreds.igToken  || '';
+  var uid  = (document.getElementById('ctrl-ig-userid') && document.getElementById('ctrl-ig-userid').value.trim()) || ctrlCreds.igUserId || '';
+  if (tok)  ctrlCreds.igToken  = tok;
+  if (uid)  ctrlCreds.igUserId = uid;
+  if (!ctrlCreds.igToken || !ctrlCreds.igUserId) {
+    agregarLog('❌ Ingresa el Token y User ID de Instagram primero','error');
+    return;
+  }
   ctrlSetPill('ctrl-pill-ig','loading');
   agregarLog('🔄 Conectando Instagram…');
   try {
@@ -3884,8 +3892,11 @@ async function ctrlUpdateCaption() {
 }
 
 async function ctrlConnectGH() {
-  var repo = ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
-  if (!ctrlCreds.ghToken) { agregarLog('❌ Falta GitHub Token','error'); return; }
+  var tok  = (document.getElementById('ctrl-gh-token') && document.getElementById('ctrl-gh-token').value.trim()) || ctrlCreds.ghToken || '';
+  var repo = (document.getElementById('ctrl-gh-repo')  && document.getElementById('ctrl-gh-repo').value.trim())  || ctrlCreds.ghRepo  || 'kakuzu003-afk/bot-social';
+  if (tok)  ctrlCreds.ghToken = tok;
+  if (repo) ctrlCreds.ghRepo  = repo;
+  if (!ctrlCreds.ghToken) { agregarLog('❌ Ingresa el GitHub Token primero','error'); return; }
   ctrlSetPill('ctrl-pill-gh','loading');
   agregarLog('🔄 Conectando GitHub: '+repo+'…');
   var h = { Authorization:'token '+ctrlCreds.ghToken, Accept:'application/vnd.github.v3+json' };
