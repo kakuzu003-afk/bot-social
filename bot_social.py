@@ -15,6 +15,7 @@ import random
 from groq import Groq
 import requests as req
 from functools import wraps
+from agentes_creativos import SuiteCreativaMultiAgente
 
 # Auto-instalar Pillow si no está disponible (necesario para overlay de texto en imágenes)
 try:
@@ -405,6 +406,7 @@ if not groq_api_key:
     raise ValueError("❌ ERROR: La variable de entorno GROQ_API_KEY no está configurada en Railway.")
 
 groq_client = Groq(api_key=groq_api_key)
+suite_creativa = SuiteCreativaMultiAgente()
 
 stats_global = {}
 logs_global = []
@@ -590,117 +592,41 @@ def _get_top_captions_producto(titulo, limit=3):
         return []
 
 def generar_post_estricto(prod_info, tendencias_reales, precio, hashtags_override=None):
+    """
+    NUEVA VERSIÓN: Utiliza la Suite Creativa de Multi-Agentes para una generación
+    de contenido orquestada y de nivel profesional.
+    """
     tendencias_filtradas = filtrar_tendencias_con_llm(tendencias_reales, prod_info)
-    ficha     = prod_info.get("ficha") or {}
-    nombre    = ficha.get("nombre")    or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "")
-    beneficio = ficha.get("beneficio") or ""
-    audiencia = ficha.get("audiencia") or "público general en Chile"
-    categoria = ficha.get("categoria") or "digital"
     tendencias_str = ', '.join(tendencias_filtradas) if tendencias_filtradas else '—'
-    año_actual = datetime.now().year
-
-    # ── MEMORIA: few-shot de captions exitosos anteriores ────────────────────
+    
+    # Obtener historial para alimentar a los agentes
+    ficha = prod_info.get("ficha") or {}
+    nombre = ficha.get("nombre") or prod_info.get("titulo_producto") or prod_info.get("detalle_producto", "Producto")
     captions_anteriores = _get_top_captions_producto(nombre, limit=2)
-    few_shot_block = ""
-    if captions_anteriores:
-        ejemplos_str = "\n\n---\n".join(captions_anteriores[:2])
-        few_shot_block = f"""
-REFERENCIA — Captions anteriores que funcionaron para este producto (NO los copies, solo úsalos como referencia de tono y estructura que resonó):
-{ejemplos_str}
-"""
+    ejemplos_str = "\n\n---\n".join(captions_anteriores) if captions_anteriores else ""
 
-    # ── PASO 1: El agente analiza el producto y elige su estrategia ──────────
-    analisis_prompt = f"""Eres un agente de ventas senior especializado en el mercado chileno.
-Te entrego un producto. Antes de escribir el caption de Instagram, analízalo como lo haría un vendedor experto:
+    # Preparar información para la suite
+    info_agentes = {
+        "nombre": nombre,
+        "beneficio": ficha.get("beneficio", ""),
+        "audiencia": ficha.get("audiencia", "Público general en Chile"),
+        "precio": precio,
+        "categoria": ficha.get("categoria", "digital")
+    }
 
-PRODUCTO: {nombre}
-BENEFICIO: {beneficio or '(analiza tú)'}
-AUDIENCIA: {audiencia}
-PRECIO: {precio}
-CATEGORÍA: {categoria}
-TENDENCIAS HOY ({año_actual}): {tendencias_str}
-
-Responde SOLO con este formato (3 líneas, sin explicaciones extra):
-DOLOR: [el problema o frustración más real que tiene el comprador sin este producto]
-GANCHO: [la cosa más irresistible de este producto — el dato, precio, resultado o feature que detiene el scroll]
-TÁCTICA: [elige UNA: precio_shock | comparacion_tienda | historia_micro | pregunta_directa | fomo | humor_precio | urgencia_stock | resultado_especifico | testimonio_implicito | feature_tecnica | tiempo_ahorrado | revelacion_final]"""
-
-    r1 = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": analisis_prompt}],
-        max_tokens=120,
-        temperature=0.9,
+    # Ejecutar la orquestación multi-agente
+    log(f"🚀 Ejecutando Suite Creativa Multi-Agente para {nombre}...", "info")
+    resultado = suite_creativa.generar_post_completo(
+        info_agentes, 
+        tendencias_str, 
+        historial_captions=ejemplos_str
     )
-    analisis = r1.choices[0].message.content.strip()
-    log(f"🧠 Análisis de ventas: {analisis[:120]}...", "info")
-
-    # ── Hashtags: override del catálogo o reglas por defecto ─────────────────
-    if hashtags_override and isinstance(hashtags_override, list) and len(hashtags_override) > 0:
-        hashtag_line = ' '.join(hashtags_override)
-        hashtag_instruccion = f"USA EXACTAMENTE ESTOS HASHTAGS (no los cambies): {hashtag_line}"
-    else:
-        hashtag_line = "#chile #oferta #hashtag3 #hashtag4 #hashtag5"
-        hashtag_instruccion = """REGLAS DE HASHTAGS (obligatorio):
-- UNA sola palabra por hashtag, sin guiones ni palabras pegadas
-- Siempre incluye #chile y #oferta
-- Los otros 3 son específicos al producto: nombre del producto, categoría y público
-- Ejemplos reales:
-  Minecraft Java → #chile #oferta #minecraft #gaming #juegos
-  Netflix → #chile #oferta #netflix #streaming #peliculas
-  Spotify → #chile #oferta #spotify #musica #streaming
-- Usa el nombre exacto del producto y palabras simples en español o del nicho"""
-
-    # ── PASO 2: El agente escribe el caption con total libertad creativa ─────
-    system_agente = (
-        "Eres un agente de ventas top de Chile — no un copywriter que sigue plantillas. "
-        "Piensas como vendedor: entiendes el dolor del cliente, sabes qué lo mueve a comprar y escribes "
-        "para que actúe AHORA. Cada publicación que escribes es diferente porque cada producto y cada momento son diferentes. "
-        "Usas el lenguaje chileno natural: directo, con personalidad, sin frases de marketing vacías. "
-        "Tu métrica no es el like — es la conversación de venta que se inicia después de publicar."
-    )
-
-    user_agente = f"""PRODUCTO: {nombre}
-PRECIO: {precio}
-AUDIENCIA: {audiencia}
-TENDENCIAS HOY: {tendencias_str}
-{few_shot_block}
-TU ANÁLISIS DE VENTAS:
-{analisis}
-
-Ahora escribe el caption de Instagram. Reglas mínimas:
-- El nombre del producto debe aparecer en el texto
-- El precio {precio} debe estar presente
-- Tono chileno real — puedes usar "al tiro", "weón", "bacán", "la raja" si el producto lo pide
-- Estructura LIBRE: tú decides si empiezas con pregunta, afirmación, precio, historia, dato, humor — lo que venda más para ESTE producto específico
-- Entre 80 y 130 palabras
-- 4 a 7 emojis, solo donde tienen sentido real
-- NO uses: "esto cambia tu vida", "no te lo pierdas", "oportunidad única", "increíble oferta", "aprovecha"
-- El cierre siempre termina con la llamada a WhatsApp
-
-FORMATO OBLIGATORIO DE SALIDA:
-[caption completo, creativo, en español chileno]
-
-📲 WhatsApp: +56946557876
-
-{hashtag_line if hashtags_override else '#hashtag1 #hashtag2 #hashtag3 #hashtag4 #hashtag5'}
-
-{hashtag_instruccion}
-
-RESPONDE SOLO CON EL CAPTION — sin explicaciones previas ni etiquetas:"""
-
-    r2 = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": system_agente},
-            {"role": "user",   "content": user_agente},
-        ],
-        max_tokens=650,
-        temperature=1.2,
-        top_p=0.92,
-        frequency_penalty=0.6,
-        presence_penalty=0.5,
-    )
-    return r2.choices[0].message.content.strip()
+    
+    # Registrar la estrategia elegida por el Director Creativo
+    estrategia = resultado.get("estrategia", {})
+    log(f"🧠 Estrategia: {estrategia.get('tactica_venta')} | Tono: {estrategia.get('tono_sugerido')}", "success")
+    
+    return resultado.get("post_final", "Error en generación multi-agente")
 
 
 def analizar_imagen_referencia(imagen_referencia_url):
