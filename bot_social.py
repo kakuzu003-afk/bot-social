@@ -3345,6 +3345,153 @@ def img_proxy():
     except Exception as e:
         return str(e), 500
 
+
+# ============================================================
+# WEBHOOK UNIVERSAL — Acceso para IAs y automatizaciones
+# ============================================================
+WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "bot_social_webhook_2026_ivan")
+
+@app.route('/webhook', methods=['GET', 'POST'])
+def webhook():
+    """
+    Endpoint universal para control externo por IAs.
+    
+    GET  /webhook?token=XXX&action=info
+    POST /webhook  { "token": "XXX", "action": "...", "params": {} }
+    
+    Acciones disponibles:
+      info         — estado general del sistema
+      get_stats    — estadísticas de posts/likes/comentarios
+      get_logs     — últimos logs del bot
+      get_captions — captions generados
+      get_clientes — lista de clientes configurados
+      bot_status   — si el bot está activo o no
+      run_cycle    — ejecutar un ciclo del bot
+      get_products — productos del catálogo
+    """
+    # Leer token y acción desde GET o POST
+    if request.method == 'POST':
+        body = request.get_json(silent=True) or {}
+        token  = body.get('token', '')
+        action = body.get('action', 'info')
+        params = body.get('params', {})
+    else:
+        token  = request.args.get('token', '')
+        action = request.args.get('action', 'info')
+        params = {}
+
+    # Validar token
+    if token != WEBHOOK_TOKEN:
+        return jsonify({
+            'ok': False,
+            'error': 'Token inválido',
+            'hint': 'Incluye el token correcto en el campo "token"'
+        }), 401
+
+    # ── Acciones disponibles ────────────────────────────────
+    try:
+
+        if action == 'info':
+            return jsonify({
+                'ok': True,
+                'sistema': 'Social Bot Manager',
+                'version': '2.0',
+                'bot_activo': bot_activo,
+                'clientes': list(CLIENTES.keys()),
+                'total_captions': len(captions_guardados),
+                'total_logs': len(logs_global),
+                'acciones_disponibles': [
+                    'info', 'get_stats', 'get_logs', 'get_captions',
+                    'get_clientes', 'bot_status', 'run_cycle', 'get_products'
+                ],
+                'descripcion': 'Bot de gestión de Instagram con IA — genera captions, imágenes y publica automáticamente'
+            })
+
+        elif action == 'get_stats':
+            return jsonify({
+                'ok': True,
+                'stats': stats_global
+            })
+
+        elif action == 'get_logs':
+            limit = int(params.get('limit', 50))
+            return jsonify({
+                'ok': True,
+                'logs': logs_global[-limit:],
+                'total': len(logs_global)
+            })
+
+        elif action == 'get_captions':
+            limit = int(params.get('limit', 20))
+            estado = params.get('estado', None)
+            caps = captions_guardados
+            if estado:
+                caps = [c for c in caps if c.get('estado') == estado]
+            return jsonify({
+                'ok': True,
+                'captions': caps[-limit:],
+                'total': len(caps)
+            })
+
+        elif action == 'get_clientes':
+            clientes_info = {}
+            for k, v in CLIENTES.items():
+                clientes_info[k] = {
+                    'nombre': v.get('nombre', k),
+                    'tiene_token': bool(v.get('meta_token')),
+                    'tiene_ig_id': bool(v.get('ig_user_id')),
+                    'stats': stats_global.get(k, {})
+                }
+            return jsonify({'ok': True, 'clientes': clientes_info})
+
+        elif action == 'bot_status':
+            return jsonify({
+                'ok': True,
+                'activo': bot_activo,
+                'logs_recientes': logs_global[-5:] if logs_global else []
+            })
+
+        elif action == 'get_products':
+            prods = _db_load_profiles()
+            return jsonify({
+                'ok': True,
+                'productos': prods,
+                'total': len(prods)
+            })
+
+        elif action == 'run_cycle':
+            if bot_activo:
+                return jsonify({'ok': False, 'error': 'El bot ya está en ejecución'})
+            cliente_id = params.get('cliente_id', list(CLIENTES.keys())[0])
+            if cliente_id not in CLIENTES:
+                return jsonify({'ok': False, 'error': f'Cliente "{cliente_id}" no existe'})
+            producto = params.get('producto', '')
+            precio   = params.get('precio', '')
+            if not producto:
+                return jsonify({'ok': False, 'error': 'Debes enviar "producto" en params'})
+            # Lanzar ciclo en hilo separado
+            def _run():
+                from flask import current_app
+                with app.app_context():
+                    ciclo_completo(cliente_id, producto, precio)
+            t = threading.Thread(target=_run, daemon=True)
+            t.start()
+            return jsonify({
+                'ok': True,
+                'mensaje': f'Ciclo iniciado para "{producto}" en cliente "{cliente_id}"',
+                'tip': 'Consulta action=get_logs para ver el progreso'
+            })
+
+        else:
+            return jsonify({
+                'ok': False,
+                'error': f'Acción "{action}" no reconocida',
+                'acciones_validas': ['info','get_stats','get_logs','get_captions','get_clientes','bot_status','run_cycle','get_products']
+            }), 400
+
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")
     hilo_scheduler = threading.Thread(target=run_scheduler)
