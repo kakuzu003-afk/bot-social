@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from groq import Groq
+from motor_tendencias import MotorTendenciasChile
 
 # Configuración de Groq (se asume que GROQ_API_KEY ya está en el entorno)
 groq_api_key = os.environ.get("GROQ_API_KEY")
@@ -12,6 +13,7 @@ client = Groq(api_key=groq_api_key)
 class SuiteCreativaMultiAgente:
     def __init__(self, model="llama-3.3-70b-versatile"):
         self.model = model
+        self.motor_tendencias = MotorTendenciasChile()
 
     def _llm_call(self, system_prompt, user_prompt, temperature=0.7, max_tokens=1000):
         try:
@@ -31,10 +33,11 @@ class SuiteCreativaMultiAgente:
 
     def agente_director_creativo(self, prod_info, tendencias, captions_historicos=""):
         system_prompt = (
-            "Eres un Director Creativo senior en una agencia de marketing digital especializada en el mercado chileno. "
-            "Tu tarea es analizar un producto y las tendencias actuales para definir la estrategia de venta más efectiva para un post de Instagram. "
-            "Tu objetivo es identificar el DOLOR del cliente, el GANCHO irresistible del producto y la TÁCTICA de venta que generará más conversiones. "
-            "También debes sugerir un TONO adecuado."
+            "Eres un Director Creativo senior en una agencia de marketing digital experta en Chile. "
+            "Tu especialidad es el 'Newsjacking': la habilidad de conectar productos comerciales con las noticias y tendencias del momento de forma orgánica e ingeniosa. "
+            "Tu tarea es analizar un producto y las tendencias actuales para definir la estrategia de venta. "
+            "Debes identificar el DOLOR del cliente, el GANCHO irresistible y la TÁCTICA de venta. "
+            "Si una tendencia actual encaja (aunque sea por humor o contraste), úsala para la estrategia."
         )
         
         user_prompt = f"""Analiza este producto y genera una estrategia de venta.
@@ -119,11 +122,20 @@ Reglas:
         
         return self._llm_call(system_prompt, user_prompt, temperature=0.6, max_tokens=200)
 
-    def generar_post_completo(self, prod_info, tendencias, historial_captions="", historial_hashtags=""):
+    def generar_post_completo(self, prod_info, tendencias_manuales="", historial_captions="", historial_hashtags=""):
         print(f"🚀 Iniciando Suite Creativa para: {prod_info.get('nombre')}")
         
+        # 0. Obtener tendencias reales si no se proveen
+        tendencias_reales = ""
+        if not tendencias_manuales:
+            print("🔍 Buscando tendencias en tiempo real en Chile...")
+            tendencias_raw = self.motor_tendencias.obtener_tendencias_google(limite=5)
+            tendencias_reales = self.motor_tendencias.formatear_para_llm(tendencias_raw)
+        else:
+            tendencias_reales = tendencias_manuales
+            
         # 1. Director Creativo
-        estrategia = self.agente_director_creativo(prod_info, tendencias, historial_captions)
+        estrategia = self.agente_director_creativo(prod_info, tendencias_reales, historial_captions)
         print(f"🧠 Estrategia definida: {estrategia.get('tactica_venta')} | {estrategia.get('tono_sugerido')}")
         
         # 2. Copywriter

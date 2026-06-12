@@ -615,10 +615,13 @@ def generar_post_estricto(prod_info, tendencias_reales, precio, hashtags_overrid
     }
 
     # Ejecutar la orquestación multi-agente
+    # Si tendencias_reales está vacío o es '-', la suite buscará tendencias automáticamente
+    tendencias_para_suite = tendencias_str if tendencias_str and tendencias_str != '—' else ""
+    
     log(f"🚀 Ejecutando Suite Creativa Multi-Agente para {nombre}...", "info")
     resultado = suite_creativa.generar_post_completo(
         info_agentes, 
-        tendencias_str, 
+        tendencias_manuales=tendencias_para_suite, 
         historial_captions=ejemplos_str
     )
     
