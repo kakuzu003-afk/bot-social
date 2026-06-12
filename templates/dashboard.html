@@ -3830,14 +3830,16 @@ function ctrlSetPill(id, s) {
 
 async function ctrlConnectIG() {
   // Leer campos directamente del DOM (no depende de Guardar previo)
-  var tok  = (document.getElementById('ctrl-ig-token')  && document.getElementById('ctrl-ig-token').value.trim())  || ctrlCreds.igToken  || '';
-  var uid  = (document.getElementById('ctrl-ig-userid') && document.getElementById('ctrl-ig-userid').value.trim()) || ctrlCreds.igUserId || '';
+  var tok  = ((document.getElementById('ctrl-ig-token')  && document.getElementById('ctrl-ig-token').value)  || ctrlCreds.igToken  || '').replace(/[\s\n\r\t]/g,'');
+  var uid  = ((document.getElementById('ctrl-ig-userid') && document.getElementById('ctrl-ig-userid').value) || ctrlCreds.igUserId || '').replace(/[\s\n\r\t]/g,'');
   if (tok)  ctrlCreds.igToken  = tok;
   if (uid)  ctrlCreds.igUserId = uid;
   if (!ctrlCreds.igToken || !ctrlCreds.igUserId) {
     agregarLog('❌ Ingresa el Token y User ID de Instagram primero','error');
     return;
   }
+  agregarLog('🔑 Token: '+ctrlCreds.igToken.slice(0,20)+'... ('+ctrlCreds.igToken.length+' chars)');
+  agregarLog('🆔 User ID: '+ctrlCreds.igUserId);
   ctrlSetPill('ctrl-pill-ig','loading');
   agregarLog('🔄 Conectando Instagram…');
   try {
