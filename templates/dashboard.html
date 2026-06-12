@@ -3662,18 +3662,14 @@ let chartEstrategiasInst = null;
 
 function switchMainPanel(name) {
   ['actividad','analytics','control'].forEach(n => {
-    const btn = document.getElementById('mnav-'+n);
+    const btn   = document.getElementById('mnav-'+n);
     const panel = document.getElementById('mpanel-'+n);
-    if (btn) btn.classList.toggle('active', n === name);
-    if (panel) panel.classList.toggle('active', n === name);
+    if (btn)   { btn.classList.remove('active');   if (n === name) btn.classList.add('active'); }
+    if (panel) { panel.classList.remove('active'); if (n === name) panel.classList.add('active'); }
   });
   if (name === 'analytics') {
     actualizarKPIs();
     renderChartsAnalytics();
-  }
-  if (name === 'control') {
-    // Init credenciales si es la primera vez
-    try { ctrlInitFieldsExternal && ctrlInitFieldsExternal(); } catch(e) {}
   }
 }
 
