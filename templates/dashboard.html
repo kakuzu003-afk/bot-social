@@ -2065,98 +2065,86 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
     </div><!-- /mpanel-analytics -->
 
 
-    <!-- PANEL: CONTROL IG + GITHUB -->
-    <div class="main-panel" id="mpanel-control">
+    <!-- PANEL: CONTROL -->
+    <div class="main-panel" id="mpanel-control" style="padding:0;">
+      <div style="padding:14px;display:flex;flex-direction:column;gap:12px;">
 
-      <!-- STATUS ROW -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div id="ctrl-card-ig" onclick="ctrlConnectIG()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .15s;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#a855f7,#ec4899,#fb923c);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">IG</div>
-            <span id="ctrl-pill-ig" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Sin conectar</span>
+        <!-- STATUS CARDS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div id="ctrl-card-ig" onclick="ctrlConnectIG()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#a855f7,#ec4899,#fb923c);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">IG</div>
+              <span id="ctrl-pill-ig" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Conectar →</span>
+            </div>
+            <div style="font-size:10px;color:var(--text3);">Instagram</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text1);" id="ctrl-ig-user">—</div>
+            <div style="font-size:10px;color:var(--text3);" id="ctrl-ig-stats"></div>
           </div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">Instagram</div>
-          <div style="font-size:12px;font-weight:600;color:var(--text1);" id="ctrl-ig-user">—</div>
-          <div style="font-size:10px;color:var(--text3);" id="ctrl-ig-stats"></div>
-        </div>
-        <div id="ctrl-card-gh" onclick="ctrlConnectGH()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .15s;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="width:28px;height:28px;border-radius:7px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">GH</div>
-            <span id="ctrl-pill-gh" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Sin conectar</span>
-          </div>
-          <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">bot-social</div>
-          <div style="font-size:12px;font-weight:600;color:var(--text1);" id="ctrl-gh-files">—</div>
-          <div style="font-size:10px;color:var(--text3);" id="ctrl-gh-commits"></div>
-        </div>
-      </div>
-
-      <!-- INSTAGRAM SECTION -->
-      <div id="ctrl-ig-section" style="display:none;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:8px;">Posts recientes</div>
-        <div id="ctrl-media-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px;"></div>
-      </div>
-
-      <!-- GITHUB SECTION -->
-      <div id="ctrl-gh-section" style="display:none;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:8px;">Archivos del repo</div>
-        <div id="ctrl-file-list" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:10px;max-height:200px;overflow-y:auto;"></div>
-        <div id="ctrl-editor-card" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:10px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border2);">
-            <span style="font-size:10px;font-family:'Share Tech Mono',monospace;color:#d4d4d8;" id="ctrl-editor-path">—</span>
-            <button id="ctrl-btn-edit" onclick="ctrlToggleEdit()" style="background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 9px;cursor:pointer;">Editar</button>
-          </div>
-          <textarea id="ctrl-editor-ta" readonly style="width:100%;min-height:160px;background:transparent;color:#d4d4d8;font-size:10px;font-family:'Share Tech Mono',monospace;padding:10px;resize:none;border:none;outline:none;"></textarea>
-          <div id="ctrl-editor-footer" style="display:none;padding:8px 10px;border-top:1px solid var(--border2);gap:6px;flex-direction:column;">
-            <input id="ctrl-commit-msg" type="text" placeholder="Mensaje de commit..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:'Share Tech Mono',monospace;outline:none;">
-            <button onclick="ctrlDoCommit()" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:6px;color:#10b981;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:7px;cursor:pointer;" id="ctrl-btn-commit">Hacer commit</button>
+          <div id="ctrl-card-gh" onclick="ctrlConnectGH()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="width:28px;height:28px;border-radius:7px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">GH</div>
+              <span id="ctrl-pill-gh" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Conectar →</span>
+            </div>
+            <div style="font-size:10px;color:var(--text3);">bot-social</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text1);" id="ctrl-gh-files">—</div>
+            <div style="font-size:10px;color:var(--text3);" id="ctrl-gh-commits"></div>
           </div>
         </div>
 
-        <!-- COMMITS -->
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:6px;">Commits recientes</div>
-        <div id="ctrl-commits" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;"></div>
-      </div>
+        <!-- MEDIA GRID IG -->
+        <div id="ctrl-ig-section" style="display:none;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:8px;" id="ctrl-media-label">Posts recientes</div>
+          <div id="ctrl-media-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+        </div>
 
-      <!-- CONFIG TOKENS -->
-      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-top:4px;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:12px;">Credenciales del panel</div>
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram Token</div>
-          <input type="password" id="ctrl-ig-token" placeholder="EAAxxxxxxxxxx..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:'Share Tech Mono',monospace;outline:none;">
+        <!-- GITHUB FILES + EDITOR -->
+        <div id="ctrl-gh-section" style="display:none;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:6px;">Archivos</div>
+          <div id="ctrl-file-list" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;max-height:180px;overflow-y:auto;margin-bottom:10px;"></div>
+          <div id="ctrl-editor-card" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border2);">
+              <span style="font-size:10px;font-family:monospace;color:#d4d4d8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;" id="ctrl-editor-path">—</span>
+              <button id="ctrl-btn-edit" onclick="ctrlToggleEdit()" style="background:var(--bg2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:10px;padding:3px 9px;cursor:pointer;margin-left:8px;flex-shrink:0;">Editar</button>
+            </div>
+            <textarea id="ctrl-editor-ta" readonly style="width:100%;min-height:150px;background:transparent;color:#d4d4d8;font-size:10px;font-family:monospace;padding:10px;resize:none;border:none;outline:none;display:block;"></textarea>
+            <div id="ctrl-editor-footer" style="display:none;padding:8px 10px;border-top:1px solid var(--border2);flex-direction:column;gap:6px;">
+              <input id="ctrl-commit-msg" type="text" placeholder="Mensaje de commit..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;">
+              <button onclick="ctrlDoCommit()" id="ctrl-btn-commit" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:6px;color:#10b981;font-size:12px;font-weight:700;padding:7px;cursor:pointer;">Hacer commit</button>
+            </div>
+          </div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:6px;">Commits recientes</div>
+          <div id="ctrl-commits" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;overflow:hidden;"></div>
         </div>
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram User ID</div>
-          <input type="text" id="ctrl-ig-userid" placeholder="17841xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:'Share Tech Mono',monospace;outline:none;">
-        </div>
-        <div style="margin-bottom:8px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">GitHub Token</div>
-          <input type="password" id="ctrl-gh-token" placeholder="ghp_xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:'Share Tech Mono',monospace;outline:none;">
-        </div>
-        <div style="margin-bottom:12px;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Repositorio (usuario/repo)</div>
-          <input type="text" id="ctrl-gh-repo" placeholder="kakuzu003-afk/bot-social" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:'Share Tech Mono',monospace;outline:none;">
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="ctrlSaveCreds()" style="flex:1;min-width:120px;background:rgba(255,255,255,.9);border:none;border-radius:6px;color:#000;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:8px;cursor:pointer;">Guardar</button>
-          <button onclick="ctrlConnectIG()" style="flex:1;min-width:120px;background:linear-gradient(135deg,#9333ea,#db2777);border:none;border-radius:6px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:8px;cursor:pointer;">Conectar IG</button>
-          <button onclick="ctrlConnectGH()" style="flex:1;min-width:120px;background:#3f3f46;border:none;border-radius:6px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:8px;cursor:pointer;">Conectar GH</button>
-        </div>
-      </div>
 
+        <!-- CREDENCIALES -->
+        <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:12px;">Credenciales</div>
+          <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram Token</div><input type="password" id="ctrl-ig-token" placeholder="EAAxxxxxxxxxx..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
+          <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram User ID</div><input type="text" id="ctrl-ig-userid" placeholder="17841xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
+          <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">GitHub Token</div><input type="password" id="ctrl-gh-token" placeholder="ghp_xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
+          <div style="margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Repositorio</div><input type="text" id="ctrl-gh-repo" value="kakuzu003-afk/bot-social" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="ctrlSaveCreds()" style="flex:1;min-width:100px;background:rgba(255,255,255,.9);border:none;border-radius:6px;color:#000;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Guardar</button>
+            <button onclick="ctrlConnectIG()" style="flex:1;min-width:100px;background:linear-gradient(135deg,#9333ea,#db2777);border:none;border-radius:6px;color:#fff;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar IG</button>
+            <button onclick="ctrlConnectGH()" style="flex:1;min-width:100px;background:#3f3f46;border:none;border-radius:6px;color:#fff;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar GH</button>
+          </div>
+        </div>
+
+      </div><!-- /padding -->
     </div><!-- /mpanel-control -->
 
-    <!-- MODAL EDIT CAPTION -->
+    <!-- MODAL CAPTION -->
     <div id="ctrl-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px;">
       <div style="background:#18181b;border:1px solid #3f3f46;border-radius:14px;width:100%;max-width:460px;padding:18px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <span style="font-weight:700;font-size:13px;color:#fff;">Editar Caption</span>
-          <button onclick="document.getElementById('ctrl-modal').style.display='none'" style="background:none;border:none;color:#71717a;font-size:20px;cursor:pointer;line-height:1;">×</button>
+          <button onclick="document.getElementById('ctrl-modal').style.display='none'" style="background:none;border:none;color:#71717a;font-size:22px;cursor:pointer;line-height:1;">×</button>
         </div>
-        <div style="font-size:9px;color:#52525b;font-family:'Share Tech Mono',monospace;word-break:break-all;margin-bottom:8px;" id="ctrl-modal-id"></div>
-        <textarea id="ctrl-modal-ta" rows="5" style="width:100%;background:#27272a;border:1px solid #3f3f46;border-radius:8px;padding:8px 10px;font-size:12px;color:#fff;resize:none;outline:none;font-family:'Share Tech Mono',monospace;"></textarea>
+        <div style="font-size:9px;color:#52525b;font-family:monospace;word-break:break-all;margin-bottom:8px;" id="ctrl-modal-id"></div>
+        <textarea id="ctrl-modal-ta" rows="5" style="width:100%;background:#27272a;border:1px solid #3f3f46;border-radius:8px;padding:8px 10px;font-size:12px;color:#fff;resize:none;outline:none;font-family:monospace;"></textarea>
         <div style="display:flex;gap:8px;margin-top:10px;">
-          <button onclick="ctrlUpdateCaption()" id="ctrl-btn-save-caption" style="flex:1;background:linear-gradient(135deg,#9333ea,#db2777);border:none;border-radius:6px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:9px;cursor:pointer;">Actualizar</button>
-          <a id="ctrl-modal-link" href="#" target="_blank" style="padding:9px 14px;background:#3f3f46;border:none;border-radius:6px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;text-decoration:none;">Ver ↗</a>
+          <button onclick="ctrlUpdateCaption()" id="ctrl-btn-save-caption" style="flex:1;background:linear-gradient(135deg,#9333ea,#db2777);border:none;border-radius:6px;color:#fff;font-weight:700;padding:9px;cursor:pointer;font-size:12px;">Actualizar</button>
+          <a id="ctrl-modal-link" href="#" target="_blank" style="padding:9px 14px;background:#3f3f46;border:none;border-radius:6px;color:#fff;font-weight:700;text-decoration:none;font-size:12px;">Ver ↗</a>
         </div>
       </div>
     </div>
@@ -3662,15 +3650,12 @@ let chartEstrategiasInst = null;
 
 function switchMainPanel(name) {
   ['actividad','analytics','control'].forEach(n => {
-    const btn   = document.getElementById('mnav-'+n);
-    const panel = document.getElementById('mpanel-'+n);
-    if (btn)   { btn.classList.remove('active');   if (n === name) btn.classList.add('active'); }
-    if (panel) { panel.classList.remove('active'); if (n === name) panel.classList.add('active'); }
+    var _b = document.getElementById('mnav-'+n);
+    var _p = document.getElementById('mpanel-'+n);
+    if (_b) { _b.classList.remove('active'); if (n===name) _b.classList.add('active'); }
+    if (_p) { _p.classList.remove('active'); if (n===name) _p.classList.add('active'); }
   });
-  if (name === 'analytics') {
-    actualizarKPIs();
-    renderChartsAnalytics();
-  }
+  if (name === 'analytics') { actualizarKPIs(); renderChartsAnalytics(); }
 }
 
 function actualizarKPIs() {
@@ -3809,239 +3794,194 @@ setTimeout(() => {
   }).catch(() => {});
 }, 3000);
 
-// ══════════════════════════════════════════════════════════════
-// PANEL CONTROL — Instagram + GitHub
-// ══════════════════════════════════════════════════════════════
-(function() {
-  const SK = 'botsocial_ctrl_creds';
-  let ctrlCreds = {}, ctrlIGStatus='idle', ctrlGHStatus='idle';
-  let ctrlCurrentFile = null, ctrlEditMode = false, ctrlCurrentPostId = null, ctrlCurrentPermalink = '';
+// ═══════════════════════════════════════════════════
+// CONTROL PANEL — IG + GitHub
+// ═══════════════════════════════════════════════════
+var ctrlCreds = {}, ctrlCurrentFile = null, ctrlEditMode = false, ctrlCurrentPostId = null;
 
-  function ctrlLoadCreds() {
-    try { ctrlCreds = JSON.parse(localStorage.getItem(SK)) || {}; } catch { ctrlCreds = {}; }
-  }
-  function ctrlInitFields() {
-    ctrlLoadCreds();
-    const f = id => document.getElementById(id);
-    f('ctrl-ig-token').value  = ctrlCreds.igToken  || '';
-    f('ctrl-ig-userid').value = ctrlCreds.igUserId || '';
-    f('ctrl-gh-token').value  = ctrlCreds.ghToken  || '';
-    f('ctrl-gh-repo').value   = ctrlCreds.ghRepo   || 'kakuzu003-afk/bot-social';
-  }
-  window.ctrlSaveCreds = function() {
-    ctrlCreds = {
-      igToken:  document.getElementById('ctrl-ig-token').value.trim(),
-      igUserId: document.getElementById('ctrl-ig-userid').value.trim(),
-      ghToken:  document.getElementById('ctrl-gh-token').value.trim(),
-      ghRepo:   document.getElementById('ctrl-gh-repo').value.trim() || 'kakuzu003-afk/bot-social'
-    };
-    localStorage.setItem(SK, JSON.stringify(ctrlCreds));
-    agregarLog('✅ Credenciales del panel guardadas', 'success');
+function ctrlLoadCreds() {
+  try { ctrlCreds = JSON.parse(localStorage.getItem('bsc2'))||{}; } catch(e) { ctrlCreds={}; }
+  var f = document.getElementById.bind(document);
+  if (f('ctrl-ig-token'))  f('ctrl-ig-token').value  = ctrlCreds.igToken  || '';
+  if (f('ctrl-ig-userid')) f('ctrl-ig-userid').value = ctrlCreds.igUserId || '';
+  if (f('ctrl-gh-token'))  f('ctrl-gh-token').value  = ctrlCreds.ghToken  || '';
+  if (f('ctrl-gh-repo'))   f('ctrl-gh-repo').value   = ctrlCreds.ghRepo   || 'kakuzu003-afk/bot-social';
+}
+document.addEventListener('DOMContentLoaded', ctrlLoadCreds);
+
+function ctrlSaveCreds() {
+  ctrlCreds = {
+    igToken:  document.getElementById('ctrl-ig-token').value.trim(),
+    igUserId: document.getElementById('ctrl-ig-userid').value.trim(),
+    ghToken:  document.getElementById('ctrl-gh-token').value.trim(),
+    ghRepo:   document.getElementById('ctrl-gh-repo').value.trim() || 'kakuzu003-afk/bot-social'
   };
+  localStorage.setItem('bsc2', JSON.stringify(ctrlCreds));
+  agregarLog('✅ Credenciales guardadas', 'success');
+}
 
-  function ctrlSetPill(pill, status) {
-    const el = document.getElementById(pill);
-    if (!el) return;
-    const map = {idle:'Sin conectar',loading:'Conectando…',live:'● Live',error:'Error'};
-    const col = {idle:'rgba(82,82,91,.3)',loading:'rgba(251,191,36,.2)',live:'rgba(16,185,129,.2)',error:'rgba(239,68,68,.2)'};
-    const txt = {idle:'#a1a1aa',loading:'#fbbf24',live:'#10b981',error:'#ef4444'};
-    el.textContent = map[status]||status;
-    el.style.background = col[status]||col.idle;
-    el.style.color = txt[status]||txt.idle;
-  }
+function ctrlSetPill(id, s) {
+  var el = document.getElementById(id); if (!el) return;
+  var labels = {idle:'Conectar →', loading:'Conectando…', live:'● Live', error:'Error'};
+  var bgs    = {idle:'rgba(82,82,91,.3)', loading:'rgba(251,191,36,.2)', live:'rgba(16,185,129,.2)', error:'rgba(239,68,68,.2)'};
+  var colors = {idle:'#a1a1aa', loading:'#fbbf24', live:'#10b981', error:'#ef4444'};
+  el.textContent = labels[s]||s; el.style.background = bgs[s]||bgs.idle; el.style.color = colors[s]||colors.idle;
+}
 
-  window.ctrlConnectIG = async function() {
-    if (!ctrlCreds.igToken || !ctrlCreds.igUserId) { agregarLog('❌ Control: Token o User ID de Instagram faltante','error'); return; }
-    ctrlSetPill('ctrl-pill-ig','loading');
-    agregarLog('🔄 Control: Conectando a Instagram…');
-    try {
-      const fields = 'id,name,username,followers_count,media_count,biography,profile_picture_url';
-      const r = await fetch(`https://graph.instagram.com/${ctrlCreds.igUserId}?fields=${fields}&access_token=${ctrlCreds.igToken}`);
-      const d = await r.json();
-      if (d.error) throw new Error(d.error.message);
-      ctrlSetPill('ctrl-pill-ig','live');
-      document.getElementById('ctrl-card-ig').style.borderColor = 'rgba(236,72,153,.35)';
-      document.getElementById('ctrl-ig-user').textContent = '@' + d.username;
-      document.getElementById('ctrl-ig-stats').textContent = (d.followers_count||0).toLocaleString('es-CL') + ' seg · ' + (d.media_count||0) + ' posts';
-      agregarLog(`✅ Control IG: @${d.username}`, 'success');
-      // cargar media
-      const mr = await fetch(`https://graph.instagram.com/${ctrlCreds.igUserId}/media?fields=id,caption,media_type,thumbnail_url,media_url,timestamp,like_count,comments_count,permalink&limit=12&access_token=${ctrlCreds.igToken}`);
-      const md = await mr.json();
-      if (md.data) { ctrlRenderMedia(md.data); agregarLog(`📸 Control: ${md.data.length} posts cargados`,'success'); }
-      document.getElementById('ctrl-ig-section').style.display = 'block';
-    } catch(e) {
-      ctrlSetPill('ctrl-pill-ig','error');
-      agregarLog(`❌ Control IG: ${e.message}`,'error');
-    }
-  };
+async function ctrlConnectIG() {
+  if (!ctrlCreds.igToken||!ctrlCreds.igUserId) { agregarLog('❌ Falta token/userID de Instagram','error'); return; }
+  ctrlSetPill('ctrl-pill-ig','loading');
+  agregarLog('🔄 Conectando Instagram…');
+  try {
+    var res = await fetch('https://graph.instagram.com/'+ctrlCreds.igUserId+'?fields=id,username,followers_count,media_count,biography,profile_picture_url&access_token='+ctrlCreds.igToken);
+    var d = await res.json();
+    if (d.error) throw new Error(d.error.message);
+    ctrlSetPill('ctrl-pill-ig','live');
+    document.getElementById('ctrl-card-ig').style.borderColor='rgba(236,72,153,.4)';
+    document.getElementById('ctrl-ig-user').textContent = '@'+d.username;
+    document.getElementById('ctrl-ig-stats').textContent = (d.followers_count||0).toLocaleString('es-CL')+' seg · '+(d.media_count||0)+' posts';
+    agregarLog('✅ IG conectado: @'+d.username,'success');
+    var mr = await fetch('https://graph.instagram.com/'+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
+    var md = await mr.json();
+    if (md.data) { ctrlRenderMedia(md.data); document.getElementById('ctrl-ig-section').style.display='block'; agregarLog('📸 '+md.data.length+' posts cargados','success'); }
+  } catch(e) { ctrlSetPill('ctrl-pill-ig','error'); agregarLog('❌ IG: '+e.message,'error'); }
+}
 
-  function ctrlRenderMedia(media) {
-    const grid = document.getElementById('ctrl-media-grid');
-    grid.innerHTML = '';
-    media.forEach(post => {
-      const src = post.media_url || post.thumbnail_url;
-      const div = document.createElement('div');
-      div.style.cssText = 'aspect-ratio:1;background:#27272a;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;';
-      div.innerHTML = src
-        ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"><div style="position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:opacity .15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-align:center;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">✏️ Editar${post.like_count!==undefined?'<br>♥ '+post.like_count:''}</div>`
-        : `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#52525b;">${post.media_type}</div>`;
-      div.onclick = () => ctrlOpenModal(post);
-      grid.appendChild(div);
-    });
-  }
+function ctrlRenderMedia(media) {
+  var g = document.getElementById('ctrl-media-grid'); g.innerHTML='';
+  document.getElementById('ctrl-media-label').textContent = 'Posts recientes · '+media.length;
+  media.forEach(function(p) {
+    var src = p.media_url||p.thumbnail_url;
+    var d = document.createElement('div');
+    d.style.cssText='aspect-ratio:1;background:#27272a;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;';
+    d.innerHTML = src ? '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;" loading="lazy"><div style="position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:.15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-align:center;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">✏️ Editar'+(p.like_count!==undefined?'<br>♥ '+p.like_count:'')+'</div>' : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:9px;color:#52525b;">'+p.media_type+'</div>';
+    d.onclick = function() { ctrlOpenModal(p); };
+    g.appendChild(d);
+  });
+}
 
-  function ctrlOpenModal(post) {
-    ctrlCurrentPostId = post.id;
-    ctrlCurrentPermalink = post.permalink || '#';
-    document.getElementById('ctrl-modal-id').textContent = post.id;
-    document.getElementById('ctrl-modal-ta').value = post.caption || '';
-    document.getElementById('ctrl-modal-link').href = ctrlCurrentPermalink;
-    document.getElementById('ctrl-modal').style.display = 'flex';
-  }
-  window.ctrlUpdateCaption = async function() {
-    if (!ctrlCurrentPostId) return;
-    const caption = document.getElementById('ctrl-modal-ta').value;
-    const btn = document.getElementById('ctrl-btn-save-caption');
-    btn.disabled = true; btn.textContent = 'Guardando…';
-    agregarLog(`🔄 Actualizando caption ${ctrlCurrentPostId}…`);
-    try {
-      const r = await fetch(`https://graph.instagram.com/${ctrlCurrentPostId}?caption=${encodeURIComponent(caption)}&access_token=${ctrlCreds.igToken}`, {method:'POST'});
-      const d = await r.json();
-      if (d.error) throw new Error(d.error.message);
-      agregarLog('✅ Caption actualizado','success');
-      document.getElementById('ctrl-modal').style.display = 'none';
-    } catch(e) {
-      agregarLog(`❌ Caption: ${e.message}`,'error');
-    } finally { btn.disabled=false; btn.textContent='Actualizar'; }
-  };
+function ctrlOpenModal(post) {
+  ctrlCurrentPostId = post.id;
+  document.getElementById('ctrl-modal-id').textContent = post.id;
+  document.getElementById('ctrl-modal-ta').value = post.caption||'';
+  document.getElementById('ctrl-modal-link').href = post.permalink||'#';
+  document.getElementById('ctrl-modal').style.display='flex';
+}
 
-  window.ctrlConnectGH = async function() {
-    const repo = ctrlCreds.ghRepo || 'kakuzu003-afk/bot-social';
-    if (!ctrlCreds.ghToken) { agregarLog('❌ Control: GitHub Token faltante','error'); return; }
-    ctrlSetPill('ctrl-pill-gh','loading');
-    agregarLog(`🔄 Control: Conectando a GitHub ${repo}…`);
-    const headers = { Authorization:`token ${ctrlCreds.ghToken}`, Accept:'application/vnd.github.v3+json' };
-    try {
-      const [fr, cr] = await Promise.all([
-        fetch(`https://api.github.com/repos/${repo}/contents`, {headers}),
-        fetch(`https://api.github.com/repos/${repo}/commits?per_page=8`, {headers})
-      ]);
-      const files = await fr.json();
-      const commits = await cr.json();
-      if (files.message) throw new Error(files.message);
-      ctrlSetPill('ctrl-pill-gh','live');
-      document.getElementById('ctrl-card-gh').style.borderColor = 'rgba(16,185,129,.35)';
-      const flist = Array.isArray(files)?files:[];
-      const clist = Array.isArray(commits)?commits:[];
-      document.getElementById('ctrl-gh-files').textContent = flist.length + ' archivos';
-      document.getElementById('ctrl-gh-commits').textContent = clist.length + ' commits recientes';
-      ctrlRenderFiles(flist);
-      ctrlRenderCommits(clist);
-      document.getElementById('ctrl-gh-section').style.display = 'block';
-      agregarLog(`✅ Control GH: ${repo}`,'success');
-    } catch(e) {
-      ctrlSetPill('ctrl-pill-gh','error');
-      agregarLog(`❌ Control GH: ${e.message}`,'error');
-    }
-  };
+async function ctrlUpdateCaption() {
+  if (!ctrlCurrentPostId) return;
+  var caption = document.getElementById('ctrl-modal-ta').value;
+  var btn = document.getElementById('ctrl-btn-save-caption');
+  btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    var r = await fetch('https://graph.instagram.com/'+ctrlCurrentPostId+'?caption='+encodeURIComponent(caption)+'&access_token='+ctrlCreds.igToken, {method:'POST'});
+    var d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    agregarLog('✅ Caption actualizado','success');
+    document.getElementById('ctrl-modal').style.display='none';
+  } catch(e) { agregarLog('❌ Caption: '+e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Actualizar'; }
+}
 
-  const ICONS = {py:'🐍',js:'🟨',ts:'🔷',json:'📋',md:'📝',txt:'📄',yml:'⚙️',yaml:'⚙️',sh:'💻',html:'🌐',css:'🎨',toml:'⚙️'};
-  function ctrlRenderFiles(files) {
-    const el = document.getElementById('ctrl-file-list');
-    el.innerHTML = '';
-    files.forEach(f => {
-      const ext = f.name.split('.').pop()?.toLowerCase()||'';
-      const icon = f.type==='dir'?'📁':(ICONS[ext]||'📄');
-      const item = document.createElement('div');
-      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(39,39,42,.5);';
-      item.innerHTML = `<span style="font-size:13px;">${icon}</span><span style="font-size:11px;color:#e4e4e7;font-family:Share Tech Mono,monospace;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.name}</span><span style="font-size:9px;color:#52525b;">${f.type==='file'?(f.size/1024).toFixed(1)+' KB':'dir'}</span>`;
-      item.onmouseover = () => item.style.background='rgba(39,39,42,.6)';
-      item.onmouseout  = () => item.style.background='transparent';
-      item.onclick = () => ctrlLoadFile(f, item);
-      el.appendChild(item);
-    });
-  }
+async function ctrlConnectGH() {
+  var repo = ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
+  if (!ctrlCreds.ghToken) { agregarLog('❌ Falta GitHub Token','error'); return; }
+  ctrlSetPill('ctrl-pill-gh','loading');
+  agregarLog('🔄 Conectando GitHub: '+repo+'…');
+  var h = { Authorization:'token '+ctrlCreds.ghToken, Accept:'application/vnd.github.v3+json' };
+  try {
+    var fr = await fetch('https://api.github.com/repos/'+repo+'/contents',{headers:h});
+    var cr = await fetch('https://api.github.com/repos/'+repo+'/commits?per_page=8',{headers:h});
+    var files = await fr.json(); var commits = await cr.json();
+    if (files.message) throw new Error(files.message);
+    ctrlSetPill('ctrl-pill-gh','live');
+    document.getElementById('ctrl-card-gh').style.borderColor='rgba(16,185,129,.4)';
+    document.getElementById('ctrl-gh-files').textContent = (Array.isArray(files)?files.length:0)+' archivos';
+    document.getElementById('ctrl-gh-commits').textContent = (Array.isArray(commits)?commits.length:0)+' commits';
+    ctrlRenderFiles(Array.isArray(files)?files:[]);
+    ctrlRenderCommits(Array.isArray(commits)?commits:[]);
+    document.getElementById('ctrl-gh-section').style.display='block';
+    agregarLog('✅ GitHub: '+repo,'success');
+  } catch(e) { ctrlSetPill('ctrl-pill-gh','error'); agregarLog('❌ GH: '+e.message,'error'); }
+}
 
-  async function ctrlLoadFile(f, itemEl) {
-    if (f.type !== 'file') return;
-    document.querySelectorAll('#ctrl-file-list > div').forEach(i => i.style.background='transparent');
-    itemEl.style.background = '#27272a';
-    ctrlCurrentFile = f;
-    ctrlEditMode = false;
-    const card = document.getElementById('ctrl-editor-card');
-    const ta = document.getElementById('ctrl-editor-ta');
-    const footer = document.getElementById('ctrl-editor-footer');
-    card.style.display = 'block';
-    document.getElementById('ctrl-editor-path').textContent = f.path;
-    ta.value = 'Cargando…'; ta.readOnly = true;
-    footer.style.display = 'none';
-    document.getElementById('ctrl-btn-edit').textContent = 'Editar';
-    agregarLog(`📄 Cargando: ${f.name}…`);
-    const repo = ctrlCreds.ghRepo || 'kakuzu003-afk/bot-social';
-    try {
-      const r = await fetch(`https://api.github.com/repos/${repo}/contents/${f.path}`, {
-        headers: { Authorization:`token ${ctrlCreds.ghToken}`, Accept:'application/vnd.github.v3+json' }
-      });
-      const d = await r.json();
-      ta.value = atob(d.content.replace(/
-/g,''));
-      ctrlCurrentFile.sha = d.sha;
-      agregarLog(`✅ ${f.name} cargado`,'success');
-    } catch(e) {
-      ta.value = 'Error: ' + e.message;
-      agregarLog(`❌ ${e.message}`,'error');
-    }
-  }
+var FICONS={py:'🐍',js:'🟨',ts:'🔷',json:'📋',md:'📝',txt:'📄',yml:'⚙️',yaml:'⚙️',sh:'💻',html:'🌐',css:'🎨',toml:'⚙️'};
+function ctrlRenderFiles(files) {
+  var el=document.getElementById('ctrl-file-list'); el.innerHTML='';
+  files.forEach(function(f){
+    var ext=(f.name.split('.').pop()||'').toLowerCase();
+    var icon=f.type==='dir'?'📁':(FICONS[ext]||'📄');
+    var item=document.createElement('div');
+    item.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;border-bottom:1px solid rgba(39,39,42,.5);';
+    item.innerHTML='<span style="font-size:13px">'+icon+'</span><span style="font-size:11px;color:#e4e4e7;font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+f.name+'</span><span style="font-size:9px;color:#52525b;">'+(f.type==='file'?(f.size/1024).toFixed(1)+' KB':'dir')+'</span>';
+    item.onmouseover=function(){item.style.background='rgba(39,39,42,.6)';};
+    item.onmouseout=function(){item.style.background='transparent';};
+    item.onclick=function(){ctrlLoadFile(f,item);};
+    el.appendChild(item);
+  });
+}
 
-  window.ctrlToggleEdit = function() {
-    ctrlEditMode = !ctrlEditMode;
-    const ta = document.getElementById('ctrl-editor-ta');
-    const footer = document.getElementById('ctrl-editor-footer');
-    ta.readOnly = !ctrlEditMode;
-    footer.style.display = ctrlEditMode ? 'flex' : 'none';
-    if (ctrlEditMode) footer.style.flexDirection = 'column';
-    document.getElementById('ctrl-btn-edit').textContent = ctrlEditMode ? 'Vista previa' : 'Editar';
-  };
+async function ctrlLoadFile(f,itemEl) {
+  if(f.type!=='file') return;
+  document.querySelectorAll('#ctrl-file-list>div').forEach(function(i){i.style.background='transparent';});
+  itemEl.style.background='#27272a';
+  ctrlCurrentFile=f; ctrlEditMode=false;
+  var card=document.getElementById('ctrl-editor-card');
+  var ta=document.getElementById('ctrl-editor-ta');
+  card.style.display='block';
+  document.getElementById('ctrl-editor-path').textContent=f.path;
+  document.getElementById('ctrl-editor-footer').style.display='none';
+  document.getElementById('ctrl-btn-edit').textContent='Editar';
+  ta.readOnly=true; ta.value='Cargando…';
+  agregarLog('📄 Cargando: '+f.name+'…');
+  var repo=ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
+  try {
+    var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+f.path,{headers:{Authorization:'token '+ctrlCreds.ghToken,Accept:'application/vnd.github.v3+json'}});
+    var d=await r.json();
+    ta.value=atob(d.content.replace(/\n/g,''));
+    ctrlCurrentFile.sha=d.sha;
+    agregarLog('✅ '+f.name+' listo','success');
+  } catch(e){ ta.value='Error: '+e.message; agregarLog('❌ '+e.message,'error'); }
+}
 
-  window.ctrlDoCommit = async function() {
-    if (!ctrlCurrentFile) return;
-    const msg = document.getElementById('ctrl-commit-msg').value.trim();
-    if (!msg) { agregarLog('❌ Escribe un mensaje de commit','error'); return; }
-    const btn = document.getElementById('ctrl-btn-commit');
-    btn.disabled = true; btn.textContent = 'Guardando…';
-    agregarLog(`🔄 Commit: ${ctrlCurrentFile.name}…`);
-    const repo = ctrlCreds.ghRepo || 'kakuzu003-afk/bot-social';
-    try {
-      const content = btoa(unescape(encodeURIComponent(document.getElementById('ctrl-editor-ta').value)));
-      const r = await fetch(`https://api.github.com/repos/${repo}/contents/${ctrlCurrentFile.path}`, {
-        method:'PUT',
-        headers: { Authorization:`token ${ctrlCreds.ghToken}`, 'Content-Type':'application/json' },
-        body: JSON.stringify({ message:msg, content, sha:ctrlCurrentFile.sha })
-      });
-      const d = await r.json();
-      if (d.message && !d.content) throw new Error(d.message);
-      agregarLog(`✅ Commit: "${msg}"`,'success');
-      document.getElementById('ctrl-commit-msg').value = '';
-      ctrlToggleEdit();
-    } catch(e) {
-      agregarLog(`❌ Commit: ${e.message}`,'error');
-    } finally { btn.disabled=false; btn.textContent='Hacer commit'; }
-  };
+function ctrlToggleEdit() {
+  ctrlEditMode=!ctrlEditMode;
+  var ta=document.getElementById('ctrl-editor-ta');
+  var footer=document.getElementById('ctrl-editor-footer');
+  ta.readOnly=!ctrlEditMode;
+  footer.style.display=ctrlEditMode?'flex':'none';
+  if(ctrlEditMode) footer.style.flexDirection='column';
+  document.getElementById('ctrl-btn-edit').textContent=ctrlEditMode?'Vista previa':'Editar';
+}
 
-  function ctrlRenderCommits(commits) {
-    const el = document.getElementById('ctrl-commits');
-    el.innerHTML = '';
-    commits.forEach(c => {
-      const div = document.createElement('div');
-      div.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(39,39,42,.5);';
-      div.innerHTML = `<code style="font-size:9px;color:#10b981;font-family:Share Tech Mono,monospace;flex-shrink:0;margin-top:2px;">${c.sha.slice(0,7)}</code><div style="min-width:0;flex:1;"><div style="font-size:11px;color:#d4d4d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.commit.message}</div><div style="font-size:9px;color:#52525b;">${c.commit.author.name} · ${new Date(c.commit.author.date).toLocaleDateString('es-CL')}</div></div>`;
-      el.appendChild(div);
-    });
-  }
+async function ctrlDoCommit() {
+  if(!ctrlCurrentFile) return;
+  var msg=document.getElementById('ctrl-commit-msg').value.trim();
+  if(!msg){ agregarLog('❌ Escribe un mensaje de commit','error'); return; }
+  var btn=document.getElementById('ctrl-btn-commit');
+  btn.disabled=true; btn.textContent='Guardando…';
+  var repo=ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
+  try {
+    var encoded=btoa(unescape(encodeURIComponent(document.getElementById('ctrl-editor-ta').value)));
+    var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+ctrlCurrentFile.path,{method:'PUT',headers:{Authorization:'token '+ctrlCreds.ghToken,'Content-Type':'application/json'},body:JSON.stringify({message:msg,content:encoded,sha:ctrlCurrentFile.sha})});
+    var d=await r.json();
+    if(d.message&&!d.content) throw new Error(d.message);
+    agregarLog('✅ Commit: "'+msg+'"','success');
+    document.getElementById('ctrl-commit-msg').value='';
+    ctrlToggleEdit();
+  } catch(e){ agregarLog('❌ Commit: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='Hacer commit'; }
+}
 
-  // Init cuando el DOM esté listo
-  document.addEventListener('DOMContentLoaded', ctrlInitFields);
-})();
+function ctrlRenderCommits(commits) {
+  var el=document.getElementById('ctrl-commits'); el.innerHTML='';
+  commits.forEach(function(c){
+    var div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(39,39,42,.5);';
+    div.innerHTML='<code style="font-size:9px;color:#10b981;font-family:monospace;flex-shrink:0;">'+c.sha.slice(0,7)+'</code><div style="min-width:0;flex:1;"><div style="font-size:11px;color:#d4d4d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+c.commit.message+'</div><div style="font-size:9px;color:#52525b;">'+c.commit.author.name+' · '+new Date(c.commit.author.date).toLocaleDateString('es-CL')+'</div></div>';
+    el.appendChild(div);
+  });
+}
 
 </script>
 </body>
