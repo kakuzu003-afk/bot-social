@@ -3846,15 +3846,23 @@ async function ctrlConnectIG() {
   ctrlSetPill('ctrl-pill-ig','loading');
   agregarLog('🔄 Conectando Instagram…');
   try {
-    var res = await fetch('https://graph.instagram.com/'+ctrlCreds.igUserId+'?fields=id,username,followers_count,media_count,biography,profile_picture_url&access_token='+ctrlCreds.igToken);
+    // Intentar primero con graph.facebook.com (tokens de Meta/Facebook app)
+    var baseUrl = 'https://graph.facebook.com/v21.0/';
+    var res = await fetch(baseUrl+ctrlCreds.igUserId+'?fields=id,username,followers_count,media_count,biography,profile_picture_url&access_token='+ctrlCreds.igToken);
     var d = await res.json();
+    // Si falla con facebook, intentar con instagram
+    if (d.error) {
+      agregarLog('⚠️ Probando endpoint alternativo...','warning');
+      res = await fetch('https://graph.instagram.com/v21.0/'+ctrlCreds.igUserId+'?fields=id,username,followers_count,media_count,biography,profile_picture_url&access_token='+ctrlCreds.igToken);
+      d = await res.json();
+    }
     if (d.error) throw new Error(d.error.message);
     ctrlSetPill('ctrl-pill-ig','live');
     document.getElementById('ctrl-card-ig').style.borderColor='rgba(236,72,153,.4)';
-    document.getElementById('ctrl-ig-user').textContent = '@'+d.username;
+    document.getElementById('ctrl-ig-user').textContent = '@'+(d.username||d.name||'cuenta');
     document.getElementById('ctrl-ig-stats').textContent = (d.followers_count||0).toLocaleString('es-CL')+' seg · '+(d.media_count||0)+' posts';
     agregarLog('✅ IG conectado: @'+d.username,'success');
-    var mr = await fetch('https://graph.instagram.com/'+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
+    var mr = await fetch(baseUrl+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
     var md = await mr.json();
     if (md.data) { ctrlRenderMedia(md.data); document.getElementById('ctrl-ig-section').style.display='block'; agregarLog('📸 '+md.data.length+' posts cargados','success'); }
   } catch(e) { ctrlSetPill('ctrl-pill-ig','error'); agregarLog('❌ IG: '+e.message,'error'); }
@@ -3887,7 +3895,7 @@ async function ctrlUpdateCaption() {
   var btn = document.getElementById('ctrl-btn-save-caption');
   btn.disabled=true; btn.textContent='Guardando…';
   try {
-    var r = await fetch('https://graph.instagram.com/'+ctrlCurrentPostId+'?caption='+encodeURIComponent(caption)+'&access_token='+ctrlCreds.igToken, {method:'POST'});
+    var r = await fetch('https://graph.facebook.com/v21.0/'+ctrlCurrentPostId+'?caption='+encodeURIComponent(caption)+'&access_token='+ctrlCreds.igToken, {method:'POST'});
     var d = await r.json();
     if (d.error) throw new Error(d.error.message);
     agregarLog('✅ Caption actualizado','success');
