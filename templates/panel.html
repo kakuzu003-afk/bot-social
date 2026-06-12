@@ -7,22 +7,24 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid #27272a; }
   :root {
-    --bg: #09090b; --surface: #18181b; --border: #27272a;
-    --zinc4: #a1a1aa; --zinc5: #71717a; --zinc6: #52525b;
-    --white: #ffffff; --emerald: #10b981; --pink: #ec4899;
-    --purple: #a855f7; --yellow: #fbbf24; --red: #ef4444;
+    --bg: #080008; --surface: #120010; --border: #3d0018;
+    --zinc4: #ffb090; --zinc5: #cc7050; --zinc6: #8b4030;
+    --white: #ffd0b0; --emerald: #6ee7b7; --pink: #ff6030;
+    --purple: #dc3c14; --yellow: #fb923c; --red: #ef4444;
     --font: 'IBM Plex Mono', 'Fira Code', 'Courier New', monospace;
   }
-  body { background: var(--bg); color: var(--white); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
+  body { background: var(--bg); color: var(--white); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; font-size: 14px; }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse 70% 50% at 85% 100%, rgba(220,60,20,0.2) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 10% 80%, rgba(160,20,40,0.14) 0%, transparent 55%), radial-gradient(ellipse 40% 30% at 50% 0%, rgba(80,0,30,0.1) 0%, transparent 60%); }
+  body > * { position: relative; z-index: 1; }
 
   /* HEADER */
   header { border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
   .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-badge { width: 24px; height: 24px; background: var(--emerald); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #000; }
-  .logo-text { font-size: 13px; font-weight: 600; letter-spacing: -0.025em; }
+  .logo-badge { width: 24px; height: 24px; background: linear-gradient(135deg, #dc3c14, #ff6030); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; box-shadow: 0 0 12px rgba(220,60,20,0.5); }
+  .logo-text { font-size: 14px; font-weight: 600; letter-spacing: -0.025em; }
   .logo-text span { color: var(--zinc6); }
   .header-status { display: flex; gap: 12px; }
-  .dot-status { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .dot-status { display: flex; align-items: center; gap: 6px; font-size: 12px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--zinc6); }
   .dot.live { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
   .dot.error { background: var(--red); }
@@ -31,9 +33,9 @@
 
   /* NAV */
   nav { border-bottom: 1px solid var(--border); padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
-  .nav-btn { display: flex; align-items: center; gap: 6px; padding: 10px 12px; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; border-bottom: 2px solid transparent; color: var(--zinc5); background: none; font-family: var(--font); transition: color .15s; margin-bottom: -1px; }
+  .nav-btn { display: flex; align-items: center; gap: 6px; padding: 10px 12px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; border-bottom: 2px solid transparent; color: var(--zinc5); background: none; font-family: var(--font); transition: color .15s; margin-bottom: -1px; }
   .nav-btn:hover { color: var(--zinc4); }
-  .nav-btn.active { border-bottom-color: var(--white); color: var(--white); }
+  .nav-btn.active { border-bottom-color: var(--pink); color: var(--white); text-shadow: 0 0 10px rgba(255,96,48,0.5); }
   .nav-icon { font-size: 14px; line-height: 1; }
 
   /* MAIN */
@@ -45,32 +47,32 @@
 
   /* CARDS */
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--zinc5); font-weight: 500; margin-bottom: 12px; }
+  .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--zinc4); font-weight: 500; margin-bottom: 12px; }
 
   /* GRID 2 */
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 
   /* STATUS CARD */
   .status-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color .15s; }
-  .status-card:hover { border-color: #3f3f46; }
-  .status-card.ig-connected { border-color: rgba(236,72,153,.3); }
-  .status-card.gh-connected { border-color: rgba(16,185,129,.3); }
+  .status-card:hover { border-color: rgba(220,60,20,0.3); }
+  .status-card.ig-connected { border-color: rgba(255,96,48,.4); box-shadow: 0 0 12px rgba(255,96,48,0.08); }
+  .status-card.gh-connected { border-color: rgba(110,231,183,.25); }
   .status-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .service-badge { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
   .ig-badge { background: linear-gradient(135deg, #a855f7, #ec4899, #fb923c); color: #fff; }
-  .gh-badge { background: #3f3f46; color: #fff; }
+  .gh-badge { background: #2d0010; color: #ffb090; border: 1px solid rgba(220,60,20,0.35); }
   .status-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
-  .pill-idle { background: rgba(82,82,91,.3); color: var(--zinc4); }
-  .pill-loading { background: rgba(251,191,36,.2); color: var(--yellow); }
-  .pill-live { background: rgba(16,185,129,.2); color: var(--emerald); }
+  .pill-idle { background: rgba(139,64,48,.25); color: var(--zinc4); }
+  .pill-loading { background: rgba(251,146,60,.2); color: var(--yellow); }
+  .pill-live { background: rgba(110,231,183,.12); color: var(--emerald); border: 1px solid rgba(110,231,183,.2); }
   .pill-error { background: rgba(239,68,68,.2); color: var(--red); }
-  .status-label { font-size: 11px; color: var(--zinc5); margin-bottom: 2px; }
-  .status-value { font-size: 13px; color: var(--white); font-weight: 600; }
-  .status-sub { font-size: 10px; color: var(--zinc5); margin-top: 2px; }
+  .status-label { font-size: 12px; color: var(--zinc5); margin-bottom: 2px; }
+  .status-value { font-size: 14px; color: var(--white); font-weight: 600; }
+  .status-sub { font-size: 11px; color: var(--zinc5); margin-top: 2px; }
 
   /* LOG */
   .log-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-  .log-entry { font-size: 10px; font-family: var(--font); padding: 2px 0; }
+  .log-entry { font-size: 12px; font-family: var(--font); padding: 3px 0; }
   .log-info { color: var(--zinc4); }
   .log-success { color: var(--emerald); }
   .log-error { color: var(--red); }
@@ -81,24 +83,24 @@
   .commit-list { display: flex; flex-direction: column; gap: 0; }
   .commit-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(39,39,42,.5); }
   .commit-item:last-child { border-bottom: none; }
-  .commit-sha { font-size: 10px; color: var(--emerald); font-family: var(--font); flex-shrink: 0; margin-top: 2px; }
-  .commit-msg { font-size: 12px; color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-  .commit-meta { font-size: 10px; color: var(--zinc6); margin-top: 2px; }
+  .commit-sha { font-size: 11px; color: var(--yellow); font-family: var(--font); flex-shrink: 0; margin-top: 2px; text-shadow: 0 0 8px rgba(251,146,60,0.5); }
+  .commit-msg { font-size: 13px; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .commit-meta { font-size: 11px; color: var(--zinc5); margin-top: 2px; }
 
   /* INSTAGRAM PANEL */
-  .ig-profile { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface); border: 1px solid rgba(236,72,153,.2); border-radius: 12px; margin-bottom: 12px; }
+  .ig-profile { display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface); border: 1px solid rgba(255,96,48,.25); border-radius: 12px; margin-bottom: 12px; }
   .ig-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
   .ig-avatar-placeholder { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg,#a855f7,#ec4899,#fb923c); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: #fff; flex-shrink: 0; }
   .ig-info { flex: 1; min-width: 0; }
   .ig-username { font-weight: 700; font-size: 13px; }
-  .ig-bio { font-size: 11px; color: var(--zinc4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .ig-bio { font-size: 12px; color: var(--zinc4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
   .ig-stats { display: flex; gap: 14px; margin-top: 6px; }
-  .ig-stat { font-size: 11px; color: var(--zinc5); }
+  .ig-stat { font-size: 12px; color: var(--zinc4); }
   .ig-stat strong { color: var(--white); }
 
   /* MEDIA GRID */
   .media-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .media-thumb { aspect-ratio: 1; background: #27272a; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; }
+  .media-thumb { aspect-ratio: 1; background: #1a0010; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; }
   .media-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .media-thumb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.6); opacity: 0; transition: opacity .15s; display: flex; align-items: center; justify-content: center; }
   .media-thumb:hover .media-thumb-overlay { opacity: 1; }
@@ -109,62 +111,62 @@
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: none; align-items: flex-end; justify-content: center; z-index: 100; padding: 16px; }
   .modal-overlay.open { display: flex; }
   @media(min-width:600px){ .modal-overlay { align-items: center; } }
-  .modal { background: #18181b; border: 1px solid #3f3f46; border-radius: 16px; width: 100%; max-width: 480px; padding: 18px; }
+  .modal { background: #120010; border: 1px solid #3d0018; border-radius: 16px; width: 100%; max-width: 480px; padding: 18px; }
   .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .modal-title { font-weight: 600; font-size: 14px; }
+  .modal-title { font-weight: 600; font-size: 15px; color: var(--white); }
   .modal-close { color: var(--zinc5); background: none; cursor: pointer; font-size: 20px; line-height: 1; font-family: var(--font); }
   .modal-close:hover { color: var(--white); }
-  .modal-id { font-size: 10px; color: var(--zinc6); font-family: var(--font); word-break: break-all; margin-bottom: 10px; }
+  .modal-id { font-size: 11px; color: var(--zinc5); font-family: var(--font); word-break: break-all; margin-bottom: 10px; }
 
   /* GITHUB PANEL */
   .file-list { max-height: 260px; overflow-y: auto; }
   .file-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; transition: background .1s; border-radius: 6px; }
-  .file-item:hover { background: rgba(39,39,42,.6); }
-  .file-item.active { background: #27272a; }
+  .file-item:hover { background: rgba(61,0,24,.6); }
+  .file-item.active { background: #2d0010; }
   .file-icon { font-size: 14px; flex-shrink: 0; }
-  .file-name { font-size: 12px; color: #e4e4e7; font-family: var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-  .file-size { font-size: 10px; color: var(--zinc6); flex-shrink: 0; }
+  .file-name { font-size: 13px; color: var(--white); font-family: var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .file-size { font-size: 11px; color: var(--zinc5); flex-shrink: 0; }
 
   .editor-area { display: flex; flex-direction: column; }
   .editor-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--border); }
   .editor-path { font-size: 10px; font-family: var(--font); color: #d4d4d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-  .editor-textarea { flex: 1; min-height: 180px; background: transparent; color: #d4d4d8; font-size: 11px; font-family: var(--font); padding: 12px; resize: none; outline: none; border: none; }
-  .editor-textarea:focus { background: rgba(39,39,42,.4); }
+  .editor-textarea { flex: 1; min-height: 180px; background: transparent; color: var(--white); font-size: 12px; font-family: var(--font); padding: 12px; resize: none; outline: none; border: none; }
+  .editor-textarea:focus { background: rgba(61,0,24,.3); }
   .editor-footer { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
 
   /* INPUTS */
-  .input { width: 100%; background: #27272a; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--white); font-family: var(--font); outline: none; }
-  .input:focus { border-color: var(--emerald); }
+  .input { width: 100%; background: #1a0015; border: 1px solid #3d0018; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--white); font-family: var(--font); outline: none; }
+  .input:focus { border-color: var(--pink); box-shadow: 0 0 0 2px rgba(255,96,48,0.15); }
   .input.ig-focus:focus { border-color: var(--pink); }
-  .textarea { width: 100%; background: #27272a; border: 1px solid #3f3f46; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--white); font-family: var(--font); outline: none; resize: none; }
-  .textarea:focus { border-color: var(--pink); }
-  label { display: block; font-size: 11px; color: var(--zinc4); margin-bottom: 4px; }
+  .textarea { width: 100%; background: #1a0015; border: 1px solid #3d0018; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--white); font-family: var(--font); outline: none; resize: none; }
+  .textarea:focus { border-color: var(--pink); box-shadow: 0 0 0 2px rgba(255,96,48,0.15); }
+  label { display: block; font-size: 12px; color: var(--zinc4); margin-bottom: 4px; }
   .form-group { margin-bottom: 10px; }
 
   /* BUTTONS */
-  .btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity .15s, background .15s; border: none; }
+  .btn { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: opacity .15s, background .15s; border: none; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .btn-white { background: var(--white); color: #000; }
-  .btn-white:hover:not(:disabled) { background: #e4e4e7; }
-  .btn-ig { background: linear-gradient(135deg, #9333ea, #db2777); color: #fff; }
-  .btn-ig:hover:not(:disabled) { opacity: .88; }
-  .btn-gh { background: #3f3f46; color: var(--white); }
-  .btn-gh:hover:not(:disabled) { background: #52525b; }
-  .btn-emerald { background: #059669; color: var(--white); width: 100%; }
-  .btn-emerald:hover:not(:disabled) { background: #10b981; }
+  .btn-white { background: var(--white); color: #100005; }
+  .btn-white:hover:not(:disabled) { background: #ffc0a0; }
+  .btn-ig { background: linear-gradient(135deg, #7c1010, #dc3c14, #ff5020); color: #fff; box-shadow: 0 0 14px rgba(220,60,20,0.3); }
+  .btn-ig:hover:not(:disabled) { opacity: .88; box-shadow: 0 0 20px rgba(220,60,20,0.5); }
+  .btn-gh { background: #2d0010; color: var(--white); border: 1px solid #3d0018; }
+  .btn-gh:hover:not(:disabled) { background: #3d0018; }
+  .btn-emerald { background: linear-gradient(135deg, #7c1010, #dc3c14); color: #fff; width: 100%; box-shadow: 0 0 12px rgba(220,60,20,0.25); }
+  .btn-emerald:hover:not(:disabled) { background: linear-gradient(135deg, #a01a1a, #ff4020); }
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn-row .btn { flex: 1; min-width: 130px; }
 
   /* LOADING SPINNER */
-  .spinner { width: 18px; height: 18px; border: 2px solid var(--emerald); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--pink); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; box-shadow: 0 0 8px rgba(255,96,48,0.4); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-center { display: flex; align-items: center; justify-content: center; padding: 30px; }
 
   /* EMPTY STATE */
   .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 12px; }
   .empty-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #fff; }
-  .empty-text { font-size: 13px; color: var(--zinc4); }
-  .empty-sub { font-size: 11px; color: var(--zinc6); text-align: center; }
+  .empty-text { font-size: 14px; color: var(--zinc4); }
+  .empty-sub { font-size: 12px; color: var(--zinc5); text-align: center; }
 
   /* SETTINGS */
   .section-header { margin-bottom: 16px; }
@@ -172,12 +174,12 @@
   .section-sub { font-size: 12px; color: var(--zinc4); }
   .conn-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
   .conn-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .conn-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+  .conn-name { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
 
   /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #4d1020; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -189,8 +191,8 @@
     <span class="logo-text">bot_social <span>panel</span></span>
   </div>
   <div class="header-status">
-    <div class="dot-status"><div class="dot" id="dot-ig"></div><span style="color:#71717a;font-size:11px">IG</span></div>
-    <div class="dot-status"><div class="dot" id="dot-gh"></div><span style="color:#71717a;font-size:11px">GH</span></div>
+    <div class="dot-status"><div class="dot" id="dot-ig"></div><span style="color:#cc7050;font-size:12px">IG</span></div>
+    <div class="dot-status"><div class="dot" id="dot-gh"></div><span style="color:#cc7050;font-size:12px">GH</span></div>
   </div>
 </header>
 
@@ -282,7 +284,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div>
           <div style="font-size:16px;font-weight:600">bot-social</div>
-          <div style="font-size:12px;color:#71717a" id="gh-repo-label">kakuzu003-afk/bot-social</div>
+          <div style="font-size:13px;color:var(--zinc5)" id="gh-repo-label">—</div>
         </div>
         <span class="status-pill pill-live">● Live</span>
       </div>
@@ -324,7 +326,7 @@
     <div class="conn-card">
       <div class="conn-card-header">
         <div class="conn-name"><div class="service-badge ig-badge" style="width:28px;height:28px;font-size:10px">IG</div>Instagram Graph API</div>
-        <div class="dot-status"><div class="dot" id="dot-ig-s"></div><span style="font-size:10px;color:#71717a" id="lbl-ig-s">Sin conectar</span></div>
+        <div class="dot-status"><div class="dot" id="dot-ig-s"></div><span style="font-size:12px;color:#cc7050" id="lbl-ig-s">Sin conectar</span></div>
       </div>
       <div class="form-group">
         <label>Access Token</label>
@@ -339,7 +341,7 @@
     <div class="conn-card">
       <div class="conn-card-header">
         <div class="conn-name"><div class="service-badge gh-badge" style="width:28px;height:28px;font-size:10px">GH</div>GitHub Repositorio</div>
-        <div class="dot-status"><div class="dot" id="dot-gh-s"></div><span style="font-size:10px;color:#71717a" id="lbl-gh-s">Sin conectar</span></div>
+        <div class="dot-status"><div class="dot" id="dot-gh-s"></div><span style="font-size:12px;color:#cc7050" id="lbl-gh-s">Sin conectar</span></div>
       </div>
       <div class="form-group">
         <label>GitHub Token (Personal Access Token)</label>
@@ -347,7 +349,7 @@
       </div>
       <div class="form-group">
         <label>Repositorio (usuario/repo)</label>
-        <input class="input" type="text" id="cfg-gh-repo" placeholder="kakuzu003-afk/bot-social">
+        <input class="input" type="text" id="cfg-gh-repo" placeholder="usuario/repositorio">
       </div>
     </div>
 
@@ -394,7 +396,7 @@ function saveCreds() {
   creds.igToken   = document.getElementById('cfg-ig-token').value.trim();
   creds.igUserId  = document.getElementById('cfg-ig-userid').value.trim();
   creds.ghToken   = document.getElementById('cfg-gh-token').value.trim();
-  creds.ghRepo    = document.getElementById('cfg-gh-repo').value.trim() || 'kakuzu003-afk/bot-social';
+  creds.ghRepo    = document.getElementById('cfg-gh-repo').value.trim() || '';
   localStorage.setItem(STORAGE_KEY, JSON.stringify(creds));
   addLog('✅ Credenciales guardadas', 'success');
 }
@@ -402,7 +404,7 @@ function initFields() {
   document.getElementById('cfg-ig-token').value  = creds.igToken  || '';
   document.getElementById('cfg-ig-userid').value = creds.igUserId || '';
   document.getElementById('cfg-gh-token').value  = creds.ghToken  || '';
-  document.getElementById('cfg-gh-repo').value   = creds.ghRepo   || 'kakuzu003-afk/bot-social';
+  document.getElementById('cfg-gh-repo').value   = creds.ghRepo   || '';
 }
 
 // ──────────────────────────────────────────
@@ -567,7 +569,7 @@ async function updateCaption() {
 // GITHUB
 // ──────────────────────────────────────────
 async function connectGH() {
-  const repo = creds.ghRepo || 'kakuzu003-afk/bot-social';
+  const repo = creds.ghRepo || '';
   if (!creds.ghToken) { addLog('❌ GitHub: Token faltante','error'); return; }
   setGHStatus('loading');
   addLog(`🔄 Conectando a GitHub: ${repo}…`);
