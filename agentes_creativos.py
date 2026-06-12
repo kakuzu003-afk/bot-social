@@ -1,6 +1,5 @@
 import json
 import os
-from datetime import datetime
 from groq import Groq
 from motor_tendencias import MotorTendenciasChile
 

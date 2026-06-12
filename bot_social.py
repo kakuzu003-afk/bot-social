@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request, Response
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 import json
 import os
 import base64
@@ -9,21 +9,23 @@ import csv
 import io as io_module
 from datetime import datetime, timedelta
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import schedule
 import time
 import random
 from groq import Groq
 import requests as req
-from functools import wraps, lru_cache
+from functools import wraps
 from agentes_creativos import SuiteCreativaMultiAgente
 
 # Auto-instalar Pillow si no está disponible (necesario para overlay de texto en imágenes)
 try:
-    from PIL import Image
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
 except ImportError:
-    import subprocess, sys
+    import sys
     print("📦 Instalando Pillow...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow", "--quiet"])
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
     print("✅ Pillow instalado correctamente.")
 
 app = Flask(__name__)
@@ -1767,7 +1769,7 @@ def subir_video_a_cdn(video_path):
             result = cloudinary.uploader.upload(video_path, resource_type="video", folder="reels")
             url = result.get("secure_url")
             if url:
-                log(f"☁️ Video subido a Cloudinary ✅", "success")
+                log("☁️ Video subido a Cloudinary ✅", "success")
                 return url
         except Exception as e:
             log(f"⚠️ Error subiendo a Cloudinary: {e}", "warning")
@@ -1802,7 +1804,7 @@ def publicar_reel_instagram(video_path, caption, cliente_id="aurakey"):
         if not container_id:
             log(f"❌ Error creando contenedor Reel: {res.json()}", "error")
             return False
-        log(f"⏳ Esperando que Meta procese el video...", "info")
+        log("⏳ Esperando que Meta procese el video...", "info")
         listo = False
         # ⚡ Polling adaptativo para Reels: empieza en 4s, sube gradualmente
         tiempos_espera_reel = [4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 10]
@@ -1852,9 +1854,7 @@ def aplicar_overlay_texto(imagen_path, texto, posicion='center', glow_color='#00
     calcularlos automaticamente. Lo que el usuario vio en preview es lo que sale.
     """
     try:
-        from PIL import Image, ImageDraw, ImageFont, ImageFilter
         import textwrap
-
         img = Image.open(imagen_path).convert("RGBA")
         w, h = img.size
 
@@ -2014,7 +2014,7 @@ def subir_imgbb(filepath):
         res = http_session.post("https://api.imgbb.com/1/upload", data={"key": imgbb_key, "image": img_b64})
         url = res.json().get("data", {}).get("url")
         if url:
-            log(f"☁️ Imagen subida a ImgBB ✅", "success")
+            log("☁️ Imagen subida a ImgBB ✅", "success")
         return url
     except Exception as e:
         log(f"❌ Error subiendo a ImgBB: {e}", "error")
@@ -2044,7 +2044,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
         if not container_id:
             log(f"❌ Error creando contenedor: {res.json()}", "error")
             return False
-        log(f"⏳ Esperando que Meta procese la imagen...", "info")
+        log("⏳ Esperando que Meta procese la imagen...", "info")
         listo = False
         # ⚡ Polling adaptativo: empieza rápido (2s) y aumenta si Meta tarda
         tiempos_espera = [2, 2, 3, 3, 4, 4, 5, 5, 6, 6]
@@ -2063,7 +2063,7 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
                 log(f"❌ Meta rechazó la imagen: {check}", "error")
                 return False
         if not listo:
-            log(f"❌ Timeout: Meta no procesó la imagen.", "error")
+            log("❌ Timeout: Meta no procesó la imagen.", "error")
             return False
         log(f"🚀 Publicando en Instagram de {cliente['nombre']}...", "info")
         res2 = http_session.post(
@@ -2121,7 +2121,6 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         "tono": "profesional, vendedor, directo y confiable"
     }
     try:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
 
         # ⚡ OPTIMIZACIÓN: buscar_tendencias y normalizar_producto corren en PARALELO
         # Ahorro estimado: ~2-4s (antes eran secuenciales)
@@ -2147,7 +2146,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         tiene_ref = bool(imagen_referencia_url and isinstance(imagen_referencia_url, str) and imagen_referencia_url.startswith("http"))
 
         if tiene_ref:
-            log(f'💬 Generando caption + analizando imagen de referencia en paralelo...', 'info')
+            log('💬 Generando caption + analizando imagen de referencia en paralelo...', 'info')
             with ThreadPoolExecutor(max_workers=2) as executor:
                 fut_caption = executor.submit(
                     generar_post_estricto, prod_info, tendencias_reales, precio_manual,
@@ -2174,7 +2173,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         
         imagen_filepath = None
         imagen_url_publica = None
-        reel_generado = False
+        reel_generado = False  # Se actualiza al generar el video más adelante
 
         # Influencia 100% → usar la imagen de referencia directamente, sin IA
         if imagen_referencia_url and style_weight >= 1.0:
@@ -2206,10 +2205,10 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
         # prepara la entrada del borrador (ahorra ~1-2s de espera bloqueante)
         imagen_url_publica = None
         if imagen_filepath:
+            # Subir a ImgBB directamente — el with cierra el executor y espera el resultado
             with ThreadPoolExecutor(max_workers=1) as executor:
                 fut_imgbb = executor.submit(subir_imgbb, imagen_filepath)
-                # El resultado se recupera más adelante, no bloqueamos aquí
-            imagen_url_publica = fut_imgbb.result()
+                imagen_url_publica = fut_imgbb.result()  # Bloqueante dentro del with (correcto)
 
         # Nuevo flujo seguro: generar primero, publicar solo después de aprobación manual.
         publicado = False
@@ -2232,7 +2231,7 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
             'lower_third': lower_third or {},
             'extra_effects': extra_effects or [],
             'usar_watermark': usar_watermark,
-            'reel_generado': False,
+            'reel_generado': reel_generado,  # Error 8 fix: usar la variable correcta
             'con_referencia': bool(imagen_referencia_url),
             'fecha': datetime.now().strftime('%d/%m %H:%M')
         }
@@ -2286,7 +2285,7 @@ def api_subir_referencia():
     archivo.save(filepath)
     url = subir_imgbb(filepath)
     if url:
-        log(f"🖼️ Imagen de referencia subida ✅", "success")
+        log("🖼️ Imagen de referencia subida ✅", "success")
         return jsonify({'url': url})
     return jsonify({'error': 'No se pudo subir la imagen a ImgBB'}), 500
 
@@ -2625,7 +2624,7 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
         if publicado:
             log(f"✅ {'Reel' if modo == 'reel' else 'Post'} publicado en Instagram ✅", "success")
         else:
-            log(f"⚠️ Generado pero no publicado en Instagram.", "warning")
+            log("⚠️ Generado pero no publicado en Instagram.", "warning")
 
         # Guardar en historial del dashboard
         entrada = {
@@ -2646,11 +2645,13 @@ def publicar_imagen_propia_task(imagen_url, cliente_id, precio, modo, mood, over
         captions_guardados.insert(0, entrada)
         _db_save_caption(entrada)
         socketio.emit('caption', entrada)
+        # Error 4 fix: inicializar stats si el cliente_id no existe aún
+        if cliente_id not in stats_global:
+            stats_global[cliente_id] = {'posts': 0, 'ultimo_ciclo': '—', 'nombre': cliente_id}
         stats_global[cliente_id]['posts'] += 1
         stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
         _db_save_stats()
         socketio.emit('stats', stats_global)
-
     except Exception as e:
         log(f"❌ Error en publicar imagen propia: {e}", "error")
     finally:
@@ -2758,6 +2759,9 @@ def api_publicar_borrador():
         })
 
         if publicado:
+            # Error 5 fix: inicializar stats si el cliente_id no existe aún
+            if cliente_id not in stats_global:
+                stats_global[cliente_id] = {'posts': 0, 'ultimo_ciclo': '—', 'nombre': cliente_id}
             stats_global[cliente_id]['posts'] += 1
             stats_global[cliente_id]['ultimo_ciclo'] = datetime.now().strftime('%d/%m %H:%M')
             _db_save_stats()
@@ -3117,7 +3121,6 @@ def api_tendencias():
 def api_preview():
     """Genera una imagen de preview del Lower-Third sobre la imagen de referencia."""
     try:
-        from PIL import Image, ImageDraw, ImageFont
         data       = request.get_json() or {}
         img_url    = data.get('imagen_url','')
         titulo     = (data.get('titulo') or '').upper()
