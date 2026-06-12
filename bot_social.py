@@ -3325,6 +3325,26 @@ def api_insights(cliente_id):
 def panel():
     return render_template('panel.html')
 
+
+@app.route('/api/img_proxy')
+def img_proxy():
+    """Proxy de imágenes para evitar CORS con URLs de Instagram/CDN externo."""
+    url = request.args.get('url', '')
+    if not url or not url.startswith('http'):
+        return '', 400
+    try:
+        resp = req.get(url, timeout=10, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; SocialBot/1.0)'
+        })
+        from flask import make_response
+        r = make_response(resp.content)
+        r.headers['Content-Type'] = resp.headers.get('Content-Type', 'image/jpeg')
+        r.headers['Cache-Control'] = 'public, max-age=3600'
+        r.headers['Access-Control-Allow-Origin'] = '*'
+        return r
+    except Exception as e:
+        return str(e), 500
+
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")
     hilo_scheduler = threading.Thread(target=run_scheduler)
