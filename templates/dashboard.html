@@ -6,6 +6,7 @@
 <title>Social Bot Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <style>
 :root {
   --bg:     #06030f;
@@ -797,6 +798,156 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 ::-webkit-scrollbar { width:3px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
+
+/* ─── ANALYTICS PANEL ───────────────────────────────────── */
+.main-nav {
+  display:flex; gap:4px;
+  border-bottom:1px solid var(--border2);
+  margin-bottom:18px;
+  padding-bottom:0;
+}
+.main-nav-btn {
+  background:none; border:none; cursor:pointer;
+  font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+  color:var(--text2); padding:8px 16px;
+  border-bottom:2px solid transparent;
+  text-transform:uppercase; letter-spacing:.05em;
+  transition:color .15s, border-color .15s;
+}
+.main-nav-btn:hover { color:var(--text); }
+.main-nav-btn.active { color:var(--neon); border-bottom-color:var(--neon); text-shadow:0 0 12px var(--neon); }
+
+.main-panel { display:none; }
+.main-panel.active { display:block; }
+
+/* KPI Cards */
+.kpi-grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:20px;
+}
+@media(max-width:900px){ .kpi-grid{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:500px){ .kpi-grid{ grid-template-columns:1fr 1fr; } }
+
+.kpi-card {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px 18px;
+  position:relative;
+  overflow:hidden;
+}
+.kpi-card::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:2px;
+}
+.kpi-card.kpi-posts::before  { background:linear-gradient(90deg,var(--cyan),transparent); }
+.kpi-card.kpi-likes::before  { background:linear-gradient(90deg,var(--amber),transparent); }
+.kpi-card.kpi-ratio::before  { background:linear-gradient(90deg,var(--green),transparent); }
+.kpi-card.kpi-trend::before  { background:linear-gradient(90deg,var(--neon),transparent); }
+
+.kpi-label {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.12em;
+  margin-bottom:8px;
+}
+.kpi-value {
+  font-family:'Orbitron',monospace;
+  font-size:28px; font-weight:700; color:#fff;
+  line-height:1; margin-bottom:4px;
+}
+.kpi-card.kpi-posts  .kpi-value { text-shadow:0 0 20px rgba(0,229,255,0.6); }
+.kpi-card.kpi-likes  .kpi-value { text-shadow:0 0 20px rgba(255,192,64,0.6); }
+.kpi-card.kpi-ratio  .kpi-value { text-shadow:0 0 20px rgba(0,255,159,0.6); }
+.kpi-card.kpi-trend  .kpi-value { text-shadow:0 0 20px rgba(191,0,255,0.6); }
+.kpi-delta {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--text2);
+}
+.kpi-delta.up   { color:var(--green); }
+.kpi-delta.down { color:var(--red); }
+.kpi-icon {
+  position:absolute; right:14px; top:14px;
+  font-size:22px; opacity:.35;
+}
+
+/* Charts row */
+.charts-row {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-bottom:20px;
+}
+@media(max-width:768px){ .charts-row{ grid-template-columns:1fr; } }
+
+.chart-card {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:16px;
+}
+.chart-card-title {
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; color:var(--text2);
+  text-transform:uppercase; letter-spacing:.1em;
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:6px;
+}
+.chart-card-title span { color:var(--neon); }
+
+/* Tendencias activas */
+.trend-list { display:flex; flex-direction:column; gap:8px; }
+.trend-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:8px;
+}
+.trend-rank {
+  font-family:'Orbitron',monospace;
+  font-size:11px; font-weight:700;
+  color:var(--neon); min-width:20px;
+}
+.trend-name {
+  flex:1; font-size:13px; font-weight:600; color:#fff;
+}
+.trend-traffic {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--amber);
+  background:rgba(255,192,64,0.08);
+  border:1px solid rgba(255,192,64,0.2);
+  border-radius:99px; padding:2px 8px;
+}
+.trend-context {
+  font-size:10px; color:var(--text2);
+  margin-top:2px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  max-width:200px;
+}
+
+/* Estrategia tag */
+.estrategia-tag {
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  padding:2px 8px; border-radius:99px;
+  background:rgba(157,78,255,0.1);
+  border:1px solid rgba(157,78,255,0.3);
+  color:var(--purple);
+}
+
+/* Refresh btn */
+.btn-refresh-trends {
+  background:rgba(191,0,255,0.08);
+  border:1px solid rgba(191,0,255,0.25);
+  border-radius:6px; color:var(--neon);
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px; padding:4px 10px;
+  cursor:pointer; transition:all .2s;
+}
+.btn-refresh-trends:hover { background:rgba(191,0,255,0.18); }
 
 /* ─── MOBILE OVERLAY ─────────────────────── */
 .sidebar-overlay {
@@ -1655,23 +1806,95 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 
   <!-- ══════════ MAIN ══════════ -->
   <main class="main">
-    <div class="panel-header">
-      <div class="panel-title">📋 Logs en tiempo <span class="accent">real</span></div>
-    </div>
-    <div class="log-box" id="logBox">
-      <div class="log-line info">[SYSTEM] Panel iniciado correctamente ✅</div>
-    </div>
 
-    <div class="panel-header">
-      <div class="panel-title">✍️ Captions <span class="accent">generados</span></div>
-      <span class="count-badge" id="captionCount">0</span>
-    </div>
-    <div id="captionList">
-      <div class="empty-state">
-        <div class="empty-icon">⚡</div>
-        Ejecuta un ciclo para comenzar.<br>Usa búsqueda libre o selecciona un producto.
+    <!-- Navegación principal del área central -->
+    <nav class="main-nav">
+      <button class="main-nav-btn active" id="mnav-actividad" onclick="switchMainPanel('actividad')">⚡ Actividad</button>
+      <button class="main-nav-btn" id="mnav-analytics" onclick="switchMainPanel('analytics')">📊 Analytics Pro</button>
+    </nav>
+
+    <!-- PANEL: ACTIVIDAD (original) -->
+    <div class="main-panel active" id="mpanel-actividad">
+      <div class="panel-header">
+        <div class="panel-title">📋 Logs en tiempo <span class="accent">real</span></div>
+      </div>
+      <div class="log-box" id="logBox">
+        <div class="log-line info">[SYSTEM] Panel iniciado correctamente ✅</div>
+      </div>
+      <div class="panel-header">
+        <div class="panel-title">✍️ Captions <span class="accent">generados</span></div>
+        <span class="count-badge" id="captionCount">0</span>
+      </div>
+      <div id="captionList">
+        <div class="empty-state">
+          <div class="empty-icon">⚡</div>
+          Ejecuta un ciclo para comenzar.<br>Usa búsqueda libre o selecciona un producto.
+        </div>
       </div>
     </div>
+
+    <!-- PANEL: ANALYTICS PRO -->
+    <div class="main-panel" id="mpanel-analytics">
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-posts">
+          <div class="kpi-icon">📸</div>
+          <div class="kpi-label">Posts Publicados</div>
+          <div class="kpi-value" id="kpi-posts">0</div>
+          <div class="kpi-delta" id="kpi-posts-delta">Cargando...</div>
+        </div>
+        <div class="kpi-card kpi-likes">
+          <div class="kpi-icon">❤️</div>
+          <div class="kpi-label">Likes Totales</div>
+          <div class="kpi-value" id="kpi-likes">0</div>
+          <div class="kpi-delta" id="kpi-likes-delta">Cargando...</div>
+        </div>
+        <div class="kpi-card kpi-ratio">
+          <div class="kpi-icon">💬</div>
+          <div class="kpi-label">Comentarios</div>
+          <div class="kpi-value" id="kpi-comentarios">0</div>
+          <div class="kpi-delta" id="kpi-comentarios-delta">Cargando...</div>
+        </div>
+        <div class="kpi-card kpi-trend">
+          <div class="kpi-icon">🔥</div>
+          <div class="kpi-label">Tendencias Activas</div>
+          <div class="kpi-value" id="kpi-tendencias">0</div>
+          <div class="kpi-delta">En tiempo real • Chile</div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-title">📈 <span>Actividad</span> — Posts por hora del día</div>
+          <div id="chartActividad"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">🥧 <span>Distribución</span> — Tipos de contenido</div>
+          <div id="chartTipos"></div>
+        </div>
+      </div>
+
+      <!-- Tendencias en tiempo real -->
+      <div class="chart-card" style="margin-bottom:20px;">
+        <div class="chart-card-title" style="justify-content:space-between;">
+          <span>🔥 <span style="color:var(--neon)">Tendencias</span> — Google Trends Chile ahora</span>
+          <button class="btn-refresh-trends" onclick="cargarTendenciasAnalytics()">↻ Actualizar</button>
+        </div>
+        <div class="trend-list" id="trendList">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">Haz clic en Actualizar para cargar tendencias en tiempo real</div>
+        </div>
+      </div>
+
+      <!-- Estrategias usadas -->
+      <div class="chart-card">
+        <div class="chart-card-title">🧠 <span>Estrategias</span> — Director Creativo (sesión actual)</div>
+        <div id="chartEstrategias"></div>
+      </div>
+
+    </div><!-- /mpanel-analytics -->
+
   </main>
 
 </div><!-- /layout -->
@@ -2985,6 +3208,146 @@ function eliminarPerfil(profileId) {
       if (d.ok) { agregarLog('🗑 Perfil eliminado', 'warning'); cargarPerfiles(); }
     });
 }
+
+// ── Analytics Pro ───────────────────────────────────────
+let estrategiasContador = {};
+let actividadPorHora    = new Array(24).fill(0);
+let reelsCount = 0;
+let postsCount = 0;
+let chartActividadInst = null;
+let chartTiposInst     = null;
+let chartEstrategiasInst = null;
+
+function switchMainPanel(name) {
+  ['actividad','analytics'].forEach(n => {
+    document.getElementById('mnav-'+n).classList.toggle('active', n === name);
+    document.getElementById('mpanel-'+n).classList.toggle('active', n === name);
+  });
+  if (name === 'analytics') {
+    actualizarKPIs();
+    renderChartsAnalytics();
+  }
+}
+
+function actualizarKPIs() {
+  let p=0, c=0, l=0;
+  for (const k in statsData) {
+    p += statsData[k].posts        || 0;
+    c += statsData[k].comentarios  || 0;
+    l += statsData[k].likes        || 0;
+  }
+  document.getElementById('kpi-posts').textContent       = p;
+  document.getElementById('kpi-likes').textContent       = l;
+  document.getElementById('kpi-comentarios').textContent = c;
+
+  const ultimoCiclo = Object.values(statsData).map(s => s.ultimo_ciclo).filter(x => x && x !== 'Nunca')[0];
+  document.getElementById('kpi-posts-delta').textContent       = ultimoCiclo ? '⏱ Último: ' + ultimoCiclo : 'Sin actividad aún';
+  document.getElementById('kpi-likes-delta').textContent       = l > 0 ? '▲ Desde Instagram API' : 'Conecta Instagram API';
+  document.getElementById('kpi-comentarios-delta').textContent = c > 0 ? '▲ Desde Instagram API' : 'Conecta Instagram API';
+}
+
+function renderChartsAnalytics() {
+  // Gráfico 1: Actividad por hora
+  const apexOptions = {
+    chart: { type:'area', height:200, background:'transparent', toolbar:{show:false}, sparkline:{enabled:false} },
+    theme: { mode:'dark' },
+    series: [{ name:'Posts', data: actividadPorHora }],
+    xaxis: { categories: Array.from({length:24},(_,i)=>i+'h'), labels:{style:{colors:'#6b44a0',fontSize:'9px'}} },
+    yaxis: { labels:{style:{colors:'#6b44a0',fontSize:'9px'}}, min:0 },
+    colors: ['#00e5ff'],
+    fill:   { type:'gradient', gradient:{ shadeIntensity:1, opacityFrom:.5, opacityTo:.05, stops:[0,100] } },
+    stroke: { curve:'smooth', width:2 },
+    grid:   { borderColor:'#1e1040', strokeDashArray:3 },
+    tooltip:{ theme:'dark' },
+    dataLabels:{ enabled:false }
+  };
+  if (chartActividadInst) { chartActividadInst.updateSeries([{name:'Posts',data:actividadPorHora}]); }
+  else {
+    chartActividadInst = new ApexCharts(document.getElementById('chartActividad'), apexOptions);
+    chartActividadInst.render();
+  }
+
+  // Gráfico 2: Donut tipos de contenido
+  const donutOpts = {
+    chart: { type:'donut', height:200, background:'transparent', toolbar:{show:false} },
+    theme: { mode:'dark' },
+    series: [reelsCount || 1, postsCount || 1],
+    labels: ['Reels 🎬', 'Posts 📸'],
+    colors: ['#bf00ff','#00e5ff'],
+    legend: { position:'bottom', labels:{colors:'#6b44a0'} },
+    dataLabels: { style:{colors:['#fff']} },
+    plotOptions: { pie:{ donut:{ size:'65%', labels:{ show:true, total:{ show:true, label:'Total', color:'#6b44a0', fontSize:'10px' } } } } },
+    tooltip:{ theme:'dark' }
+  };
+  if (chartTiposInst) { chartTiposInst.updateSeries([reelsCount||1, postsCount||1]); }
+  else {
+    chartTiposInst = new ApexCharts(document.getElementById('chartTipos'), donutOpts);
+    chartTiposInst.render();
+  }
+
+  // Gráfico 3: Estrategias del Director Creativo
+  const estrategias = Object.keys(estrategiasContador);
+  const valores     = Object.values(estrategiasContador);
+  const barOpts = {
+    chart: { type:'bar', height:180, background:'transparent', toolbar:{show:false} },
+    theme: { mode:'dark' },
+    series: [{ name:'Usos', data: valores.length ? valores : [0] }],
+    xaxis: { categories: estrategias.length ? estrategias : ['Sin datos'], labels:{style:{colors:'#6b44a0',fontSize:'9px'}} },
+    yaxis: { labels:{style:{colors:'#6b44a0',fontSize:'9px'}}, min:0 },
+    colors: ['#9d4eff'],
+    plotOptions: { bar:{ borderRadius:4, horizontal:false } },
+    grid:   { borderColor:'#1e1040', strokeDashArray:3 },
+    tooltip:{ theme:'dark' },
+    dataLabels:{ enabled:false }
+  };
+  if (chartEstrategiasInst) { chartEstrategiasInst.updateSeries([{name:'Usos',data:valores.length?valores:[0]}]); chartEstrategiasInst.updateOptions({xaxis:{categories:estrategias.length?estrategias:['Sin datos']}}); }
+  else {
+    chartEstrategiasInst = new ApexCharts(document.getElementById('chartEstrategias'), barOpts);
+    chartEstrategiasInst.render();
+  }
+}
+
+async function cargarTendenciasAnalytics() {
+  const list = document.getElementById('trendList');
+  list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">⏳ Cargando tendencias de Chile...</div>';
+  document.getElementById('kpi-tendencias').textContent = '...';
+  try {
+    const res  = await fetch('/api/tendencias');
+    const data = await res.json();
+    const items = data.tendencias || [];
+    document.getElementById('kpi-tendencias').textContent = items.length;
+    if (!items.length) { list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">No se encontraron tendencias</div>'; return; }
+    list.innerHTML = items.map((t,i) => `
+      <div class="trend-item">
+        <span class="trend-rank">#${i+1}</span>
+        <div style="flex:1;min-width:0;">
+          <div class="trend-name">${t.termino}</div>
+          ${t.contexto ? `<div class="trend-context">${t.contexto}</div>` : ''}
+        </div>
+        <span class="trend-traffic">${t.trafico}</span>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--red);text-align:center;padding:20px;">❌ Error al cargar tendencias</div>';
+  }
+}
+
+// Interceptar captions para registrar estrategias y actividad
+const _origCaption = socket.listeners('caption')[0];
+socket.on('caption', d => {
+  const hora = new Date().getHours();
+  actividadPorHora[hora]++;
+  if (d.tipo_publicacion === 'reel') reelsCount++; else postsCount++;
+  // Registrar estrategia si viene en el caption
+  if (d.estrategia) {
+    const t = d.estrategia;
+    estrategiasContador[t] = (estrategiasContador[t] || 0) + 1;
+  }
+  // Actualizar KPIs si el panel está visible
+  if (document.getElementById('mpanel-analytics').classList.contains('active')) {
+    actualizarKPIs();
+    renderChartsAnalytics();
+  }
+});
 
 // Verificar token al cargar (silencioso — solo muestra banner si hay problema)
 setTimeout(() => {
