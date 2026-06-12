@@ -2094,7 +2094,7 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
         <!-- MEDIA GRID IG -->
         <div id="ctrl-ig-section" style="display:none;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:8px;" id="ctrl-media-label">Posts recientes</div>
-          <div id="ctrl-media-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+          <div id="ctrl-media-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;max-height:420px;overflow-y:auto;padding-right:2px;"></div>
         </div>
 
         <!-- GITHUB FILES + EDITOR -->
@@ -3862,9 +3862,23 @@ async function ctrlConnectIG() {
     document.getElementById('ctrl-ig-user').textContent = '@'+(d.username||d.name||'cuenta');
     document.getElementById('ctrl-ig-stats').textContent = (d.followers_count||0).toLocaleString('es-CL')+' seg · '+(d.media_count||0)+' posts';
     agregarLog('✅ IG conectado: @'+d.username,'success');
-    var mr = await fetch(baseUrl+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,cover_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
+    var mr = await fetch(baseUrl+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,cover_url,timestamp,like_count,comments_count,permalink&limit=50&access_token='+ctrlCreds.igToken);
     var md = await mr.json();
-    if (md.data) { ctrlRenderMedia(md.data); document.getElementById('ctrl-ig-section').style.display='block'; agregarLog('📸 '+md.data.length+' posts cargados','success'); }
+    if (md.data) {
+      ctrlRenderMedia(md.data);
+      document.getElementById('ctrl-ig-section').style.display='block';
+      agregarLog('📸 '+md.data.length+' posts cargados','success');
+      // Si hay más páginas, cargar siguiente
+      if (md.paging && md.paging.next) {
+        agregarLog('📄 Cargando más posts...');
+        var mr2 = await fetch(md.paging.next);
+        var md2 = await mr2.json();
+        if (md2.data && md2.data.length > 0) {
+          ctrlRenderMedia(md.data.concat(md2.data));
+          agregarLog('📸 Total: '+(md.data.length+md2.data.length)+' posts','success');
+        }
+      }
+    }
   } catch(e) { ctrlSetPill('ctrl-pill-ig','error'); agregarLog('❌ IG: '+e.message,'error'); }
 }
 
