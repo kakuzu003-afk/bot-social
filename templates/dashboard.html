@@ -3661,13 +3661,19 @@ let chartTiposInst     = null;
 let chartEstrategiasInst = null;
 
 function switchMainPanel(name) {
-  ['actividad','analytics'].forEach(n => {
-    document.getElementById('mnav-'+n).classList.toggle('active', n === name);
-    document.getElementById('mpanel-'+n).classList.toggle('active', n === name);
+  ['actividad','analytics','control'].forEach(n => {
+    const btn = document.getElementById('mnav-'+n);
+    const panel = document.getElementById('mpanel-'+n);
+    if (btn) btn.classList.toggle('active', n === name);
+    if (panel) panel.classList.toggle('active', n === name);
   });
   if (name === 'analytics') {
     actualizarKPIs();
     renderChartsAnalytics();
+  }
+  if (name === 'control') {
+    // Init credenciales si es la primera vez
+    try { ctrlInitFieldsExternal && ctrlInitFieldsExternal(); } catch(e) {}
   }
 }
 
