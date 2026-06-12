@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Social Bot Manager</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <style>
@@ -16,11 +16,17 @@
   --border: #1e1040;
   --border2:#2d1a5e;
   --cyan:   #bf00ff;
+  --cyan-raw: 191,0,255;
   --green:  #00ff9f;
+  --green-raw: 0,255,159;
   --amber:  #ff6ef7;
+  --amber-raw: 255,110,247;
   --red:    #ff2d6b;
+  --red-raw: 255,45,107;
   --purple: #9d4eff;
+  --purple-raw: 157,78,255;
   --neon:   #e040fb;
+  --neon-raw: 224,64,251;
   --neon2:  #7c3aed;
   --text:   #d4b8f0;
   --text2:  #6b44a0;
@@ -28,6 +34,9 @@
   --header-h: 56px;
   --sidebar-w: 300px;
   --tab-h: 44px;
+  /* Alias semánticos para colores de acento directo (cyan real = #00e5ff en algunos elementos legacy) */
+  --accent-cyan-hex: #00e5ff;
+  --accent-green-hex: #00e87a;
 }
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -799,6 +808,87 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
 
+/* ─── TOAST NOTIFICATIONS ──────────────────────────────── */
+#toast-container {
+  position:fixed; bottom:20px; right:20px;
+  z-index:9999;
+  display:flex; flex-direction:column; gap:8px;
+  pointer-events:none;
+}
+.toast {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 16px;
+  border-radius:10px;
+  font-family:'Share Tech Mono',monospace; font-size:11px;
+  backdrop-filter:blur(12px);
+  border:1px solid;
+  box-shadow:0 4px 24px rgba(0,0,0,0.4);
+  pointer-events:all;
+  animation: toastIn .25s cubic-bezier(.4,0,.2,1) forwards;
+  max-width:320px;
+}
+.toast.removing { animation: toastOut .25s cubic-bezier(.4,0,.2,1) forwards; }
+.toast.success { background:rgba(0,255,159,0.1); border-color:rgba(0,255,159,0.35); color:var(--green); }
+.toast.error   { background:rgba(255,45,107,0.1); border-color:rgba(255,45,107,0.35); color:var(--red); }
+.toast.info    { background:rgba(224,64,251,0.1); border-color:rgba(224,64,251,0.35); color:var(--neon); }
+.toast.warning { background:rgba(255,110,247,0.1); border-color:rgba(255,110,247,0.35); color:var(--amber); }
+.toast-icon { font-size:14px; flex-shrink:0; }
+.toast-msg  { flex:1; line-height:1.4; }
+.toast-close { cursor:pointer; opacity:.5; font-size:14px; flex-shrink:0; }
+.toast-close:hover { opacity:1; }
+@keyframes toastIn  { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(20px)} }
+
+/* ─── MODAL DE CONFIRMACIÓN ───────────────────────────── */
+#confirm-overlay {
+  display:none;
+  position:fixed; inset:0; z-index:8000;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+#confirm-overlay.visible { display:flex; }
+.confirm-box {
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:14px;
+  padding:24px 28px;
+  max-width:340px; width:90%;
+  box-shadow:0 0 40px rgba(191,0,255,0.25);
+  animation: toastIn .2s cubic-bezier(.4,0,.2,1) forwards;
+}
+.confirm-title {
+  font-family:'Orbitron',monospace;
+  font-size:13px; font-weight:700; color:#fff;
+  margin-bottom:10px;
+}
+.confirm-msg {
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px; color:var(--text2);
+  line-height:1.6; margin-bottom:20px;
+}
+.confirm-btns { display:flex; gap:8px; justify-content:flex-end; }
+.confirm-btn {
+  padding:7px 18px; border-radius:8px;
+  font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+  cursor:pointer; border:1px solid; transition:all .15s;
+}
+.confirm-btn.cancel {
+  background:transparent;
+  border-color:var(--border2); color:var(--text2);
+}
+.confirm-btn.cancel:hover { border-color:var(--text2); color:#fff; }
+.confirm-btn.danger {
+  background:rgba(255,45,107,0.15);
+  border-color:rgba(255,45,107,0.5); color:var(--red);
+}
+.confirm-btn.danger:hover { background:rgba(255,45,107,0.3); }
+.confirm-btn.ok {
+  background:rgba(224,64,251,0.15);
+  border-color:rgba(224,64,251,0.5); color:var(--neon);
+}
+.confirm-btn.ok:hover { background:rgba(224,64,251,0.3); }
+
 /* ─── ANALYTICS PANEL ───────────────────────────────────── */
 .main-nav {
   display:flex; gap:4px;
@@ -1054,6 +1144,21 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 <!-- SIDEBAR OVERLAY (mobile) -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- MODAL DE CONFIRMACIÓN PERSONALIZADO -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Confirmar acción</div>
+    <div class="confirm-msg"   id="confirm-msg">¿Estás seguro?</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn cancel" id="confirm-cancel">Cancelar</button>
+      <button class="confirm-btn danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Token warning banner -->
 <div id="tokenWarning" style="display:none;background:rgba(255,45,107,0.12);border-bottom:1px solid rgba(255,45,107,0.4);padding:6px 20px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#ff2d6b;text-align:center;">
   ⚠️ <span id="tokenWarningText">Token Meta próximo a expirar</span> — <a href="https://developers.facebook.com/tools/accesstoken/" target="_blank" style="color:#ff6ef7;text-decoration:underline;">Renovar token</a>
@@ -1069,6 +1174,10 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
     <div class="status-pill">
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Sistema activo</span>
+    </div>
+    <div id="header-sched-pill" style="display:none;align-items:center;gap:5px;background:rgba(255,192,64,0.08);border:1px solid rgba(255,192,64,0.3);border-radius:99px;padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--amber);">
+      <span style="width:5px;height:5px;border-radius:50%;background:var(--amber);box-shadow:0 0 6px var(--amber);animation:blink 2s infinite;display:inline-block;"></span>
+      <span id="header-sched-text">⏱ --:--</span>
     </div>
     <button onclick="exportarCSV()" title="Exportar historial CSV" style="background:rgba(0,255,159,0.08);border:1px solid rgba(0,255,159,0.25);border-radius:6px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer;">⬇ CSV</button>
     <button onclick="verificarToken()" title="Verificar token Meta" style="background:rgba(191,0,255,0.08);border:1px solid rgba(191,0,255,0.25);border-radius:6px;color:var(--neon);font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 10px;cursor:pointer;">🔑 Token</button>
@@ -1821,9 +1930,17 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
       <div class="log-box" id="logBox">
         <div class="log-line info">[SYSTEM] Panel iniciado correctamente ✅</div>
       </div>
-      <div class="panel-header">
+      <div class="panel-header" style="flex-wrap:wrap;gap:8px;">
         <div class="panel-title">✍️ Captions <span class="accent">generados</span></div>
-        <span class="count-badge" id="captionCount">0</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="count-badge" id="captionCount">0</span>
+          <select id="filter-estado" onchange="renderCaptions()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 8px;cursor:pointer;">
+            <option value="todos">Todos</option>
+            <option value="borrador">Borradores</option>
+            <option value="publicado">Publicados</option>
+          </select>
+          <button onclick="bulkPublicar()" style="background:rgba(0,255,159,0.08);border:1px solid rgba(0,255,159,0.25);border-radius:6px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:9px;padding:3px 9px;cursor:pointer;" title="Publicar todos los borradores listos">⚡ Publicar borradores</button>
+        </div>
       </div>
       <div id="captionList">
         <div class="empty-state">
@@ -1924,7 +2041,7 @@ function closeSidebar() {
 
 // ── Tab switching ────────────────────────────────────────
 function switchTab(name) {
-  ['ciclo','publicar','perfiles','clientes'].forEach(t => {
+  ['ciclo','publicar','catalogo','perfiles','clientes'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t === name);
     document.getElementById('panel-'+t).classList.toggle('active', t === name);
   });
@@ -2018,11 +2135,16 @@ function seleccionarCliente(clienteId) {
 function renderCaptions() {
   const list = document.getElementById('captionList');
   document.getElementById('captionCount').textContent = captions.length;
-  if (!captions.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div>Genera un borrador para comenzar.</div>`;
+  const filtrados = getCaptionsFiltrados();
+  if (!filtrados.length) {
+    const filtro = document.getElementById('filter-estado')?.value || 'todos';
+    const msg = filtro === 'todos' ? 'Genera un borrador para comenzar.' : `No hay captions con estado "${filtro}".`;
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚡</div>${msg}</div>`;
     return;
   }
-  list.innerHTML = `<div class="caption-grid">${captions.map((c,i) => {
+  // Usar índices reales del array original para que las acciones funcionen correctamente
+  list.innerHTML = `<div class="caption-grid">${filtrados.map(c => {
+    const i = captions.indexOf(c);
     const tipo = c.tipo_publicacion === 'reel' ? '🎬 Reel' : '📸 Post';
     const estado = c.publicado ? '✅ Publicado' : (c.estado === 'error_publicacion' ? '❌ Error al publicar' : '📝 Borrador');
     const estadoClass = c.publicado ? 'yes' : (c.estado === 'error_publicacion' ? 'no' : 'no');
@@ -2060,11 +2182,22 @@ function renderCaptions() {
   }).join('')}</div>`;
 }
 
-function copiarCaption(i) { navigator.clipboard.writeText(document.getElementById('caption_'+i).value); agregarLog('Caption copiado ✅','success'); }
-function copiarPrompt(i)  { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value);  agregarLog('Prompt copiado ✅','success');  }
-function borrarCaption(i) { if(confirm('¿Borrar?')){ captions.splice(i,1); renderCaptions(); agregarLog('Caption eliminado','warning'); } }
+function copiarCaption(i) { navigator.clipboard.writeText(document.getElementById('caption_'+i).value); agregarLog('Caption copiado ✅','success'); showToast('Caption copiado al portapapeles', 'success'); }
+function copiarPrompt(i)  { navigator.clipboard.writeText(document.getElementById('prompt_'+i).value);  agregarLog('Prompt copiado ✅','success'); showToast('Prompt copiado al portapapeles', 'success'); }
+async function borrarCaption(i) {
+  const ok = await showConfirm('Eliminar caption', '¿Eliminar este caption? Esta acción no se puede deshacer.');
+  if (!ok) return;
+  captions.splice(i,1); renderCaptions();
+  agregarLog('Caption eliminado','warning');
+  showToast('Caption eliminado', 'warning');
+}
 function limpiarLogs()    { document.getElementById('logBox').innerHTML=''; }
-function limpiarTodosLosCaptions() { if(confirm('¿Limpiar todo?')){ captions=[]; renderCaptions(); } }
+async function limpiarTodosLosCaptions() {
+  const ok = await showConfirm('Limpiar todos los captions', `Se eliminarán ${captions.length} caption(s) de la sesión actual.`);
+  if (!ok) return;
+  captions=[]; renderCaptions();
+  showToast('Todos los captions eliminados', 'warning');
+}
 
 // ── Publicar imagen propia ───────────────────────────────
 let urlImagenPropia  = null;
@@ -2547,7 +2680,7 @@ async function publicarBorrador(i) {
   const borrador = captions[i];
   if (!borrador || !borrador.id) { agregarLog('⚠️ Este borrador no tiene ID para publicar','warning'); return; }
   if (borrador.publicado) { agregarLog('⚠️ Este contenido ya fue publicado','warning'); return; }
-  const ok = confirm('¿Aprobar y publicar ahora en Instagram?');
+  const ok = await showConfirm('Publicar en Instagram', '¿Publicar este contenido ahora en Instagram?', 'ok');
   if (!ok) return;
 
   const captionEditado = document.getElementById('caption_'+i).value.trim();
@@ -2963,7 +3096,8 @@ async function guardarProducto() {
 
 async function eliminarProducto(pid) {
   const p = catalogoData.find(x => x.id === pid);
-  if (!confirm(`¿Eliminar "${p?.nombre}"?`)) return;
+  const ok2 = await showConfirm('Eliminar producto', `¿Eliminar "${p?.nombre}" del catálogo? Esta acción no se puede deshacer.`);
+  if (!ok2) return;
   await fetch(`/api/productos/${pid}`, {method:'DELETE'});
   agregarLog('🗑 Producto eliminado','warning');
   cargarCatalogo();
@@ -3033,14 +3167,34 @@ async function previewProducto(pid) {
     });
     const d = await r.json();
     if (d.ok && d.preview_b64) {
-      // Mostrar en modal simple
+      // Modal de preview mejorado
       const modal = document.createElement('div');
-      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
-      modal.onclick = () => modal.remove();
-      modal.innerHTML = `<div style="position:relative;max-width:320px;"><img src="${d.preview_b64}" style="width:100%;border-radius:12px;box-shadow:0 0 40px rgba(191,0,255,0.4);">
-        <div style="text-align:center;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#888;">Toca para cerrar</div></div>`;
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);animation:toastIn .2s ease forwards;';
+      modal.innerHTML = `
+        <div style="position:relative;max-width:380px;width:90%;">
+          <!-- Barra superior -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#6b44a0;">PREVIEW — ${pid}</span>
+            <div style="display:flex;gap:6px;">
+              <a href="${d.preview_b64}" download="preview_${pid}.jpg"
+                 style="background:rgba(0,255,159,0.1);border:1px solid rgba(0,255,159,0.3);border-radius:6px;color:#00ff9f;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 10px;text-decoration:none;cursor:pointer;">
+                ⬇ Descargar
+              </a>
+              <button onclick="this.closest('[data-modal]').remove()"
+                style="background:rgba(255,45,107,0.1);border:1px solid rgba(255,45,107,0.3);border-radius:6px;color:#ff2d6b;font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 10px;cursor:pointer;">
+                × Cerrar
+              </button>
+            </div>
+          </div>
+          <!-- Imagen -->
+          <img src="${d.preview_b64}" style="width:100%;border-radius:12px;box-shadow:0 0 50px rgba(191,0,255,0.5);display:block;">
+          <!-- Pie -->
+          <div style="text-align:center;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#3a1f6b;">Haz clic fuera para cerrar</div>
+        </div>`;
+      modal.setAttribute('data-modal','preview');
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
       document.body.appendChild(modal);
-    } else { agregarLog('⚠️ Preview no disponible: ' + (d.msg||''),'warning'); }
+    } else { agregarLog('⚠️ Preview no disponible: ' + (d.msg||''),'warning'); showToast('Preview no disponible: ' + (d.msg||''), 'warning'); }
   } catch(e) { agregarLog('❌ Error en preview: '+e,'error'); }
 }
 
@@ -3201,12 +3355,134 @@ function cargarPerfil(profileId) {
   });
 }
 
-function eliminarPerfil(profileId) {
-  if (!confirm('¿Eliminar este perfil?')) return;
+async function eliminarPerfil(profileId) {
+  const ok = await showConfirm('Eliminar perfil', '¿Eliminar este perfil de configuración? Esta acción no se puede deshacer.');
+  if (!ok) return;
   fetch(`/api/profiles/${profileId}`, { method:'DELETE' })
     .then(r=>r.json()).then(d => {
-      if (d.ok) { agregarLog('🗑 Perfil eliminado', 'warning'); cargarPerfiles(); }
+      if (d.ok) { agregarLog('🗑 Perfil eliminado', 'warning'); cargarPerfiles(); showToast('Perfil eliminado', 'warning'); }
     });
+}
+
+// ── Toast Notifications ────────────────────────────────
+const TOAST_ICONS = { success:'✅', error:'❌', info:'⚡', warning:'⚠️' };
+function showToast(msg, tipo='info', duracion=3500) {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${tipo}`;
+  t.innerHTML = `<span class="toast-icon">${TOAST_ICONS[tipo]||'ℹ️'}</span><span class="toast-msg">${msg}</span><span class="toast-close" onclick="removeToast(this.parentElement)">×</span>`;
+  container.appendChild(t);
+  setTimeout(() => removeToast(t), duracion);
+}
+function removeToast(el) {
+  if (!el || !el.parentElement) return;
+  el.classList.add('removing');
+  setTimeout(() => el.remove(), 250);
+}
+
+// ── Modal de Confirmación ─────────────────────────────
+let _confirmResolve = null;
+function showConfirm(titulo, msg, tipo='danger') {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirm-title').textContent = titulo;
+    document.getElementById('confirm-msg').textContent   = msg;
+    const okBtn = document.getElementById('confirm-ok');
+    okBtn.className = `confirm-btn ${tipo}`;
+    okBtn.textContent = tipo === 'danger' ? 'Eliminar' : 'Confirmar';
+    document.getElementById('confirm-overlay').classList.add('visible');
+  });
+}
+function _resolveConfirm(val) {
+  document.getElementById('confirm-overlay').classList.remove('visible');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
+document.getElementById('confirm-ok').addEventListener('click',     () => _resolveConfirm(true));
+document.getElementById('confirm-cancel').addEventListener('click', () => _resolveConfirm(false));
+document.getElementById('confirm-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) _resolveConfirm(false); });
+
+// ── Manejo de desconexion WebSocket ─────────────────────
+let _socketConectado = true;
+socket.on('disconnect', () => {
+  _socketConectado = false;
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className  = 'status-dot off';
+  text.textContent = 'Desconectado';
+  text.style.color = 'var(--red)';
+  showToast('Conexión perdida con el servidor', 'error', 0); // 0 = permanente hasta reconectar
+});
+socket.on('connect', () => {
+  if (!_socketConectado) {
+    // Fue una reconexion
+    showToast('Conexión restablecida', 'success');
+  }
+  _socketConectado = true;
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className  = 'status-dot';
+  text.textContent = 'Sistema activo';
+  text.style.color = '';
+  // Limpiar toast de desconexion si existe
+  document.querySelectorAll('.toast.error').forEach(t => {
+    if (t.querySelector('.toast-msg')?.textContent.includes('Conexión perdida')) removeToast(t);
+  });
+});
+
+// ── Countdown del Scheduler en Header ───────────────────
+function actualizarHeaderSched(on, nextIn) {
+  const pill = document.getElementById('header-sched-pill');
+  const text = document.getElementById('header-sched-text');
+  pill.style.display = on ? 'flex' : 'none';
+  if (on && nextIn !== undefined) {
+    const m = Math.floor(nextIn/60);
+    const s = nextIn % 60;
+    text.textContent = `⏱ ${m}m ${String(s).padStart(2,'0')}s`;
+  }
+}
+// Patch updateSchedStatus para sincronizar el header
+const _origUpdateSchedStatus = typeof updateSchedStatus === 'function' ? updateSchedStatus : null;
+function updateSchedStatus(on) {
+  if (_origUpdateSchedStatus) _origUpdateSchedStatus(on);
+  actualizarHeaderSched(on, typeof schedNextIn !== 'undefined' ? schedNextIn : undefined);
+}
+
+// ── Filtros de Captions ──────────────────────────────────
+function getCaptionsFiltrados() {
+  const filtro = document.getElementById('filter-estado')?.value || 'todos';
+  if (filtro === 'todos')      return captions;
+  if (filtro === 'publicado')  return captions.filter(c => c.publicado);
+  if (filtro === 'borrador')   return captions.filter(c => !c.publicado && c.estado !== 'error_publicacion');
+  return captions;
+}
+
+// ── Bulk Publish ───────────────────────────────────────
+async function bulkPublicar() {
+  const borradores = captions.filter(c => !c.publicado && c.id && c.imagen_url && c.estado !== 'error_publicacion');
+  if (!borradores.length) { showToast('No hay borradores listos para publicar', 'warning'); return; }
+  const ok = await showConfirm(
+    'Publicar borradores',
+    `Se publicarán ${borradores.length} borrador(es) en Instagram. ¿Confirmar?`,
+    'ok'
+  );
+  if (!ok) return;
+  showToast(`Publicando ${borradores.length} borradores...`, 'info', 5000);
+  let exitosos = 0, errores = 0;
+  for (const c of borradores) {
+    try {
+      const idx = captions.indexOf(c);
+      const res = await fetch('/api/publicar_borrador', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ id: c.id, caption: captions[idx]?.caption || c.caption })
+      });
+      const d = await res.json();
+      if (d.ok) { exitosos++; } else { errores++; }
+    } catch(e) { errores++; }
+  }
+  showToast(`✅ ${exitosos} publicados${errores ? ` — ❌ ${errores} errores` : ''}`, exitosos > 0 ? 'success' : 'error');
+  // Recargar captions desde la API
+  fetch('/api/captions').then(r=>r.json()).then(d => { captions = d; renderCaptions(); });
 }
 
 // ── Analytics Pro ───────────────────────────────────────
