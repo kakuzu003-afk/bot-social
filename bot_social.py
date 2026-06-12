@@ -1606,6 +1606,121 @@ def _generar_imagen_fallback(prompt_imagen, replicate_token):
     return None
 
 # ============================================
+# FLUX 1.1 PRO — MOTOR DE IMAGEN PREMIUM
+# ============================================
+
+def generar_imagen_flux(prompt_imagen, imagen_referencia_url=None):
+    """
+    Genera imagen con FLUX 1.1 Pro de Black Forest Labs via Replicate.
+    Superior en fotorrealismo y calidad de producto vs Ideogram.
+    Ideal para: tecnología, gaming, electrónica, productos sin texto.
+    Costo: ~$0.04 USD por imagen (~$36 CLP).
+    Fallback automático a Ideogram v3 si falla.
+    """
+    replicate_token = os.environ.get("REPLICATE_API_TOKEN")
+    if not replicate_token:
+        log("⚠️ REPLICATE_API_TOKEN no configurada. Usando Ideogram como fallback.", "warning")
+        return generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
+    try:
+        import replicate
+        import io
+        client = replicate.Client(api_token=replicate_token)
+
+        # Prompt enriquecido para FLUX — optimizado para fotografía de producto comercial
+        prompt_flux = (
+            prompt_imagen
+            + " | FLUX QUALITY ANCHORS: professional product photography, studio lighting, "
+            "8K ultra-detailed, sharp focus, commercial advertising quality, "
+            "clean composition, premium aesthetic, photorealistic render, "
+            "cinematic color grading, no text, no watermark, no logo"
+        )
+
+        parametros = {
+            "prompt": prompt_flux,
+            "aspect_ratio": "9:16",
+            "output_format": "png",
+            "output_quality": 100,
+            "safety_tolerance": 2,
+            "prompt_upsampling": True,
+        }
+
+        # Si hay imagen de referencia, usarla como image_prompt (FLUX Redux)
+        if imagen_referencia_url:
+            try:
+                img_response = req.get(imagen_referencia_url, timeout=15)
+                if img_response.status_code == 200:
+                    parametros["image_prompt"] = io.BytesIO(img_response.content)
+                    parametros["image_prompt_strength"] = 0.15
+                    log("✅ Referencia de estilo inyectada en FLUX", "success")
+            except Exception as ref_err:
+                log(f"⚠️ No se pudo cargar referencia para FLUX: {ref_err}", "warning")
+
+        log("🖤 Generando con FLUX 1.1 Pro (fotorrealismo premium)...", "info")
+        output = client.run("black-forest-labs/flux-1.1-pro", input=parametros)
+        image_url = str(output)
+
+        img_bytes = req.get(image_url, timeout=30).content
+        os.makedirs("static", exist_ok=True)
+        filepath = f"static/flux_{int(time.time())}.png"
+        with open(filepath, "wb") as f:
+            f.write(img_bytes)
+
+        size_kb = len(img_bytes) / 1024
+        log(f"🖼️ Imagen FLUX 1.1 Pro generada ✅ — {size_kb:.0f} KB | 9:16 vertical", "success")
+        return filepath
+
+    except Exception as e:
+        error_str = str(e)
+        if "402" in error_str or "Insufficient credit" in error_str:
+            log("💳 Sin créditos en Replicate para FLUX. Recarga en: https://replicate.com/account/billing", "warning")
+        elif "429" in error_str:
+            log("⏳ Rate limit en FLUX. Reintentando con Ideogram...", "warning")
+        else:
+            log(f"❌ Error generando imagen con FLUX: {e}", "error")
+        log("🔄 Fallback automático a Ideogram v3...", "info")
+        return generar_imagen_dalle(prompt_imagen, imagen_referencia_url)
+
+
+def seleccionar_motor_imagen(busqueda, motor_forzado=None):
+    """
+    Selecciona automáticamente el mejor motor de imagen según el tipo de producto.
+    - FLUX 1.1 Pro: tecnología, gaming, electrónica, streaming, productos sin texto visible.
+    - Ideogram v3: productos que requieren texto legible en la imagen, banners, diseño gráfico.
+    Puede ser forzado con motor_forzado='flux' o motor_forzado='ideogram'.
+    """
+    if motor_forzado == 'flux':
+        log("🖤 Motor forzado: FLUX 1.1 Pro", "info")
+        return 'flux'
+    if motor_forzado == 'ideogram':
+        log("🎨 Motor forzado: Ideogram v3", "info")
+        return 'ideogram'
+
+    keywords_flux = [
+        'xbox', 'playstation', 'nintendo', 'gaming', 'game pass', 'ps5', 'ps4',
+        'disney', 'netflix', 'spotify', 'apple', 'iphone', 'samsung', 'laptop',
+        'auricular', 'headset', 'teclado', 'mouse', 'monitor', 'consola',
+        'duolingo', 'canva', 'software', 'app', 'suscripción', 'streaming',
+        'producto', 'electrónica', 'gadget', 'tech', 'tecnología', 'vpn',
+        'antivirus', 'office', 'windows', 'adobe', 'youtube', 'twitch'
+    ]
+    keywords_ideogram = [
+        'oferta', 'descuento', 'precio', 'promo', 'banner', 'flyer', 'cartel',
+        'texto', 'letras', 'tipografía', 'diseño', 'poster', 'anuncio', 'cupón'
+    ]
+
+    busqueda_lower = busqueda.lower()
+    score_flux     = sum(1 for k in keywords_flux     if k in busqueda_lower)
+    score_ideogram = sum(1 for k in keywords_ideogram if k in busqueda_lower)
+
+    if score_flux >= score_ideogram:
+        log(f"🖤 Motor auto-seleccionado: FLUX 1.1 Pro (score flux={score_flux} vs ideogram={score_ideogram})", "info")
+        return 'flux'
+    else:
+        log(f"🎨 Motor auto-seleccionado: Ideogram v3 (score ideogram={score_ideogram} vs flux={score_flux})", "info")
+        return 'ideogram'
+
+
+# ============================================
 # CLOUDINARY — SUBIR VIDEO
 # ============================================
 
@@ -1938,7 +2053,8 @@ def publicar_en_instagram(imagen_path, caption, cliente_id="aurakey"):
 def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey", mood="energico",
                 hacer_reel=True, imagen_referencia_url=None, style_weight=0.5, titulo_producto=None,
                 color_grade="none", lower_third=None, usar_watermark=True, duracion_reel=15,
-                movimiento=None, extra_effects=None, hashtags_override=None, producto_id=None):
+                movimiento=None, extra_effects=None, hashtags_override=None, producto_id=None,
+                motor_imagen=None):
     global bot_activo
 
     # 🔒 Check-and-set atómico: evita que dos ciclos corran al mismo tiempo
@@ -2018,8 +2134,13 @@ def ciclo_libre(busqueda, precio_manual="No especificado", cliente_id="aurakey",
                 log(f"⚠️ No se pudo descargar la referencia ({e_ref}). Generando con IA...", "warning")
                 imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=0.99)
         else:
-            # Generación con Ideogram — referencia como guía de estilo parcial
-            imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
+            # Selección automática del motor según el tipo de producto (o forzado desde el dashboard)
+            motor = seleccionar_motor_imagen(busqueda, motor_forzado=motor_imagen)
+            if motor == 'flux':
+                imagen_filepath = generar_imagen_flux(prompt_imagen, imagen_referencia_url)
+            else:
+                # Ideogram v3 — mejor para productos con texto visible
+                imagen_filepath = generar_imagen_dalle(prompt_imagen, imagen_referencia_url, style_weight=style_weight)
 
         # Aplicar watermark a la imagen (si está configurado)
         if imagen_filepath and usar_watermark and os.path.exists(LOGO_PATH_DEFAULT):
@@ -2646,6 +2767,7 @@ def api_ciclo():
     extra_effects     = data.get('extra_effects') or []
     hashtags_override = data.get('hashtags_override') or None
     producto_id       = data.get('producto_id') or None
+    motor_imagen      = data.get('motor_imagen') or None  # 'flux', 'ideogram' o None (auto)
     if not busqueda_libre:
         return jsonify({'msg': '⚠️ Se requiere búsqueda libre para iniciar un ciclo.'})
     with _bot_lock:
@@ -2661,7 +2783,7 @@ def api_ciclo():
             'lower_third': lower_third, 'usar_watermark': usar_watermark,
             'duracion_reel': duracion_reel, 'movimiento': movimiento,
             'extra_effects': extra_effects, 'hashtags_override': hashtags_override,
-            'producto_id': producto_id,
+            'producto_id': producto_id, 'motor_imagen': motor_imagen,
         }
     )
     hilo.daemon = True
