@@ -15,18 +15,18 @@
   --bg4:    #18152e;
   --border: #2a2040;
   --border2:#3d2d6e;
-  --cyan:   #bf00ff;
-  --cyan-raw: 191,0,255;
+  --cyan:   #a855f7;
+  --cyan-raw: 168,85,247;
   --green:  #00ff9f;
   --green-raw: 0,255,159;
-  --amber:  #ff6ef7;
-  --amber-raw: 255,110,247;
+  --amber:  #e879f9;
+  --amber-raw: 232,121,249;
   --red:    #ff2d6b;
   --red-raw: 255,45,107;
-  --purple: #9d4eff;
-  --purple-raw: 157,78,255;
-  --neon:   #e040fb;
-  --neon-raw: 224,64,251;
+  --purple: #8b5cf6;
+  --purple-raw: 139,92,246;
+  --neon:   #c084fc;
+  --neon-raw: 192,132,252;
   --neon2:  #7c3aed;
   /* TEXTOS — alto contraste para mejor legibilidad */
   --text:   #f0eafa;
@@ -1028,32 +1028,32 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 /* Tendencias activas */
 .trend-list { display:flex; flex-direction:column; gap:8px; }
 .trend-item {
-  display:flex; align-items:center; gap:10px;
-  padding:10px 12px;
+  display:flex; align-items:center; gap:12px;
+  padding:14px 16px;
   background:var(--bg3);
-  border:1px solid var(--border);
-  border-radius:8px;
+  border:1px solid var(--border2);
+  border-radius:10px;
 }
 .trend-rank {
   font-family:'Orbitron',monospace;
-  font-size:11px; font-weight:700;
-  color:var(--neon); min-width:20px;
+  font-size:13px; font-weight:700;
+  color:#c084fc; min-width:26px;
 }
 .trend-name {
-  flex:1; font-size:13px; font-weight:600; color:#fff;
+  flex:1; font-size:16px; font-weight:600; color:#f0eafa;
 }
 .trend-traffic {
   font-family:'Share Tech Mono',monospace;
-  font-size:9px; color:var(--amber);
-  background:rgba(255,192,64,0.08);
-  border:1px solid rgba(255,192,64,0.2);
-  border-radius:99px; padding:2px 8px;
+  font-size:11px; color:#fcd34d;
+  background:rgba(252,211,77,0.1);
+  border:1px solid rgba(252,211,77,0.25);
+  border-radius:99px; padding:3px 10px;
 }
 .trend-context {
-  font-size:10px; color:var(--text2);
-  margin-top:2px; white-space:nowrap;
+  font-size:12px; color:#b8a0e0;
+  margin-top:3px; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis;
-  max-width:200px;
+  max-width:280px;
 }
 
 /* Estrategia tag */
@@ -2182,7 +2182,7 @@ input::placeholder, textarea::placeholder {
       <!-- Tendencias en tiempo real -->
       <div class="chart-card" style="margin-bottom:20px;">
         <div class="chart-card-title" style="justify-content:space-between;">
-          <span>🔥 <span style="color:var(--neon)">Tendencias</span> — Google Trends Chile ahora</span>
+          <span style="font-size:16px;font-weight:700;">🔥 <span style="color:#c084fc">Tendencias</span> — Google Trends Chile ahora</span>
           <button class="btn-refresh-trends" onclick="cargarTendenciasAnalytics()">↻ Actualizar</button>
         </div>
         <div class="trend-list" id="trendList">
