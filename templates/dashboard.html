@@ -3862,7 +3862,7 @@ async function ctrlConnectIG() {
     document.getElementById('ctrl-ig-user').textContent = '@'+(d.username||d.name||'cuenta');
     document.getElementById('ctrl-ig-stats').textContent = (d.followers_count||0).toLocaleString('es-CL')+' seg · '+(d.media_count||0)+' posts';
     agregarLog('✅ IG conectado: @'+d.username,'success');
-    var mr = await fetch(baseUrl+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
+    var mr = await fetch(baseUrl+ctrlCreds.igUserId+'/media?fields=id,caption,media_type,thumbnail_url,media_url,cover_url,timestamp,like_count,comments_count,permalink&limit=12&access_token='+ctrlCreds.igToken);
     var md = await mr.json();
     if (md.data) { ctrlRenderMedia(md.data); document.getElementById('ctrl-ig-section').style.display='block'; agregarLog('📸 '+md.data.length+' posts cargados','success'); }
   } catch(e) { ctrlSetPill('ctrl-pill-ig','error'); agregarLog('❌ IG: '+e.message,'error'); }
@@ -3872,7 +3872,8 @@ function ctrlRenderMedia(media) {
   var g = document.getElementById('ctrl-media-grid'); g.innerHTML='';
   document.getElementById('ctrl-media-label').textContent = 'Posts recientes · '+media.length;
   media.forEach(function(p) {
-    var rawSrc = p.media_url||p.thumbnail_url;
+    // Para videos: thumbnail_url o cover_url. Para imágenes: media_url
+    var rawSrc = p.thumbnail_url || p.cover_url || (p.media_type !== 'VIDEO' ? p.media_url : null);
     // Usar proxy del servidor para evitar CORS
     var src = rawSrc ? '/api/img_proxy?url='+encodeURIComponent(rawSrc) : null;
     var d = document.createElement('div');
@@ -3882,13 +3883,14 @@ function ctrlRenderMedia(media) {
       img.src = src;
       img.style.cssText='width:100%;height:100%;object-fit:cover;';
       img.loading='lazy';
-      img.onerror=function(){ 
-        d.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;"><span style="font-size:18px;">📷</span><span style="font-size:8px;color:#52525b;">'+p.media_type+'</span></div>';
+      img.onerror=function(){
+        var isVid = p.media_type==='VIDEO'||p.media_type==='REELS';
+        d.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;background:linear-gradient(135deg,#18181b,#27272a)"><span style="font-size:28px;">'+(isVid?'▶️':'📷')+'</span><span style="font-size:8px;color:#71717a;font-family:monospace;">'+p.media_type+'</span><span style="font-size:7px;color:#52525b;">sin preview</span></div>';
       };
       d.appendChild(img);
       var overlay=document.createElement('div');
       overlay.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:.15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-align:center;';
-      overlay.innerHTML='✏️ Editar'+(p.like_count!==undefined?'<br>♥ '+p.like_count:'');
+      overlay.innerHTML=(p.media_type==='VIDEO'?'▶ ':'✏️ ')+'Editar'+(p.like_count!==undefined?'<br>♥ '+p.like_count:'');
       overlay.onmouseover=function(){overlay.style.opacity=1;};
       overlay.onmouseout=function(){overlay.style.opacity=0;};
       d.appendChild(overlay);
