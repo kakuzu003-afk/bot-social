@@ -2119,7 +2119,7 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
         <!-- CREDENCIALES -->
         <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;">
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);font-weight:600;margin-bottom:12px;">Credenciales</div>
-          <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram Token</div><textarea id="ctrl-ig-token" placeholder="EAAxxxxxxxxxx..." rows="3" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:10px;color:var(--text1);font-family:monospace;outline:none;resize:none;word-break:break-all;"></textarea></div>
+          <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram Token <span style="color:#52525b;">(pega el token completo)</span></div><input type="text" id="ctrl-ig-token" placeholder="EAAxxxxxxxxxx..." autocomplete="off" spellcheck="false" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:10px;color:var(--text1);font-family:monospace;outline:none;overflow:hidden;text-overflow:clip;white-space:nowrap;"></div>
           <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Instagram User ID</div><input type="text" id="ctrl-ig-userid" placeholder="17841xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;letter-spacing:0.5px;"></div>
           <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">GitHub Token</div><input type="text" id="ctrl-gh-token" placeholder="ghp_xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:10px;color:var(--text1);font-family:monospace;outline:none;word-break:break-all;"></div>
           <div style="margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Repositorio</div><input type="text" id="ctrl-gh-repo" value="kakuzu003-afk/bot-social" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
@@ -3830,8 +3830,11 @@ function ctrlSetPill(id, s) {
 
 async function ctrlConnectIG() {
   // Leer campos directamente del DOM (no depende de Guardar previo)
-  var tok  = ((document.getElementById('ctrl-ig-token')  && document.getElementById('ctrl-ig-token').value)  || ctrlCreds.igToken  || '').replace(/[\s\n\r\t]/g,'');
-  var uid  = ((document.getElementById('ctrl-ig-userid') && document.getElementById('ctrl-ig-userid').value) || ctrlCreds.igUserId || '').replace(/[\s\n\r\t]/g,'');
+  var rawTok = document.getElementById('ctrl-ig-token') ? document.getElementById('ctrl-ig-token').value : '';
+  var rawUid = document.getElementById('ctrl-ig-userid') ? document.getElementById('ctrl-ig-userid').value : '';
+  agregarLog('📋 Raw token length: '+rawTok.length+' | Raw UID: '+rawUid);
+  var tok  = (rawTok || ctrlCreds.igToken  || '').replace(/[\s\n\r\t]/g,'');
+  var uid  = (rawUid || ctrlCreds.igUserId || '').replace(/[\s\n\r\t]/g,'');
   if (tok)  ctrlCreds.igToken  = tok;
   if (uid)  ctrlCreds.igUserId = uid;
   if (!ctrlCreds.igToken || !ctrlCreds.igUserId) {
