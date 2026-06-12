@@ -3319,6 +3319,12 @@ def api_insights(cliente_id):
         return jsonify({'ok': False, 'error': str(e)})
 
 
+
+@app.route('/panel')
+@requiere_auth
+def panel():
+    return render_template('panel.html')
+
 if __name__ == '__main__':
     print("🤖 Social Bot Manager - Activado")
     hilo_scheduler = threading.Thread(target=run_scheduler)
