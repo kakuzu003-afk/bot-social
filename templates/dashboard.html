@@ -4086,7 +4086,12 @@ async function ctrlLoadFile(f,itemEl) {
   try {
     var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+f.path,{headers:{Authorization:'token '+ctrlCreds.ghToken,Accept:'application/vnd.github.v3+json'}});
     var d=await r.json();
-    var fileContent=atob(d.content.replace(/\n/g,''));
+    // Decodificar UTF-8 correctamente (soporta emojis y tildes)
+    var b64 = d.content.replace(/\n/g,'');
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for(var i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    var fileContent = new TextDecoder('utf-8').decode(bytes);
     ctrlCurrentFile.sha=d.sha;
     // Inicializar CodeMirror con el contenido
     ctrlInitCM(fileContent, ctrlGetMode(f.name), true);
@@ -4114,7 +4119,10 @@ async function ctrlDoCommit() {
   btn.disabled=true; btn.textContent='Guardando…';
   var repo=ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
   try {
-    var encoded=btoa(unescape(encodeURIComponent(ctrlGetCMValue())));
+    // Encodear UTF-8 correctamente
+    var bytes2 = new TextEncoder().encode(ctrlGetCMValue());
+    var binary2 = String.fromCharCode.apply(null, bytes2);
+    var encoded = btoa(binary2);
     var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+ctrlCurrentFile.path,{method:'PUT',headers:{Authorization:'token '+ctrlCreds.ghToken,'Content-Type':'application/json'},body:JSON.stringify({message:msg,content:encoded,sha:ctrlCurrentFile.sha})});
     var d=await r.json();
     if(d.message&&!d.content) throw new Error(d.message);
