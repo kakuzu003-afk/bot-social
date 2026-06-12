@@ -1772,9 +1772,10 @@ input::placeholder, textarea::placeholder {
         ══════════════════════════════════════ -->
         <div id="subpanel-reel" style="display:none;">
 
-          <div class="pub-section-label">🏷️ Título del producto</div>
-          <input type="text" class="product-title-field" id="pub-reel-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass…">
-          <div class="product-title-hint">Lo usa la IA para generar la imagen y el caption</div>
+          <div class="pub-section-label">📦 Descripción del servicio</div>
+          <select class="product-title-field" id="pub-reel-titulo" onchange="pubSeleccionarProducto('reel', this.value)" style="width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;cursor:pointer;outline:none;margin-bottom:6px;">
+            <option value="">— Selecciona un producto —</option>
+          </select>
 
           <!-- FUENTE DE IMAGEN -->
           <div class="pub-section-label" style="margin-top:10px;">🖼️ Fuente de imagen</div>
@@ -4261,6 +4262,80 @@ function ctrlRenderCommits(commits) {
     el.appendChild(div);
   });
 }
+
+
+// ═══════════════════════════════════════════════════
+// SELECTOR DE PRODUCTOS — autocompleta campos
+// ═══════════════════════════════════════════════════
+async function cargarSelectoresProductos() {
+  try {
+    const r = await fetch('/api/profiles');
+    const data = await r.json();
+    const prods = Array.isArray(data) ? data : (data.profiles || data.productos || []);
+    
+    const selectores = ['ciclo-titulo', 'pub-post-titulo', 'pub-reel-titulo'];
+    selectores.forEach(function(id) {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      // Limpiar y agregar opción default
+      sel.innerHTML = '<option value="">— Selecciona un producto —</option>';
+      prods.forEach(function(p) {
+        const opt = document.createElement('option');
+        opt.value = p.nombre || p.title || p.id;
+        opt.textContent = (p.nombre || p.title || p.id) + (p.precio ? ' — ' + p.precio : '');
+        opt.dataset.precio = p.precio || '';
+        opt.dataset.nombre = p.nombre || p.title || '';
+        opt.dataset.id = p.id || '';
+        sel.appendChild(opt);
+      });
+      if (prods.length === 0) {
+        sel.innerHTML = '<option value="">Sin productos — agrega uno en CATÁLOGO</option>';
+      }
+    });
+  } catch(e) {
+    console.warn('No se pudieron cargar productos:', e);
+  }
+}
+
+function cicloSeleccionarProducto(val) {
+  if (!val) return;
+  const sel = document.getElementById('ciclo-titulo');
+  const opt = sel.options[sel.selectedIndex];
+  // Autocompletar precio
+  const precioInput = document.getElementById('input-precio');
+  if (precioInput && opt.dataset.precio) {
+    precioInput.value = opt.dataset.precio;
+  }
+  // Hint
+  const hint = document.getElementById('ciclo-prod-hint');
+  if (hint && opt.dataset.nombre) {
+    hint.textContent = '✅ ' + opt.dataset.nombre + (opt.dataset.precio ? ' · ' + opt.dataset.precio : '');
+    hint.style.color = 'var(--green)';
+  }
+}
+
+function pubSeleccionarProducto(tipo, val) {
+  if (!val) return;
+  const id = tipo === 'post' ? 'pub-post-titulo' : 'pub-reel-titulo';
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const opt = sel.options[sel.selectedIndex];
+  // Autocompletar precio si existe el campo
+  const precioId = tipo === 'post' ? 'pub-post-precio' : 'pub-reel-precio';
+  const precioInput = document.getElementById(precioId);
+  if (precioInput && opt.dataset.precio) precioInput.value = opt.dataset.precio;
+}
+
+// Cargar al iniciar y al cambiar de pestaña
+document.addEventListener('DOMContentLoaded', function() {
+  cargarSelectoresProductos();
+  // Recargar cuando se vuelve a la pestaña de ciclo o publicar
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setTimeout(cargarSelectoresProductos, 100);
+    });
+  });
+});
 
 </script>
 </body>
