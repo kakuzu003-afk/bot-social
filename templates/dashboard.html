@@ -1173,6 +1173,21 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 }
 
 </style>
+<!-- CodeMirror editor -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.js"></script>
+<style>
+.CodeMirror { height: 320px !important; font-size: 12px !important; font-family: 'Fira Code', 'Consolas', monospace !important; border-radius: 0 0 10px 10px; }
+.CodeMirror-scroll { max-height: 320px; }
+</style>
 </head>
 <body>
 
@@ -2106,7 +2121,8 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
               <span style="font-size:10px;font-family:monospace;color:#d4d4d8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;" id="ctrl-editor-path">—</span>
               <button id="ctrl-btn-edit" onclick="ctrlToggleEdit()" style="background:var(--bg2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-size:10px;padding:3px 9px;cursor:pointer;margin-left:8px;flex-shrink:0;">Editar</button>
             </div>
-            <textarea id="ctrl-editor-ta" readonly style="width:100%;min-height:150px;background:transparent;color:#d4d4d8;font-size:10px;font-family:monospace;padding:10px;resize:none;border:none;outline:none;display:block;"></textarea>
+            <div id="ctrl-editor-cm" style="border-radius:0 0 10px 10px;overflow:hidden;"></div>
+<textarea id="ctrl-editor-ta" style="display:none;"></textarea>
             <div id="ctrl-editor-footer" style="display:none;padding:8px 10px;border-top:1px solid var(--border2);flex-direction:column;gap:6px;">
               <input id="ctrl-commit-msg" type="text" placeholder="Mensaje de commit..." style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;">
               <button onclick="ctrlDoCommit()" id="ctrl-btn-commit" style="width:100%;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);border-radius:6px;color:#10b981;font-size:12px;font-weight:700;padding:7px;cursor:pointer;">Hacer commit</button>
@@ -3966,6 +3982,44 @@ async function ctrlConnectGH() {
 
 var FICONS={py:'🐍',js:'🟨',ts:'🔷',json:'📋',md:'📝',txt:'📄',yml:'⚙️',yaml:'⚙️',sh:'💻',html:'🌐',css:'🎨',toml:'⚙️'};
 var ctrlCurrentPath = '';
+var ctrlCMEditor = null;
+
+function ctrlInitCM(content, mode, readOnly) {
+  var cmDiv = document.getElementById('ctrl-editor-cm');
+  if (!cmDiv) return;
+  if (ctrlCMEditor) { ctrlCMEditor.toTextArea(); ctrlCMEditor = null; }
+  // Crear textarea temporal
+  var ta = document.createElement('textarea');
+  ta.value = content;
+  cmDiv.innerHTML = '';
+  cmDiv.appendChild(ta);
+  ctrlCMEditor = CodeMirror.fromTextArea(ta, {
+    mode: mode || 'python',
+    theme: 'dracula',
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    readOnly: readOnly ? 'nocursor' : false,
+    lineWrapping: false,
+    tabSize: 4,
+    indentWithTabs: false
+  });
+}
+
+function ctrlGetCMValue() {
+  return ctrlCMEditor ? ctrlCMEditor.getValue() : document.getElementById('ctrl-editor-ta').value;
+}
+
+function ctrlSetCMReadOnly(readOnly) {
+  if (ctrlCMEditor) ctrlCMEditor.setOption('readOnly', readOnly ? 'nocursor' : false);
+}
+
+function ctrlGetMode(filename) {
+  var ext = (filename.split('.').pop() || '').toLowerCase();
+  var modes = {py:'python', js:'javascript', ts:'javascript', html:'htmlmixed', css:'css', json:'javascript'};
+  return modes[ext] || 'python';
+}
 
 function ctrlRenderFiles(files, path) {
   ctrlCurrentPath = path || '';
@@ -4032,20 +4086,24 @@ async function ctrlLoadFile(f,itemEl) {
   try {
     var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+f.path,{headers:{Authorization:'token '+ctrlCreds.ghToken,Accept:'application/vnd.github.v3+json'}});
     var d=await r.json();
-    ta.value=atob(d.content.replace(/\n/g,''));
+    var fileContent=atob(d.content.replace(/\n/g,''));
     ctrlCurrentFile.sha=d.sha;
+    // Inicializar CodeMirror con el contenido
+    ctrlInitCM(fileContent, ctrlGetMode(f.name), true);
     agregarLog('✅ '+f.name+' listo','success');
-  } catch(e){ ta.value='Error: '+e.message; agregarLog('❌ '+e.message,'error'); }
+  } catch(e){
+    ctrlInitCM('// Error: '+e.message, 'python', true);
+    agregarLog('❌ '+e.message,'error');
+  }
 }
 
 function ctrlToggleEdit() {
   ctrlEditMode=!ctrlEditMode;
-  var ta=document.getElementById('ctrl-editor-ta');
   var footer=document.getElementById('ctrl-editor-footer');
-  ta.readOnly=!ctrlEditMode;
+  ctrlSetCMReadOnly(!ctrlEditMode);
   footer.style.display=ctrlEditMode?'flex':'none';
   if(ctrlEditMode) footer.style.flexDirection='column';
-  document.getElementById('ctrl-btn-edit').textContent=ctrlEditMode?'Vista previa':'Editar';
+  document.getElementById('ctrl-btn-edit').textContent=ctrlEditMode?'👁 Vista previa':'✏️ Editar';
 }
 
 async function ctrlDoCommit() {
@@ -4056,7 +4114,7 @@ async function ctrlDoCommit() {
   btn.disabled=true; btn.textContent='Guardando…';
   var repo=ctrlCreds.ghRepo||'kakuzu003-afk/bot-social';
   try {
-    var encoded=btoa(unescape(encodeURIComponent(document.getElementById('ctrl-editor-ta').value)));
+    var encoded=btoa(unescape(encodeURIComponent(ctrlGetCMValue())));
     var r=await fetch('https://api.github.com/repos/'+repo+'/contents/'+ctrlCurrentFile.path,{method:'PUT',headers:{Authorization:'token '+ctrlCreds.ghToken,'Content-Type':'application/json'},body:JSON.stringify({message:msg,content:encoded,sha:ctrlCurrentFile.sha})});
     var d=await r.json();
     if(d.message&&!d.content) throw new Error(d.message);
