@@ -3320,12 +3320,6 @@ def api_insights(cliente_id):
 
 
 
-@app.route('/panel')
-@requiere_auth
-def panel():
-    return render_template('panel.html')
-
-
 @app.route('/api/img_proxy')
 def img_proxy():
     """Proxy de imágenes para evitar CORS con URLs de Instagram/CDN externo."""
