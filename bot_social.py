@@ -3378,7 +3378,8 @@ def webhook():
     else:
         token  = request.args.get('token', '')
         action = request.args.get('action', 'info')
-        params = {}
+        # Para GET: todos los query params excepto token y action son params
+        params = {k:v for k,v in request.args.items() if k not in ('token','action')}
 
     # Validar token
     if token != WEBHOOK_TOKEN:
@@ -3458,6 +3459,34 @@ def webhook():
                 'productos': prods,
                 'total': len(prods)
             })
+
+        elif action == 'add_product':
+            nombre = params.get('nombre', '').strip()
+            precio = params.get('precio', '').strip()
+            keyword = params.get('keyword', nombre).strip()
+            detalle = params.get('detalle', nombre).strip()
+            if not nombre:
+                return jsonify({'ok': False, 'error': 'Debes enviar "nombre" del producto'})
+            import uuid
+            from datetime import datetime
+            profile = {
+                'id': str(uuid.uuid4())[:8],
+                'nombre': nombre,
+                'precio': precio,
+                'keyword_busqueda': keyword,
+                'detalle_producto': detalle,
+                'fecha': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+            _db_save_profile(profile)
+            log(f"✅ Producto agregado via webhook: {nombre}", "success")
+            return jsonify({'ok': True, 'producto': profile, 'mensaje': f'Producto "{nombre}" agregado correctamente'})
+
+        elif action == 'delete_product':
+            pid = params.get('id', '')
+            if not pid:
+                return jsonify({'ok': False, 'error': 'Debes enviar "id" del producto'})
+            ok = _db_delete_profile(pid)
+            return jsonify({'ok': ok, 'mensaje': f'Producto {pid} eliminado' if ok else 'No encontrado'})
 
         elif action == 'run_cycle':
             if bot_activo:
