@@ -3261,6 +3261,226 @@ def api_tendencias():
     except Exception as e:
         return jsonify({'ok': False, 'nicho': nicho, 'tendencias': [], 'total': 0, 'error': str(e)})
 
+
+# ══════════════════════════════════════════════════════
+# SEO — Instagram Growth Strategy
+# ══════════════════════════════════════════════════════
+
+@app.route('/api/seo/estrategias', methods=['POST'])
+@requiere_auth
+def api_seo_estrategias():
+    import json as _json
+    data       = request.get_json() or {}
+    nicho      = data.get('nicho', 'general')
+    seguidores = data.get('seguidores', 'desconocido')
+    engagement = data.get('engagement', 'desconocido')
+    objetivo   = data.get('objetivo', 'crecer y monetizar')
+    try:
+        res = groq_client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[{'role': 'user', 'content': f"""Eres un experto en crecimiento orgánico de Instagram para Latinoamérica.
+
+Datos de la cuenta:
+- Nicho: {nicho}
+- Seguidores: {seguidores}
+- Engagement rate: {engagement}
+- Objetivo: {objetivo}
+
+Genera un plan SEO de Instagram con EXACTAMENTE estas 6 secciones en JSON:
+{{
+  "diagnostico": "2-3 oraciones sobre la situación actual y oportunidades",
+  "hashtags": "estrategia de hashtags: qué tipos, cantidades y rotación",
+  "perfil": "optimización de bio, nombre de usuario y foto de perfil",
+  "calendario": "frecuencia ideal, mejores horarios y tipos de contenido por día",
+  "engagement": "5 tácticas concretas para crecer orgánicamente",
+  "kpis": ["KPI 1", "KPI 2", "KPI 3", "KPI 4", "KPI 5"]
+}}
+
+Sé muy específico y práctico. Solo devuelve el JSON, sin texto extra."""}],
+            temperature=0.7, max_tokens=1500,
+            response_format={'type': 'json_object'}
+        )
+        plan = _json.loads(res.choices[0].message.content)
+        return jsonify({'ok': True, 'plan': plan})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/api/seo/hashtags', methods=['POST'])
+@requiere_auth
+def api_seo_hashtags():
+    import json as _json
+    data  = request.get_json() or {}
+    tema  = data.get('tema', '')
+    nicho = data.get('nicho', 'general')
+    try:
+        res = groq_client.chat.completions.create(
+            model='llama-3.1-8b-instant',
+            messages=[{'role': 'user', 'content': f"""Genera hashtags para Instagram para el mercado latinoamericano.
+
+Tema: {tema}
+Nicho: {nicho}
+
+Devuelve SOLO este JSON (sin texto extra):
+{{
+  "grandes":  ["#tag", ...],
+  "medianos": ["#tag", ...],
+  "nicho":    ["#tag", ...],
+  "tip": "consejo de 1 oración sobre cómo combinarlos"
+}}
+
+- grandes: 5 hashtags con más de 1M posts (alcance masivo, mucha competencia)
+- medianos: 10 hashtags con 100K-1M posts (balance ideal)
+- nicho: 10 hashtags con menos de 100K posts (alta relevancia, baja competencia)
+
+Todos deben empezar con # y ser reales de Instagram."""}],
+            temperature=0.5, max_tokens=800,
+            response_format={'type': 'json_object'}
+        )
+        hashtags = _json.loads(res.choices[0].message.content)
+        return jsonify({'ok': True, 'hashtags': hashtags})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/api/seo/ideas', methods=['POST'])
+@requiere_auth
+def api_seo_ideas():
+    import json as _json
+    data  = request.get_json() or {}
+    nicho = data.get('nicho', 'general')
+    try:
+        from motor_tendencias import MotorTendenciasChile
+        tendencias = MotorTendenciasChile().obtener_tendencias_google(limite=5, nicho='general')
+        trend_str  = ', '.join([t['termino'] for t in tendencias]) if tendencias else 'sin datos'
+    except:
+        trend_str = 'sin datos'
+    try:
+        res = groq_client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[{'role': 'user', 'content': f"""Eres un estratega de contenido viral para Instagram en Latinoamérica.
+
+Nicho: {nicho}
+Tendencias actuales en Chile: {trend_str}
+
+Genera 6 ideas de Reels que combinen el nicho con las tendencias. Devuelve SOLO este JSON:
+{{
+  "ideas": [
+    {{
+      "titulo": "título atractivo del Reel",
+      "hook": "primeras palabras del video (máx 10 palabras, que enganchen)",
+      "formato": "tipo: tutorial / trending sound / storytelling / antes-después / POV / etc.",
+      "razon": "por qué va a funcionar (1 oración)",
+      "hashtags": ["#tag1","#tag2","#tag3","#tag4","#tag5"]
+    }}
+  ]
+}}"""}],
+            temperature=0.8, max_tokens=1400,
+            response_format={'type': 'json_object'}
+        )
+        ideas = _json.loads(res.choices[0].message.content)
+        return jsonify({'ok': True, 'ideas': ideas.get('ideas', [])})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+# ══════════════════════════════════════════════════════
+# Instagram Management — Posts + Comments
+# ══════════════════════════════════════════════════════
+
+@app.route('/api/ig/posts', methods=['GET'])
+@requiere_auth
+def api_ig_posts():
+    token      = os.environ.get('META_ACCESS_TOKEN', '')
+    ig_user_id = os.environ.get('IG_USER_ID', '')
+    if not token or not ig_user_id:
+        return jsonify({'ok': False, 'error': 'Instagram no configurado'})
+    try:
+        r = req.get(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{ig_user_id}/media",
+            params={
+                'fields': 'id,caption,media_type,media_url,thumbnail_url,timestamp,like_count,comments_count,permalink',
+                'limit': 24,
+                'access_token': token
+            }, timeout=12
+        )
+        data = r.json()
+        if 'error' in data:
+            return jsonify({'ok': False, 'error': data['error']['message']})
+        return jsonify({'ok': True, 'posts': data.get('data', [])})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/api/ig/comentarios', methods=['GET'])
+@requiere_auth
+def api_ig_comentarios():
+    token    = os.environ.get('META_ACCESS_TOKEN', '')
+    media_id = request.args.get('media_id', '')
+    if not token or not media_id:
+        return jsonify({'ok': False, 'error': 'Parámetros faltantes'})
+    try:
+        r = req.get(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{media_id}/comments",
+            params={
+                'fields': 'id,text,username,timestamp,like_count,replies{id,text,username,timestamp}',
+                'access_token': token
+            }, timeout=10
+        )
+        data = r.json()
+        if 'error' in data:
+            return jsonify({'ok': False, 'error': data['error']['message']})
+        return jsonify({'ok': True, 'comentarios': data.get('data', [])})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/api/ig/responder', methods=['POST'])
+@requiere_auth
+def api_ig_responder():
+    token = os.environ.get('META_ACCESS_TOKEN', '')
+    data  = request.get_json() or {}
+    comment_id = data.get('comment_id', '')
+    mensaje    = data.get('mensaje', '')
+    if not token or not comment_id or not mensaje:
+        return jsonify({'ok': False, 'error': 'Parámetros faltantes'})
+    try:
+        r = req.post(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{comment_id}/replies",
+            params={'access_token': token},
+            json={'message': mensaje}, timeout=10
+        )
+        data = r.json()
+        if 'error' in data:
+            return jsonify({'ok': False, 'error': data['error']['message']})
+        return jsonify({'ok': True, 'id': data.get('id')})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
+@app.route('/api/ig/ocultar-comentario', methods=['POST'])
+@requiere_auth
+def api_ig_ocultar_comentario():
+    token = os.environ.get('META_ACCESS_TOKEN', '')
+    data  = request.get_json() or {}
+    comment_id = data.get('comment_id', '')
+    ocultar    = data.get('ocultar', True)
+    if not token or not comment_id:
+        return jsonify({'ok': False, 'error': 'Parámetros faltantes'})
+    try:
+        r = req.post(
+            f"https://graph.facebook.com/{GRAPH_API_VERSION}/{comment_id}",
+            params={'access_token': token},
+            json={'hide': ocultar}, timeout=10
+        )
+        data = r.json()
+        if 'error' in data:
+            return jsonify({'ok': False, 'error': data['error']['message']})
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+
 @app.route('/api/preview', methods=['POST'])
 @requiere_auth
 def api_preview():

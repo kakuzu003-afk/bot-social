@@ -1172,6 +1172,143 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 }
 .trend-usar-btn:hover { background:rgba(208,120,48,0.15); }
 
+/* ─── PANEL SEO ──────────────────────────────── */
+.seo-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:900px){ .seo-grid { grid-template-columns:1fr; } }
+
+.seo-card {
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:12px; overflow:hidden; display:flex; flex-direction:column;
+}
+.seo-card-head {
+  padding:12px 16px 10px;
+  border-bottom:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.seo-card-title {
+  font-family:'Orbitron',monospace; font-size:12px; font-weight:700;
+  color:var(--neon); letter-spacing:.05em; text-shadow:0 0 10px rgba(208,120,48,0.5);
+}
+.seo-card-body { padding:14px 16px; flex:1; display:flex; flex-direction:column; gap:10px; }
+
+.seo-input {
+  width:100%; background:rgba(20,12,4,0.82); border:1px solid var(--border2);
+  border-radius:8px; color:var(--text); padding:9px 12px;
+  font-size:13px; font-family:'Rajdhani',sans-serif; font-weight:500;
+  outline:none; transition:border-color .2s;
+}
+.seo-input:focus { border-color:#d07830; box-shadow:0 0 0 2px rgba(208,120,48,0.12); }
+.seo-input::placeholder { color:var(--text3); }
+
+.seo-btn {
+  width:100%; padding:10px; border-radius:8px; cursor:pointer;
+  font-family:'Orbitron',monospace; font-size:11px; font-weight:700; letter-spacing:.06em;
+  background:linear-gradient(135deg,rgba(208,120,48,0.25),rgba(200,152,64,0.15));
+  border:1px solid rgba(208,120,48,0.4); color:var(--neon);
+  transition:all .2s; text-transform:uppercase;
+}
+.seo-btn:hover { background:linear-gradient(135deg,rgba(208,120,48,0.4),rgba(200,152,64,0.25)); box-shadow:0 0 16px rgba(208,120,48,0.2); }
+.seo-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+.seo-result {
+  background:rgba(0,0,0,0.3); border:1px solid var(--border2);
+  border-radius:8px; padding:12px 14px;
+  font-size:13px; color:var(--text); line-height:1.6;
+  max-height:320px; overflow-y:auto; white-space:pre-wrap;
+}
+
+/* Secciones del plan estratégico */
+.seo-plan-section { margin-bottom:12px; }
+.seo-plan-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--amber);
+  text-transform:uppercase; letter-spacing:.12em; margin-bottom:4px;
+}
+.seo-plan-text { font-size:13px; color:var(--text); line-height:1.6; }
+
+/* Hashtag tiers */
+.ht-tier { margin-bottom:10px; }
+.ht-tier-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:.1em;
+  text-transform:uppercase; margin-bottom:6px;
+}
+.ht-tier-label.grande  { color:#ef4444; }
+.ht-tier-label.mediano { color:var(--amber); }
+.ht-tier-label.nicho   { color:var(--green); }
+.ht-tags { display:flex; flex-wrap:wrap; gap:5px; }
+.ht-tag {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  padding:3px 9px; border-radius:99px; cursor:pointer;
+  transition:all .15s;
+}
+.ht-tag.grande  { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
+.ht-tag.mediano { background:rgba(232,144,26,0.1); border:1px solid rgba(232,144,26,0.3); color:#fcd34d; }
+.ht-tag.nicho   { background:rgba(200,152,64,0.1); border:1px solid rgba(200,152,64,0.3); color:var(--green); }
+.ht-tag:hover   { filter:brightness(1.3); transform:scale(1.05); }
+
+/* Ideas de contenido */
+.idea-card {
+  background:rgba(0,0,0,0.25); border:1px solid var(--border2);
+  border-radius:9px; padding:11px 13px; display:flex; flex-direction:column; gap:5px;
+}
+.idea-titulo   { font-size:13px; font-weight:700; color:#fff; }
+.idea-hook     { font-size:12px; color:var(--amber); font-style:italic; }
+.idea-meta     { font-size:11px; color:var(--text2); }
+.idea-razon    { font-size:11px; color:var(--text); line-height:1.5; }
+.idea-hashtags { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
+.idea-hashtag  { font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--text3);
+  background:rgba(208,120,48,0.08); border:1px solid rgba(208,120,48,0.2);
+  border-radius:99px; padding:1px 7px; cursor:pointer; }
+.idea-hashtag:hover { color:var(--amber); }
+
+/* Posts Grid IG */
+.ig-posts-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+}
+.ig-post-card {
+  position:relative; border-radius:8px; overflow:hidden;
+  background:var(--bg4); border:1px solid var(--border2);
+  cursor:pointer; transition:border-color .15s;
+  aspect-ratio:1;
+}
+.ig-post-card:hover { border-color:rgba(208,120,48,0.5); }
+.ig-post-thumb { width:100%; height:100%; object-fit:cover; display:block; }
+.ig-post-overlay {
+  position:absolute; bottom:0; left:0; right:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);
+  padding:6px 7px 5px; display:flex; gap:8px; align-items:center;
+}
+.ig-post-stat { font-family:'Share Tech Mono',monospace; font-size:9px; color:#fff; }
+
+/* Comentarios */
+.comentario-item {
+  background:rgba(0,0,0,0.25); border:1px solid var(--border2);
+  border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px;
+}
+.comentario-user { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--amber); }
+.comentario-text { font-size:13px; color:var(--text); line-height:1.5; }
+.comentario-actions { display:flex; gap:8px; }
+.comentario-reply-input {
+  width:100%; background:rgba(20,12,4,0.82); border:1px solid var(--border2);
+  border-radius:6px; color:var(--text); padding:6px 10px;
+  font-size:12px; font-family:'Rajdhani',sans-serif; outline:none;
+  transition:border-color .2s; display:none;
+}
+.comentario-reply-input.visible { display:block; }
+.comentario-reply-input:focus { border-color:#d07830; }
+
+/* Horarios óptimos */
+.horario-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.horario-day { text-align:center; }
+.horario-day-label { font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--text3); margin-bottom:4px; }
+.horario-slot {
+  border-radius:5px; padding:3px 2px;
+  font-family:'Share Tech Mono',monospace; font-size:8px;
+  text-align:center; margin-bottom:3px;
+}
+.horario-slot.hot  { background:rgba(208,120,48,0.35); color:#fcd34d; border:1px solid rgba(208,120,48,0.5); }
+.horario-slot.warm { background:rgba(208,120,48,0.12); color:var(--text2); border:1px solid rgba(208,120,48,0.2); }
+.horario-slot.cold { background:rgba(30,20,10,0.4);   color:var(--text3); border:1px solid var(--border); }
+
 /* Estrategia tag */
 .estrategia-tag {
   display:inline-flex; align-items:center; gap:4px;
@@ -2206,6 +2343,7 @@ input::placeholder, textarea::placeholder {
     <nav class="main-nav">
       <button class="main-nav-btn active" id="mnav-actividad" onclick="switchMainPanel('actividad')">⚡ Actividad</button>
       <button class="main-nav-btn" id="mnav-analytics" onclick="switchMainPanel('analytics')">📊 Analytics Pro</button>
+      <button class="main-nav-btn" id="mnav-seo" onclick="switchMainPanel('seo')">🚀 SEO</button>
       <button class="main-nav-btn" id="mnav-control" onclick="switchMainPanel('control')">🎛️ Control</button>
     </nav>
 
@@ -2380,6 +2518,105 @@ input::placeholder, textarea::placeholder {
 
       </div><!-- /padding -->
     </div><!-- /mpanel-control -->
+
+    <!-- PANEL: SEO -->
+    <div class="main-panel" id="mpanel-seo" style="padding:18px;">
+
+      <!-- Fila 1: Estrategias + Hashtags -->
+      <div class="seo-grid" style="margin-bottom:14px;">
+
+        <!-- Estrategias IA -->
+        <div class="seo-card">
+          <div class="seo-card-head">
+            <span class="seo-card-title">🧠 Estrategias de Crecimiento</span>
+            <span style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;">Powered by IA</span>
+          </div>
+          <div class="seo-card-body">
+            <input type="text" class="seo-input" id="seo-nicho" placeholder="Tu nicho: tecnología, fitness, moda…">
+            <input type="text" class="seo-input" id="seo-seguidores" placeholder="Seguidores actuales: 1500, 10K…">
+            <input type="text" class="seo-input" id="seo-engagement" placeholder="Engagement rate: 3%, 8%…">
+            <input type="text" class="seo-input" id="seo-objetivo" placeholder="Objetivo: monetizar, llegar a 10K…">
+            <button class="seo-btn" id="seo-btn-estrategias" onclick="seoGenerarEstrategias()">⚡ Generar Plan SEO</button>
+            <div id="seo-result-estrategias" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Buscador de Hashtags -->
+        <div class="seo-card">
+          <div class="seo-card-head">
+            <span class="seo-card-title"># Buscador de Hashtags</span>
+            <button onclick="seoCopiarHashtags()" style="font-size:9px;padding:2px 8px;border-radius:5px;background:rgba(208,120,48,0.1);border:1px solid rgba(208,120,48,0.3);color:var(--text2);cursor:pointer;font-family:'Share Tech Mono',monospace;" id="seo-btn-copiar" style="display:none;">📋 Copiar set</button>
+          </div>
+          <div class="seo-card-body">
+            <input type="text" class="seo-input" id="seo-tema-hashtag" placeholder="Tema del contenido: gaming, recetas…">
+            <input type="text" class="seo-input" id="seo-nicho-hashtag" placeholder="Nicho: entretenimiento, educación…">
+            <button class="seo-btn" id="seo-btn-hashtags" onclick="seoBuscarHashtags()">🔍 Generar Hashtags</button>
+            <div id="seo-result-hashtags" style="display:none;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila 2: Ideas de Contenido + Horarios -->
+      <div class="seo-grid" style="margin-bottom:14px;">
+
+        <!-- Ideas de contenido -->
+        <div class="seo-card">
+          <div class="seo-card-head">
+            <span class="seo-card-title">💡 Ideas de Contenido Viral</span>
+            <span style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;">Trends + IA</span>
+          </div>
+          <div class="seo-card-body">
+            <input type="text" class="seo-input" id="seo-nicho-ideas" placeholder="Tu nicho: fitness, tecnología, cocina…">
+            <button class="seo-btn" id="seo-btn-ideas" onclick="seoGenerarIdeas()">🎬 Generar Ideas de Reels</button>
+            <div id="seo-result-ideas" style="display:none;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Horarios óptimos -->
+        <div class="seo-card">
+          <div class="seo-card-head">
+            <span class="seo-card-title">⏰ Horarios Óptimos LATAM</span>
+            <span style="font-size:9px;color:var(--text3);font-family:'Share Tech Mono',monospace;">Chile / ARG / COL / MX</span>
+          </div>
+          <div class="seo-card-body" style="gap:6px;">
+            <div style="display:flex;gap:12px;margin-bottom:4px;">
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(208,120,48,0.35);border-radius:2px;display:inline-block;"></span> Óptimo</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(208,120,48,0.12);border-radius:2px;display:inline-block;"></span> Bueno</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:9px;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:rgba(30,20,10,0.4);border-radius:2px;display:inline-block;"></span> Bajo</span>
+            </div>
+            <div id="seo-horarios-grid"></div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-top:4px;">
+              💡 Publica Reels entre semana a las 12:00 y 20:00 hs para máximo alcance orgánico
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila 3: Gestión de Posts IG -->
+      <div class="seo-card" style="margin-bottom:14px;">
+        <div class="seo-card-head">
+          <span class="seo-card-title">📸 Mis Publicaciones en Instagram</span>
+          <button class="seo-btn" onclick="seoCargarPosts()" style="width:auto;padding:4px 14px;font-size:9px;">↻ Cargar</button>
+        </div>
+        <div class="seo-card-body">
+          <div id="seo-posts-grid" class="ig-posts-grid">
+            <div style="grid-column:1/-1;text-align:center;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);padding:20px;">Haz clic en Cargar para ver tus publicaciones</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila 4: Comentarios -->
+      <div class="seo-card" id="seo-comentarios-card" style="display:none;">
+        <div class="seo-card-head">
+          <span class="seo-card-title" id="seo-comentarios-titulo">💬 Comentarios</span>
+          <button onclick="document.getElementById('seo-comentarios-card').style.display='none'" style="font-size:9px;padding:2px 8px;border-radius:5px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#fca5a5;cursor:pointer;font-family:'Share Tech Mono',monospace;">✕ Cerrar</button>
+        </div>
+        <div class="seo-card-body">
+          <div id="seo-comentarios-list" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+    </div><!-- /mpanel-seo -->
 
     <!-- MODAL CAPTION -->
     <div id="ctrl-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px;">
@@ -4094,6 +4331,250 @@ async function buscarTendencias() {
 
 // Alias para compatibilidad con llamadas existentes
 function cargarTendenciasAnalytics() { buscarTendencias(); }
+
+// ══════════════════════════════════════════════════════
+// PANEL SEO
+// ══════════════════════════════════════════════════════
+
+function _seoSetLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? '⏳ Generando…' : text;
+}
+
+async function seoGenerarEstrategias() {
+  _seoSetLoading('seo-btn-estrategias', true);
+  const nicho      = document.getElementById('seo-nicho').value.trim() || 'general';
+  const seguidores = document.getElementById('seo-seguidores').value.trim() || 'desconocido';
+  const engagement = document.getElementById('seo-engagement').value.trim() || 'desconocido';
+  const objetivo   = document.getElementById('seo-objetivo').value.trim() || 'crecer orgánicamente';
+  const el = document.getElementById('seo-result-estrategias');
+  el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '10px';
+  el.innerHTML = '<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:10px;text-align:center;padding:20px;">⏳ La IA está analizando tu cuenta…</div>';
+  try {
+    const res  = await fetch('/api/seo/estrategias', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nicho, seguidores, engagement, objetivo }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const p = data.plan;
+    const LABELS = {
+      diagnostico: '🔍 Diagnóstico',
+      hashtags:    '# Estrategia de Hashtags',
+      perfil:      '👤 Optimización de Perfil',
+      calendario:  '📅 Calendario de Contenido',
+      engagement:  '🚀 Tácticas de Engagement',
+      kpis:        '📊 KPIs a Monitorear',
+    };
+    el.innerHTML = Object.entries(LABELS).map(([key, label]) => {
+      if (!p[key]) return '';
+      const val = Array.isArray(p[key])
+        ? p[key].map((k,i) => `<div style="display:flex;gap:6px;align-items:flex-start;"><span style="color:var(--amber);flex-shrink:0;">${i+1}.</span><span>${k}</span></div>`).join('')
+        : `<div class="seo-plan-text">${p[key]}</div>`;
+      return `<div class="seo-plan-section">
+        <div class="seo-plan-label">${label}</div>
+        ${val}
+      </div>`;
+    }).join('<hr style="border:none;border-top:1px solid var(--border2);margin:2px 0;">');
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:12px;">❌ ${e.message}</div>`;
+  }
+  _seoSetLoading('seo-btn-estrategias', false, '⚡ Generar Plan SEO');
+}
+
+async function seoBuscarHashtags() {
+  _seoSetLoading('seo-btn-hashtags', true);
+  const tema  = document.getElementById('seo-tema-hashtag').value.trim();
+  const nicho = document.getElementById('seo-nicho-hashtag').value.trim() || 'general';
+  if (!tema) { agregarLog('⚠️ Escribe un tema para generar hashtags','warning'); _seoSetLoading('seo-btn-hashtags',false,'🔍 Generar Hashtags'); return; }
+  const el = document.getElementById('seo-result-hashtags');
+  el.style.display = 'flex'; el.innerHTML = '<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:10px;padding:10px;text-align:center;">⏳ Buscando hashtags óptimos…</div>';
+  try {
+    const res  = await fetch('/api/seo/hashtags', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tema, nicho }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const h = data.hashtags;
+    const renderTier = (tags, cls, label, desc) =>
+      `<div class="ht-tier">
+        <div class="ht-tier-label ${cls}">${label} <span style="opacity:.6;font-size:8px;">${desc}</span></div>
+        <div class="ht-tags">${(tags||[]).map(t=>`<span class="ht-tag ${cls}" onclick="navigator.clipboard.writeText('${t}')" title="Clic para copiar">${t}</span>`).join('')}</div>
+      </div>`;
+    el.innerHTML =
+      renderTier(h.grandes,  'grande',  '🔴 Masivos',   '+1M posts') +
+      renderTier(h.medianos, 'mediano', '🟡 Balance',   '100K-1M') +
+      renderTier(h.nicho,    'nicho',   '🟢 Nicho',    '<100K') +
+      (h.tip ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text2);padding:8px 10px;background:rgba(208,120,48,0.06);border-radius:6px;border-left:2px solid var(--amber);">💡 ${h.tip}</div>` : '');
+    document.getElementById('seo-btn-copiar').style.display = 'block';
+    window._seoLastHashtags = h;
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:12px;">❌ ${e.message}</div>`;
+  }
+  _seoSetLoading('seo-btn-hashtags', false, '🔍 Generar Hashtags');
+}
+
+function seoCopiarHashtags() {
+  const h = window._seoLastHashtags;
+  if (!h) return;
+  const all = [...(h.grandes||[]), ...(h.medianos||[]), ...(h.nicho||[])].join(' ');
+  navigator.clipboard.writeText(all).then(() => agregarLog('📋 Hashtags copiados al portapapeles','success'));
+}
+
+async function seoGenerarIdeas() {
+  _seoSetLoading('seo-btn-ideas', true);
+  const nicho = document.getElementById('seo-nicho-ideas').value.trim() || 'general';
+  const el = document.getElementById('seo-result-ideas');
+  el.style.display = 'flex'; el.innerHTML = '<div style="color:var(--text3);font-family:\'Share Tech Mono\',monospace;font-size:10px;padding:16px;text-align:center;">⏳ Analizando tendencias y generando ideas…</div>';
+  try {
+    const res  = await fetch('/api/seo/ideas', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nicho }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    el.innerHTML = (data.ideas||[]).map((idea, i) => `
+      <div class="idea-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div class="idea-titulo">${i+1}. ${idea.titulo}</div>
+          <button onclick="usarIdea(${JSON.stringify(JSON.stringify(idea))})" style="font-size:9px;padding:2px 9px;border-radius:5px;background:rgba(208,120,48,0.12);border:1px solid rgba(208,120,48,0.35);color:var(--amber);cursor:pointer;font-family:'Share Tech Mono',monospace;white-space:nowrap;flex-shrink:0;">＋ Usar</button>
+        </div>
+        <div class="idea-hook">"${idea.hook}"</div>
+        <div class="idea-meta">📽️ ${idea.formato}</div>
+        <div class="idea-razon">✅ ${idea.razon}</div>
+        <div class="idea-hashtags">${(idea.hashtags||[]).map(h=>`<span class="idea-hashtag" onclick="navigator.clipboard.writeText('${h}')" title="Clic para copiar">${h}</span>`).join('')}</div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);font-size:12px;">❌ ${e.message}</div>`;
+  }
+  _seoSetLoading('seo-btn-ideas', false, '🎬 Generar Ideas de Reels');
+}
+
+function usarIdea(ideaJson) {
+  const idea = JSON.parse(ideaJson);
+  const bEl = document.getElementById('input-busqueda');
+  if (bEl) { bEl.value = idea.titulo; bEl.dispatchEvent(new Event('input')); }
+  agregarLog(`💡 Idea cargada: "${idea.titulo}"`, 'info');
+}
+
+// Horarios óptimos — datos estáticos basados en benchmarks LATAM
+(function renderHorarios() {
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  // hot=óptimo, warm=bueno, cold=bajo — formato HH:mm
+  const SLOTS = {
+    'Lun': [['06:00','cold'],['12:00','hot'],['18:00','warm'],['20:00','hot']],
+    'Mar': [['06:00','cold'],['12:00','hot'],['18:00','warm'],['20:00','hot']],
+    'Mié': [['06:00','cold'],['12:00','hot'],['18:00','hot'], ['20:00','warm']],
+    'Jue': [['06:00','cold'],['12:00','warm'],['18:00','hot'],['20:00','hot']],
+    'Vie': [['06:00','cold'],['12:00','warm'],['18:00','hot'],['21:00','hot']],
+    'Sáb': [['09:00','warm'],['12:00','warm'],['17:00','hot'],['21:00','warm']],
+    'Dom': [['10:00','cold'],['14:00','warm'],['19:30','hot'],['21:30','hot']],
+  };
+  function init() {
+    const grid = document.getElementById('seo-horarios-grid');
+    if (!grid) return;
+    grid.className = 'horario-grid';
+    grid.innerHTML = DAYS.map(d => `
+      <div class="horario-day">
+        <div class="horario-day-label">${d}</div>
+        ${SLOTS[d].map(([h,cls])=>`<div class="horario-slot ${cls}">${h}</div>`).join('')}
+      </div>`).join('');
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+async function seoCargarPosts() {
+  const grid = document.getElementById('seo-posts-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);padding:20px;">⏳ Cargando publicaciones…</div>';
+  try {
+    const res  = await fetch('/api/ig/posts');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const posts = data.posts || [];
+    if (!posts.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--text3);padding:20px;">No se encontraron publicaciones</div>'; return; }
+    grid.innerHTML = posts.map(p => {
+      const thumb = p.thumbnail_url || p.media_url || '';
+      const tipo  = p.media_type === 'VIDEO' ? '🎬' : (p.media_type === 'CAROUSEL_ALBUM' ? '📷' : '🖼️');
+      return `<div class="ig-post-card" onclick="seoVerComentarios('${p.id}', '${(p.caption||'').slice(0,40).replace(/'/g,"\\'")}')">
+        ${thumb ? `<img class="ig-post-thumb" src="${thumb}" alt="" onerror="this.style.display='none'">` : `<div class="ig-post-thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--bg4);">${tipo}</div>`}
+        <div class="ig-post-overlay">
+          <span class="ig-post-stat">❤️ ${p.like_count||0}</span>
+          <span class="ig-post-stat">💬 ${p.comments_count||0}</span>
+          <a href="${p.permalink||'#'}" target="_blank" onclick="event.stopPropagation()" style="margin-left:auto;font-size:9px;color:var(--text2);">↗</a>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:1/-1;color:var(--red);font-size:11px;text-align:center;padding:20px;">❌ ${e.message}</div>`;
+  }
+}
+
+async function seoVerComentarios(mediaId, caption) {
+  const card = document.getElementById('seo-comentarios-card');
+  const list = document.getElementById('seo-comentarios-list');
+  const titulo = document.getElementById('seo-comentarios-titulo');
+  card.style.display = 'flex';
+  titulo.textContent = `💬 Comentarios — "${caption}…"`;
+  list.innerHTML = '<div style="text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);padding:16px;">⏳ Cargando comentarios…</div>';
+  card.scrollIntoView({ behavior:'smooth', block:'start' });
+  try {
+    const res  = await fetch(`/api/ig/comentarios?media_id=${mediaId}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const comentarios = data.comentarios || [];
+    if (!comentarios.length) { list.innerHTML = '<div style="color:var(--text3);font-size:11px;text-align:center;padding:16px;">Sin comentarios aún</div>'; return; }
+    list.innerHTML = comentarios.map(c => `
+      <div class="comentario-item" id="cmt-${c.id}">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span class="comentario-user">@${c.username||'usuario'}</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);">${new Date(c.timestamp).toLocaleDateString('es-CL')}</span>
+        </div>
+        <div class="comentario-text">${c.text}</div>
+        <div class="comentario-actions">
+          <button onclick="seoToggleReply('${c.id}')" style="font-size:9px;padding:2px 9px;border-radius:5px;background:rgba(208,120,48,0.1);border:1px solid rgba(208,120,48,0.3);color:var(--amber);cursor:pointer;font-family:'Share Tech Mono',monospace;">↩ Responder</button>
+          <button onclick="seoOcultarComentario('${c.id}')" style="font-size:9px;padding:2px 9px;border-radius:5px;background:rgba(100,100,120,0.1);border:1px solid rgba(100,100,120,0.3);color:var(--text3);cursor:pointer;font-family:'Share Tech Mono',monospace;">🚫 Ocultar</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" class="comentario-reply-input" id="reply-input-${c.id}" placeholder="Escribe tu respuesta…">
+          <button onclick="seoEnviarRespuesta('${c.id}')" style="font-size:9px;padding:4px 10px;border-radius:5px;background:rgba(208,120,48,0.15);border:1px solid rgba(208,120,48,0.4);color:var(--neon);cursor:pointer;font-family:'Share Tech Mono',monospace;flex-shrink:0;">Enviar</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--red);font-size:11px;text-align:center;padding:16px;">❌ ${e.message}</div>`;
+  }
+}
+
+function seoToggleReply(commentId) {
+  const inp = document.getElementById(`reply-input-${commentId}`);
+  if (inp) { inp.classList.toggle('visible'); if (inp.classList.contains('visible')) inp.focus(); }
+}
+
+async function seoEnviarRespuesta(commentId) {
+  const inp = document.getElementById(`reply-input-${commentId}`);
+  const mensaje = inp?.value?.trim();
+  if (!mensaje) return;
+  inp.disabled = true;
+  try {
+    const res  = await fetch('/api/ig/responder', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ comment_id: commentId, mensaje }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    inp.value = '';
+    inp.classList.remove('visible');
+    agregarLog('✅ Respuesta enviada en Instagram', 'success');
+  } catch(e) {
+    agregarLog(`❌ Error al responder: ${e.message}`, 'error');
+  }
+  inp.disabled = false;
+}
+
+async function seoOcultarComentario(commentId) {
+  try {
+    const res  = await fetch('/api/ig/ocultar-comentario', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ comment_id: commentId, ocultar: true }) });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    const el = document.getElementById(`cmt-${commentId}`);
+    if (el) el.style.opacity = '0.3';
+    agregarLog('🚫 Comentario ocultado en Instagram', 'info');
+  } catch(e) {
+    agregarLog(`❌ Error: ${e.message}`, 'error');
+  }
+}
 
 function usarTendencia(termino) {
   const campos = ['input-busqueda', 'pub-cat-search'];
