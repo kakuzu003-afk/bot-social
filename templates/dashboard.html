@@ -4154,7 +4154,7 @@ let chartTiposInst     = null;
 let chartEstrategiasInst = null;
 
 function switchMainPanel(name) {
-  ['actividad','analytics','control'].forEach(n => {
+  ['actividad','analytics','seo','control'].forEach(n => {
     var _b = document.getElementById('mnav-'+n);
     var _p = document.getElementById('mpanel-'+n);
     if (_b) { _b.classList.remove('active'); if (n===name) _b.classList.add('active'); }
