@@ -4931,12 +4931,13 @@ async function seoGenerarIdeas() {
     window._seoIdeasCache = data.ideas || [];
     el.innerHTML = window._seoIdeasCache.map((idea, i) => `
       <div class="idea-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
           <div class="idea-titulo">${i+1}. ${idea.titulo}</div>
-          <button onclick="usarIdea(${i})" style="font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.5);color:#d09aff;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseover="this.style.background='rgba(168,85,247,0.3)'" onmouseout="this.style.background='rgba(168,85,247,0.15)'">▶ Usar</button>
+          <button onclick="copiarIdea(${i})" style="font-size:11px;padding:5px 13px;border-radius:7px;background:rgba(0,217,255,0.12);border:1px solid rgba(0,217,255,0.45);color:#7fe8ff;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:700;white-space:nowrap;flex-shrink:0;transition:all .15s;display:flex;align-items:center;gap:5px;" onmouseover="this.style.background='rgba(0,217,255,0.25)'" onmouseout="this.style.background='rgba(0,217,255,0.12)'">📋 Copiar</button>
         </div>
         <div class="idea-hook">"${idea.hook}"</div>
         <div class="idea-meta">📽️ ${idea.formato}</div>
+        ${idea.descripcion ? `<div style="font-size:12px;color:#c8d4f0;line-height:1.55;margin:5px 0 3px;font-family:'Inter',sans-serif;background:rgba(0,0,0,0.2);border-left:2px solid rgba(0,217,255,0.4);padding:6px 10px;border-radius:0 6px 6px 0;">${idea.descripcion}</div>` : ''}
         <div class="idea-razon">✅ ${idea.razon}</div>
         <div class="idea-hashtags">${(idea.hashtags||[]).map(h=>`<span class="idea-hashtag" onclick="navigator.clipboard.writeText('${h}')" title="Clic para copiar">${h}</span>`).join('')}</div>
       </div>`).join('');
@@ -4949,19 +4950,36 @@ async function seoGenerarIdeas() {
 function usarIdea(idx) {
   const idea = (window._seoIdeasCache || [])[idx];
   if (!idea) { mostrarToast('No se encontró la idea', 'error'); return; }
-
-  // 1. Cargar título en el campo de búsqueda libre del Ciclo
   const bEl = document.getElementById('input-busqueda');
   if (bEl) { bEl.value = idea.titulo; bEl.dispatchEvent(new Event('input')); }
-
-  // 2. Si hay campo de precio vacío, no tocarlo
-  // 3. Navegar al tab Ciclo para que el usuario vea el resultado
   switchTab('ciclo');
+  mostrarToast(`✅ Idea cargada en Ciclo: "${idea.titulo.substring(0,40)}…"`, 'success');
+  agregarLog(`💡 Idea SEO cargada: "${idea.titulo}" | Hook: "${idea.hook}"`, 'info');
+}
 
-  // 4. Toast de confirmación con info útil
-  const hashStr = (idea.hashtags || []).slice(0,3).join(' ');
-  mostrarToast(`✅ Idea cargada en Ciclo: "${idea.titulo.substring(0,40)}…" — Hook: "${idea.hook}"`, 'success');
-  agregarLog(`💡 Idea SEO cargada: "${idea.titulo}" | Hook: "${idea.hook}" | ${hashStr}`, 'info');
+function copiarIdea(idx) {
+  const idea = (window._seoIdeasCache || [])[idx];
+  if (!idea) { mostrarToast('No se encontró la idea', 'error'); return; }
+
+  const hashtags = (idea.hashtags || []).join(' ');
+  const descripcion = idea.descripcion ? idea.descripcion : idea.razon || '';
+
+  // Caption completo listo para pegar en Instagram
+  const caption = `${idea.titulo}\n\n${descripcion}\n\n${hashtags}`;
+
+  navigator.clipboard.writeText(caption).then(() => {
+    mostrarToast('📋 Caption copiado al portapapeles', 'success');
+    agregarLog(`📋 Caption copiado: "${idea.titulo}"`, 'success');
+  }).catch(() => {
+    // Fallback para navegadores sin permiso de clipboard
+    const ta = document.createElement('textarea');
+    ta.value = caption;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    mostrarToast('📋 Caption copiado al portapapeles', 'success');
+  });
 }
 
 // Horarios óptimos — datos estáticos basados en benchmarks LATAM

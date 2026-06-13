@@ -3391,6 +3391,7 @@ Devuelve SOLO este JSON:
       "titulo": "título del Reel (máx 12 palabras, orientado a resultados)",
       "hook": "primeras palabras del video que enganchen en 3 segundos (máx 10 palabras)",
       "formato": "unboxing / comparativa / tutorial / antes-después / POV / beneficio / error-común / testimonio",
+      "descripcion": "caption completo para el post de Instagram: 2-3 oraciones que amplían el título, presentan el beneficio principal y terminan con un CTA claro (ej: Comenta QUIERO, Guarda este post, Link en bio). Debe sonar natural, conversacional y persuasivo.",
       "razon": "por qué va a convertir para este negocio (1 oración concreta)",
       "hashtags": ["#tag1","#tag2","#tag3","#tag4","#tag5"]
     }}
@@ -3402,7 +3403,7 @@ Devuelve SOLO este JSON:
             model='llama-3.3-70b-versatile',
             messages=[{'role': 'user', 'content': prompt}],
             temperature=0.6,
-            max_tokens=1600,
+            max_tokens=2200,
             response_format={'type': 'json_object'}
         )
         ideas = _json.loads(res.choices[0].message.content)
