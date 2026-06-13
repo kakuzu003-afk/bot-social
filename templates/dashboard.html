@@ -1441,7 +1441,6 @@ input::placeholder, textarea::placeholder {
       <button class="tab-btn active" id="tab-ciclo"     onclick="switchTab('ciclo')"     role="tab"><span class="tb-icon">⚡</span> Ciclo</button>
       <button class="tab-btn"        id="tab-publicar"  onclick="switchTab('publicar')"  role="tab"><span class="tb-icon">📤</span> Publicar</button>
       <button class="tab-btn"        id="tab-catalogo"  onclick="switchTab('catalogo');cargarCatalogo()"  role="tab"><span class="tb-icon">🗂</span> Catálogo</button>
-      <button class="tab-btn"        id="tab-perfiles"  onclick="switchTab('perfiles')"  role="tab"><span class="tb-icon">💾</span> Perfiles</button>
       <button class="tab-btn"        id="tab-clientes"  onclick="switchTab('clientes')"  role="tab"><span class="tb-icon">📊</span> Stats</button>
     </nav>
 
@@ -2132,38 +2131,6 @@ input::placeholder, textarea::placeholder {
 
       </div><!-- /panel-catalogo -->
 
-      <!-- ── TAB: PERFILES ── -->
-      <div class="tab-panel" id="panel-perfiles">
-        <div class="field-label" style="margin-top:0">💾 Productos guardados</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:10px;">Guarda combinaciones frecuentes para lanzar con 1 clic</div>
-
-        <!-- Formulario nuevo perfil -->
-        <div style="background:rgba(208,120,48,0.03);border:1px solid rgba(208,120,48,0.15);border-radius:9px;padding:11px;margin-bottom:12px;">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--cyan);margin-bottom:8px;">+ NUEVO PERFIL</div>
-          <input type="text" class="text-input" id="perfil-nombre" placeholder="Nombre del perfil (ej: Xbox Game Pass)">
-          <div class="field-label">Búsqueda libre</div>
-          <input type="text" class="text-input" id="perfil-busqueda" placeholder="gaming, xbox, consola chile">
-          <div class="field-label">Título producto</div>
-          <input type="text" class="text-input" id="perfil-titulo" placeholder="Xbox Game Pass Ultimate">
-          <div class="field-label">Precio</div>
-          <input type="text" class="text-input" id="perfil-precio" placeholder="$9.900">
-          <div class="field-label">Mood</div>
-          <select id="perfil-mood">
-            <option value="energico">⚡ Enérgico</option>
-            <option value="motivador">🔥 Motivador</option>
-            <option value="alegre">😊 Alegre</option>
-            <option value="corporativo">💼 Corporativo</option>
-            <option value="relajado">🌿 Relajado</option>
-            <option value="misterioso">🌑 Misterioso</option>
-          </select>
-          <button onclick="guardarPerfil()" style="width:100%;margin-top:10px;background:linear-gradient(135deg,rgba(208,120,48,0.15),rgba(208,120,48,0.05));border:1px solid rgba(208,120,48,0.35);border-radius:7px;color:var(--cyan);padding:8px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.06em;">💾 GUARDAR PERFIL</button>
-        </div>
-
-        <!-- Lista de perfiles -->
-        <div id="perfilesList">
-          <div style="text-align:center;padding:20px;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;">Sin perfiles guardados aún</div>
-        </div>
-      </div>
 
       <!-- ── TAB: CLIENTES / STATS ── -->
       <div class="tab-panel" id="panel-clientes">
@@ -2409,11 +2376,10 @@ function closeSidebar() {
 
 // ── Tab switching ────────────────────────────────────────
 function switchTab(name) {
-  ['ciclo','publicar','catalogo','perfiles','clientes'].forEach(t => {
+  ['ciclo','publicar','catalogo','clientes'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t === name);
     document.getElementById('panel-'+t).classList.toggle('active', t === name);
   });
-  if (name === 'perfiles') cargarPerfiles();
 }
 
 // ── Presets de servicio ────────────────────────────────────
@@ -3748,82 +3714,6 @@ function cargarInsights() {
   });
 }
 
-// ── Perfiles de producto ─────────────────────────────────
-function cargarPerfiles() {
-  fetch('/api/profiles').then(r=>r.json()).then(perfiles => {
-    const el = document.getElementById('perfilesList');
-    if (!perfiles.length) {
-      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;">Sin perfiles guardados aún</div>`;
-      return;
-    }
-    el.innerHTML = perfiles.map(p => `
-      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;margin-bottom:6px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:700;color:#fff;">${p.nombre}</span>
-          <div style="display:flex;gap:4px;">
-            <button onclick="cargarPerfil('${p.id}')" style="background:rgba(208,120,48,0.1);border:1px solid rgba(208,120,48,0.3);border-radius:5px;color:var(--cyan);font-size:10px;padding:3px 8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;">⚡ Usar</button>
-            <button onclick="eliminarPerfil('${p.id}')" style="background:rgba(255,45,107,0.08);border:1px solid rgba(255,45,107,0.25);border-radius:5px;color:var(--red);font-size:10px;padding:3px 7px;cursor:pointer;">🗑</button>
-          </div>
-        </div>
-        <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);line-height:1.8;">
-          ${p.titulo_producto ? `<div>📦 ${p.titulo_producto}</div>` : ''}
-          ${p.busqueda ? `<div>🔍 ${p.busqueda}</div>` : ''}
-          ${p.precio ? `<div>💰 ${p.precio}</div>` : ''}
-          <div>🎵 ${p.mood} · ${p.fecha}</div>
-        </div>
-      </div>`).join('');
-  });
-}
-
-function guardarPerfil() {
-  const nombre = document.getElementById('perfil-nombre').value.trim();
-  if (!nombre) { agregarLog('⚠️ El perfil necesita un nombre', 'warning'); return; }
-  const payload = {
-    nombre,
-    busqueda:       document.getElementById('perfil-busqueda').value.trim(),
-    titulo_producto:document.getElementById('perfil-titulo').value.trim(),
-    precio:         document.getElementById('perfil-precio').value.trim(),
-    mood:           document.getElementById('perfil-mood').value,
-    cliente_id:     document.getElementById('select-cliente').value,
-  };
-  fetch('/api/profiles', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
-    .then(r=>r.json()).then(d => {
-      if (d.ok) {
-        agregarLog(`💾 Perfil "${nombre}" guardado ✅`, 'success');
-        ['perfil-nombre','perfil-busqueda','perfil-titulo','perfil-precio'].forEach(id => document.getElementById(id).value='');
-        cargarPerfiles();
-      } else { agregarLog(d.msg || 'Error guardando perfil', 'error'); }
-    });
-}
-
-function cargarPerfil(profileId) {
-  fetch('/api/profiles').then(r=>r.json()).then(perfiles => {
-    const p = perfiles.find(x => x.id === profileId);
-    if (!p) return;
-    if (p.busqueda)        document.getElementById('input-busqueda').value = p.busqueda;
-    if (p.titulo_producto) document.getElementById('ciclo-titulo').value   = p.titulo_producto;
-    if (p.precio)          document.getElementById('input-precio').value   = p.precio;
-    if (p.mood)            document.getElementById('select-mood').value    = p.mood;
-    if (p.cliente_id)      { document.getElementById('select-cliente').value = p.cliente_id; actualizarClienteSeleccionado(); }
-    // Actualizar indicador de modo
-    const val = p.busqueda || p.titulo_producto;
-    if (val) {
-      document.getElementById('modeIndicator').className = 'mode-tag libre';
-      document.getElementById('modeLabel').textContent   = `Perfil: "${p.nombre}"`;
-    }
-    switchTab('ciclo');
-    agregarLog(`✅ Perfil "${p.nombre}" cargado — listo para ejecutar ciclo`, 'success');
-  });
-}
-
-async function eliminarPerfil(profileId) {
-  const ok = await showConfirm('Eliminar perfil', '¿Eliminar este perfil de configuración? Esta acción no se puede deshacer.');
-  if (!ok) return;
-  fetch(`/api/profiles/${profileId}`, { method:'DELETE' })
-    .then(r=>r.json()).then(d => {
-      if (d.ok) { agregarLog('🗑 Perfil eliminado', 'warning'); cargarPerfiles(); showToast('Perfil eliminado', 'warning'); }
-    });
-}
 
 // ── Toast Notifications ────────────────────────────────
 const TOAST_ICONS = { success:'✅', error:'❌', info:'⚡', warning:'⚠️' };
