@@ -2868,8 +2868,8 @@ div[style*="rgba(208,120,48"] { border-color: rgba(0,217,255,0.2) !important; ba
     <!-- PANEL: ANALYTICS PRO -->
     <div class="main-panel" id="mpanel-analytics">
 
-      <!-- KPI Cards -->
-      <div class="kpi-grid">
+      <!-- KPI Cards — fila 1 -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);">
         <div class="kpi-card kpi-posts">
           <div class="kpi-icon">📸</div>
           <div class="kpi-label">Posts Publicados</div>
@@ -2894,6 +2894,51 @@ div[style*="rgba(208,120,48"] { border-color: rgba(0,217,255,0.2) !important; ba
           <div class="kpi-value" id="kpi-tendencias">0</div>
           <div class="kpi-delta">En tiempo real • Chile</div>
         </div>
+        <!-- ★ NUEVO: Engagement Rate -->
+        <div class="kpi-card" style="border-color:rgba(0,255,65,0.2);background:linear-gradient(135deg,rgba(0,255,65,0.05),rgba(0,0,0,0));">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-label">Engagement Rate</div>
+          <div class="kpi-value" id="kpi-engagement" style="font-size:22px;">—</div>
+          <div class="kpi-delta" id="kpi-engagement-label" style="color:var(--text3);">Calculando…</div>
+          <div id="chartEngagement" style="margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <!-- ★ NUEVO: Consistencia + Alcance Potencial -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+
+        <!-- Score de Consistencia -->
+        <div class="chart-card" style="padding:14px;">
+          <div class="chart-card-title" style="margin-bottom:10px;">
+            🗓️ <span>Consistencia</span> — Frecuencia de publicación
+          </div>
+          <div id="card-consistencia-body">
+            <div style="font-size:10px;color:var(--text3);text-align:center;padding:20px;">
+              Sin datos aún — publica para ver tu score
+            </div>
+          </div>
+        </div>
+
+        <!-- Alcance Potencial -->
+        <div class="chart-card" style="padding:14px;">
+          <div class="chart-card-title" style="margin-bottom:10px;">
+            🎯 <span>Alcance Potencial</span> — Último set de hashtags
+          </div>
+          <div id="card-alcance-body">
+            <div style="font-size:10px;color:var(--text3);text-align:center;padding:20px;">
+              Genera hashtags en SEO para ver el alcance estimado
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ★ NUEVO: Heatmap actividad semanal -->
+      <div class="chart-card" style="margin-bottom:12px;">
+        <div class="chart-card-title">
+          🌡️ <span>Heatmap</span> — Actividad por día y hora de la semana
+        </div>
+        <div id="chartHeatmap"></div>
       </div>
 
       <!-- Gráficos -->
@@ -2902,9 +2947,11 @@ div[style*="rgba(208,120,48"] { border-color: rgba(0,217,255,0.2) !important; ba
           <div class="chart-card-title">📈 <span>Actividad</span> — Posts por hora del día</div>
           <div id="chartActividad"></div>
         </div>
+        <!-- ★ NUEVO: Rendimiento por Formato (reemplaza donut simple) -->
         <div class="chart-card">
-          <div class="chart-card-title">🥧 <span>Distribución</span> — Tipos de contenido</div>
-          <div id="chartTipos"></div>
+          <div class="chart-card-title">⚡ <span>Rendimiento</span> — Por formato de contenido</div>
+          <div id="tabla-formato" style="padding:4px 0;"></div>
+          <div id="chartTipos" style="margin-top:8px;"></div>
         </div>
       </div>
 
@@ -4649,9 +4696,14 @@ let estrategiasContador = {};
 let actividadPorHora    = new Array(24).fill(0);
 let reelsCount = 0;
 let postsCount = 0;
-let chartActividadInst = null;
-let chartTiposInst     = null;
+let chartActividadInst   = null;
+let chartTiposInst       = null;
 let chartEstrategiasInst = null;
+
+// ★ Nuevas estructuras de tracking
+let formatoStats     = { reel:{posts:0,likes:0,comments:0}, post:{posts:0,likes:0,comments:0} };
+let diasPublicacion  = {};   // 'YYYY-MM-DD': count
+let actividadSemanal = {};   // 'dia-hora': count (0=Lun … 6=Dom)
 
 function switchMainPanel(name) {
   ['actividad','analytics','seo','control'].forEach(n => {
@@ -4676,18 +4728,44 @@ function actualizarKPIs() {
   document.getElementById('kpi-posts-delta').textContent       = ultimoCiclo ? '⏱ Último: ' + ultimoCiclo : 'Sin actividad aún';
   document.getElementById('kpi-comentarios-delta').textContent = c > 0 ? '▲ Bot acumulado' : 'Sin actividad aún';
 
-  // Fetch real likes received from Instagram Graph API
   document.getElementById('kpi-likes').textContent       = '…';
   document.getElementById('kpi-likes-delta').textContent = 'Consultando Instagram…';
   const clienteId = document.getElementById('select-cliente')?.value || 'aurakey';
   fetch(`/api/insights/${clienteId}`).then(r => r.json()).then(d => {
     if (d.ok && Array.isArray(d.media_reciente) && d.media_reciente.length) {
-      const realLikes = d.media_reciente.reduce((s, m) => s + (m.like_count || 0), 0);
-      document.getElementById('kpi-likes').textContent       = realLikes;
-      document.getElementById('kpi-likes-delta').textContent = `❤️ Últimas ${d.media_reciente.length} publicaciones`;
+      const media       = d.media_reciente;
+      const totalLikes  = media.reduce((s, m) => s + (m.like_count    || 0), 0);
+      const totalComs   = media.reduce((s, m) => s + (m.comments_count|| 0), 0);
+      const totalPosts  = media.length;
+
+      document.getElementById('kpi-likes').textContent       = totalLikes;
+      document.getElementById('kpi-likes-delta').textContent = `❤️ Últimas ${totalPosts} publicaciones`;
+
+      // ★ Engagement Rate = (likes + comments) / posts
+      const engRate = totalPosts > 0 ? ((totalLikes + totalComs) / totalPosts) : 0;
+      const engPct  = engRate.toFixed(1);
+      const engColor = engRate >= 6 ? '#00FF41' : engRate >= 3 ? '#FFB800' : '#FF006E';
+      const engLabel = engRate >= 6 ? '🔥 Viral' : engRate >= 3 ? '✅ Bueno' : '⚠️ Bajo';
+
+      document.getElementById('kpi-engagement').textContent       = engPct + '%';
+      document.getElementById('kpi-engagement').style.color       = engColor;
+      document.getElementById('kpi-engagement-label').textContent = engLabel + ' · prom/post';
+      document.getElementById('kpi-engagement-label').style.color = engColor;
+
+      // Actualizar formatoStats con likes reales por formato
+      media.forEach(m => {
+        const tipo = m.media_type === 'VIDEO' ? 'reel' : 'post';
+        formatoStats[tipo].likes    += (m.like_count     || 0);
+        formatoStats[tipo].comments += (m.comments_count || 0);
+      });
+
+      renderEngagementGauge(engRate);
+      renderFormatoTable();
     } else {
-      document.getElementById('kpi-likes').textContent       = '—';
-      document.getElementById('kpi-likes-delta').textContent = d.error || 'Sin datos de Instagram';
+      document.getElementById('kpi-likes').textContent           = '—';
+      document.getElementById('kpi-likes-delta').textContent     = d.error || 'Sin datos de Instagram';
+      document.getElementById('kpi-engagement').textContent      = '—';
+      document.getElementById('kpi-engagement-label').textContent= 'Conecta Instagram';
     }
   }).catch(() => {
     document.getElementById('kpi-likes').textContent       = '—';
@@ -4754,6 +4832,159 @@ function renderChartsAnalytics() {
     chartEstrategiasInst = new ApexCharts(document.getElementById('chartEstrategias'), barOpts);
     chartEstrategiasInst.render();
   }
+
+  // ★ Nuevas features
+  renderHeatmap();
+  renderConsistencia();
+  renderFormatoTable();
+}
+
+// ★ 1. Gauge de Engagement Rate
+function renderEngagementGauge(rate) {
+  const el = document.getElementById('chartEngagement');
+  if (!el) return;
+  const pct   = Math.min(Math.round(rate * 10), 100); // 10% = gauge lleno
+  const color = rate >= 6 ? '#00FF41' : rate >= 3 ? '#FFB800' : '#FF006E';
+  const opts  = {
+    chart: { type:'radialBar', height:90, background:'transparent', sparkline:{enabled:true} },
+    series: [pct],
+    plotOptions: { radialBar: {
+      hollow: { size:'55%' },
+      track:  { background:'rgba(255,255,255,0.05)' },
+      dataLabels: { show:false }
+    }},
+    colors: [color],
+    stroke: { lineCap:'round' }
+  };
+  if (window._chartEngInst) { window._chartEngInst.updateSeries([pct]); window._chartEngInst.updateOptions({colors:[color]}); }
+  else { window._chartEngInst = new ApexCharts(el, opts); window._chartEngInst.render(); }
+}
+
+// ★ 2. Heatmap día × hora
+function renderHeatmap() {
+  const el = document.getElementById('chartHeatmap');
+  if (!el) return;
+  const dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const series = dias.map((name, dia) => ({
+    name,
+    data: Array.from({length:24}, (_, hora) => ({
+      x: hora + 'h',
+      y: actividadSemanal[`${dia}-${hora}`] || 0
+    }))
+  }));
+  const opts = {
+    chart: { type:'heatmap', height:190, background:'transparent', toolbar:{show:false} },
+    theme: { mode:'dark' },
+    series,
+    xaxis: { labels:{ style:{ colors:'#5C6A99', fontSize:'8px' } } },
+    yaxis: { labels:{ style:{ colors:'#5C6A99', fontSize:'9px' } } },
+    plotOptions: { heatmap: { shadeIntensity:0.6, colorScale: { ranges:[
+      { from:0, to:0,   color:'#0c0d1e',  name:'Ninguno' },
+      { from:1, to:2,   color:'#003d5c',  name:'Bajo'    },
+      { from:3, to:5,   color:'#00D9FF',  name:'Medio'   },
+      { from:6, to:999, color:'#00FF41',  name:'Alto'    }
+    ]}}},
+    dataLabels: { enabled:false },
+    grid: { show:false },
+    tooltip: { theme:'dark', y:{ formatter: v => v + ' posts' } }
+  };
+  if (window._chartHeatmapInst) window._chartHeatmapInst.updateSeries(series);
+  else { window._chartHeatmapInst = new ApexCharts(el, opts); window._chartHeatmapInst.render(); }
+}
+
+// ★ 3. Tabla rendimiento por formato
+function renderFormatoTable() {
+  const el = document.getElementById('tabla-formato');
+  if (!el) return;
+  const tipos = [
+    { key:'reel', label:'🎬 Reel', color:'#FF6B35' },
+    { key:'post', label:'📸 Post', color:'#00D9FF' }
+  ];
+  const rows = tipos.map(({ key, label, color }) => {
+    const s   = formatoStats[key];
+    const tot = s.likes + s.comments;
+    const eng = s.posts > 0 ? (tot / s.posts).toFixed(1) : '—';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:7px 8px;color:${color};font-weight:700;">${label}</td>
+      <td style="padding:7px 8px;text-align:center;">${s.posts}</td>
+      <td style="padding:7px 8px;text-align:center;">${s.likes  || '—'}</td>
+      <td style="padding:7px 8px;text-align:center;">${s.comments|| '—'}</td>
+      <td style="padding:7px 8px;text-align:center;color:${color};font-weight:600;">${eng}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-family:'Poppins',sans-serif;font-size:12px;color:var(--text);">
+    <thead><tr style="color:var(--text3);font-size:9px;text-transform:uppercase;letter-spacing:.06em;">
+      <th style="text-align:left;padding:4px 8px;">Formato</th>
+      <th style="padding:4px 8px;">Posts</th>
+      <th style="padding:4px 8px;">Likes</th>
+      <th style="padding:4px 8px;">Coms</th>
+      <th style="padding:4px 8px;">Eng/post</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ★ 4. Score de Consistencia + mini calendario
+function renderConsistencia() {
+  const el = document.getElementById('card-consistencia-body');
+  if (!el) return;
+  const hoy = new Date();
+  let postsSemana = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(hoy); d.setDate(d.getDate() - i);
+    const k = d.toISOString().slice(0,10);
+    if (diasPublicacion[k]) postsSemana += diasPublicacion[k];
+  }
+  const color = postsSemana >= 5 ? '#00FF41' : postsSemana >= 2 ? '#FFB800' : '#FF006E';
+  const label = postsSemana >= 5 ? '🟢 Consistente' : postsSemana >= 2 ? '🟡 Irregular' : '🔴 Inactivo';
+  const tip   = postsSemana >= 5 ? 'Excelente ritmo. Instagram premia la consistencia.' :
+                postsSemana >= 2 ? 'Sube a 5-7 posts/semana para más alcance orgánico.' :
+                                   'Publica al menos 3 veces esta semana para no perder posicionamiento.';
+
+  // Últimos 14 días como mini grid
+  const celdas = Array.from({length:14}, (_, i) => {
+    const d = new Date(hoy); d.setDate(d.getDate() - (13 - i));
+    const k = d.toISOString().slice(0,10);
+    const n = diasPublicacion[k] || 0;
+    const bg = n === 0 ? 'rgba(255,255,255,0.05)' : n === 1 ? 'rgba(0,217,255,0.35)' : 'rgba(0,255,65,0.55)';
+    return `<div title="${k}: ${n} posts" style="width:16px;height:16px;border-radius:3px;background:${bg};"></div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <div style="font-size:30px;font-weight:800;color:${color};line-height:1;">${postsSemana}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${color};">${label}</div>
+        <div style="font-size:10px;color:var(--text3);">posts esta semana</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:3px;margin-bottom:6px;">${celdas}</div>
+    <div style="font-size:9px;color:var(--text3);margin-bottom:6px;">Últimos 14 días</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.4;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:5px;border-left:2px solid ${color};">${tip}</div>`;
+}
+
+// ★ 5. Alcance Potencial — llamar desde seoBuscarHashtags
+function actualizarAlcance(h) {
+  const el = document.getElementById('card-alcance-body');
+  if (!el || !h) return;
+  const ng = (h.grandes  || []).slice(0,3).length;
+  const nm = (h.medianos || []).length;
+  const nn = (h.nicho    || []).length;
+  const min = ng * 800  + nm * 1500  + nn * 2500;
+  const max = ng * 3000 + nm * 7000  + nn * 12000;
+  const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : n;
+  const total = ng + nm + nn;
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:10px;">
+      <div style="font-size:26px;font-weight:800;color:var(--cyan);">${fmt(min)} – ${fmt(max)}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;">cuentas que pueden ver tu post</div>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+      <span style="font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,0,110,0.1);border:1px solid rgba(255,0,110,0.3);color:#ff8db8;">${ng} masivos</span>
+      <span style="font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(255,184,0,0.1);border:1px solid rgba(255,184,0,0.3);color:#ffd980;">${nm} balance</span>
+      <span style="font-size:10px;padding:3px 8px;border-radius:99px;background:rgba(0,255,65,0.08);border:1px solid rgba(0,255,65,0.3);color:#80ff99;">${nn} nicho</span>
+    </div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;">${total} hashtags · estimado conservador</div>`;
 }
 
 async function buscarTendencias() {
@@ -4909,6 +5140,7 @@ async function seoBuscarHashtags() {
       `<button onclick="seoUsarHashtagsEnPost()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:rgba(0,255,65,0.1);border:1px solid rgba(0,255,65,0.3);color:var(--green);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,255,65,0.2)'" onmouseout="this.style.background='rgba(0,255,65,0.1)'">⚡ Usar ${totalTags} hashtags en próximo post</button>`;
     document.getElementById('seo-btn-copiar').style.display = 'block';
     window._seoLastHashtags = h;
+    actualizarAlcance(h); // ★ actualiza card de Analytics Pro
   } catch(e) {
     el.innerHTML = `<div style="color:var(--red);font-size:12px;">❌ ${e.message}</div>`;
   }
@@ -5139,15 +5371,25 @@ function usarTendencia(termino) {
 // Interceptar captions para registrar estrategias y actividad
 const _origCaption = socket.listeners('caption')[0];
 socket.on('caption', d => {
-  const hora = new Date().getHours();
+  const ahora = new Date();
+  const hora  = ahora.getHours();
+  const fecha = ahora.toISOString().slice(0, 10);
+  const dia   = (ahora.getDay() + 6) % 7; // 0=Lun, 6=Dom
+  const clave = `${dia}-${hora}`;
+
   actividadPorHora[hora]++;
+  actividadSemanal[clave] = (actividadSemanal[clave] || 0) + 1;
+  diasPublicacion[fecha]  = (diasPublicacion[fecha]  || 0) + 1;
+
+  const tipo = d.tipo_publicacion === 'reel' ? 'reel' : 'post';
   if (d.tipo_publicacion === 'reel') reelsCount++; else postsCount++;
-  // Registrar estrategia si viene en el caption
+  formatoStats[tipo].posts++;
+  if (d.comentarios_respondidos) formatoStats[tipo].comments += d.comentarios_respondidos;
+
   if (d.estrategia) {
     const t = d.estrategia;
     estrategiasContador[t] = (estrategiasContador[t] || 0) + 1;
   }
-  // Actualizar KPIs si el panel está visible
   if (document.getElementById('mpanel-analytics').classList.contains('active')) {
     actualizarKPIs();
     renderChartsAnalytics();
