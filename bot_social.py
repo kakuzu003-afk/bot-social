@@ -3104,59 +3104,133 @@ def api_productos_prefill(pid):
 # PREVIEW RÁPIDO DE DISEÑO (Pillow — sin FFmpeg)
 # ============================================
 
+_NICHOS_TODOS = {
+    'general': 0, 'tecnologia': 5, 'gaming': 9, 'deportes': 30,
+    'negocios': 7, 'entretenimiento': 3, 'internet': 15, 'noticias': 22,
+}
+_TREND_UA = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+             'AppleWebKit/537.36 (KHTML, like Gecko) '
+             'Chrome/120.0.0.0 Safari/537.36')
+
+def _buscar_tendencias_keyword(q):
+    """Busca tendencias reales relacionadas con una keyword.
+    1. Recorre todos los nichos de Google Trends en paralelo → filtra por keyword → datos ricos.
+    2. Google Suggest → variaciones del término.
+    3. Google News RSS → titulares recientes para enriquecer los Suggest sin datos de Trends.
+    Devuelve (lista_tendencias, lista_errores).
+    """
+    import urllib.parse, threading, xml.etree.ElementTree as ET
+
+    trend_hits   = []   # resultados de Trends con datos ricos (tráfico, noticia, imagen)
+    suggest_terms = []  # variaciones de la keyword desde Suggest
+    news_items   = []   # titulares de Google News para contexto
+    errors       = []
+    lock         = threading.Lock()
+
+    def _fetch_nicho(nicho):
+        try:
+            from motor_tendencias import MotorTendenciasChile
+            items = MotorTendenciasChile().obtener_tendencias_google(limite=25, nicho=nicho)
+            ql = q.lower()
+            for t in items:
+                if ql in t.get('termino', '').lower() or ql in t.get('contexto', '').lower():
+                    with lock:
+                        trend_hits.append(t)
+        except Exception as e:
+            with lock:
+                errors.append(f"trends/{nicho}:{e}")
+
+    def _fetch_suggest():
+        try:
+            url = (f"https://suggestqueries.google.com/complete/search"
+                   f"?output=firefox&q={urllib.parse.quote(q)}&hl=es&gl=CL")
+            r = req.get(url, timeout=8,
+                        headers={'User-Agent': _TREND_UA, 'Accept-Language': 'es-CL,es;q=0.9'})
+            with lock:
+                suggest_terms.extend(r.json()[1] if r.ok else [])
+        except Exception as e:
+            with lock:
+                errors.append(f"suggest:{e}")
+
+    def _fetch_news():
+        try:
+            url = (f"https://news.google.com/rss/search"
+                   f"?q={urllib.parse.quote(q)}&hl=es-419&gl=CL&ceid=CL:es")
+            r = req.get(url, timeout=8, headers={'User-Agent': _TREND_UA})
+            if not r.ok:
+                return
+            root = ET.fromstring(r.content)
+            for item in root.findall('.//item')[:15]:
+                title_el  = item.find('title')
+                source_el = item.find('source')
+                img_el    = item.find('{http://search.yahoo.com/mrss/}thumbnail')
+                if title_el is not None and title_el.text:
+                    with lock:
+                        news_items.append({
+                            'titulo': title_el.text.strip(),
+                            'fuente': source_el.text.strip() if source_el is not None else 'Google News',
+                            'imagen': img_el.get('url', '') if img_el is not None else '',
+                        })
+        except Exception as e:
+            with lock:
+                errors.append(f"news:{e}")
+
+    # Lanzar todo en paralelo
+    threads = [threading.Thread(target=_fetch_suggest),
+               threading.Thread(target=_fetch_news)]
+    for nicho in _NICHOS_TODOS:
+        threads.append(threading.Thread(target=_fetch_nicho, args=(nicho,)))
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    # Dedup Trends hits por término
+    seen  = set()
+    final = []
+    for t in trend_hits:
+        key = t.get('termino', '').lower()
+        if key not in seen:
+            seen.add(key)
+            t['_src'] = 'trends'
+            final.append(t)
+
+    # Agregar Suggest enriquecidos con Google News
+    for i, term in enumerate(suggest_terms):
+        if term.lower() in seen:
+            continue
+        seen.add(term.lower())
+        news = news_items[i] if i < len(news_items) else {}
+        final.append({
+            'termino':  term,
+            'trafico':  '',
+            'contexto': news.get('titulo', ''),
+            'fuente':   news.get('fuente', 'Google Suggest'),
+            'imagen':   news.get('imagen', ''),
+            '_src':     'suggest',
+        })
+
+    return final[:20], errors
+
+
 @app.route('/api/tendencias', methods=['GET'])
 @requiere_auth
 def api_tendencias():
-    """Tendencias de Chile. Con ?q=keyword busca términos relacionados; sin él devuelve tendencias del día."""
+    """Tendencias de Chile. Con ?q=keyword busca datos ricos; sin él devuelve tendencias del día."""
     q = request.args.get('q', '').strip()
 
     if q:
         try:
-            import urllib.parse, threading
-            tendencias = []
-            errors = []
-
-            CHROME_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-
-            def _fetch_suggest():
-                try:
-                    url = f"https://suggestqueries.google.com/complete/search?output=firefox&q={urllib.parse.quote(q)}&hl=es&gl=CL"
-                    r = req.get(url, timeout=8, headers={'User-Agent': CHROME_UA, 'Accept-Language': 'es-CL,es;q=0.9'})
-                    suggestions = r.json()[1] if r.ok else []
-                    for s in suggestions:
-                        tendencias.append({'termino': s, 'trafico': '', 'contexto': '', 'fuente': 'Google Suggest', 'imagen': ''})
-                except Exception as e:
-                    errors.append(f"suggest:{e}")
-
-            def _fetch_trends():
-                try:
-                    from motor_tendencias import MotorTendenciasChile
-                    motor = MotorTendenciasChile()
-                    items = motor.obtener_tendencias_google(limite=20, nicho='general')
-                    ql = q.lower()
-                    for t in items:
-                        termino = t.get('termino', '').lower()
-                        contexto = t.get('contexto', '').lower()
-                        if ql in termino or ql in contexto:
-                            if not any(x['termino'].lower() == t.get('termino', '').lower() for x in tendencias):
-                                tendencias.insert(0, t)
-                except Exception as e:
-                    errors.append(f"trends:{e}")
-
-            t1 = threading.Thread(target=_fetch_trends)
-            t2 = threading.Thread(target=_fetch_suggest)
-            t1.start(); t2.start()
-            t1.join(); t2.join()
-
-            return jsonify({'ok': True, 'q': q, 'tendencias': tendencias[:20], 'total': len(tendencias), 'errors': errors if errors else None})
+            tendencias, errors = _buscar_tendencias_keyword(q)
+            return jsonify({'ok': True, 'q': q, 'tendencias': tendencias,
+                            'total': len(tendencias), 'errors': errors or None})
         except Exception as e:
             return jsonify({'ok': False, 'q': q, 'tendencias': [], 'total': 0, 'error': str(e)})
 
     nicho = request.args.get('nicho', 'general').lower()
     try:
         from motor_tendencias import MotorTendenciasChile
-        motor = MotorTendenciasChile()
-        tendencias = motor.obtener_tendencias_google(limite=15, nicho=nicho)
+        tendencias = MotorTendenciasChile().obtener_tendencias_google(limite=15, nicho=nicho)
         return jsonify({'ok': True, 'nicho': nicho, 'tendencias': tendencias, 'total': len(tendencias)})
     except Exception as e:
         return jsonify({'ok': False, 'nicho': nicho, 'tendencias': [], 'total': 0, 'error': str(e)})

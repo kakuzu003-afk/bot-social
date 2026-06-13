@@ -4012,17 +4012,29 @@ async function buscarTendencias() {
       return;
     }
     list.innerHTML = items.map((t, i) => {
-      const emoji = q ? '🔍' : '🔥';
-      const imgHtml = t.imagen
+      const isTrend  = t._src === 'trends';
+      const emoji    = isTrend ? '🔥' : '🔍';
+      const imgHtml  = t.imagen
         ? `<img class="trend-img" src="${t.imagen}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="trend-img-placeholder" style="display:none">${emoji}</div>`
         : `<div class="trend-img-placeholder">${emoji}</div>`;
+      const badge    = isTrend
+        ? `<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(208,120,48,0.18);color:var(--amber);border:1px solid rgba(208,120,48,0.35);font-family:'Share Tech Mono',monospace;white-space:nowrap;">🔥 TRENDING</span>`
+        : `<span style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(100,100,120,0.18);color:var(--text3);border:1px solid rgba(100,100,120,0.3);font-family:'Share Tech Mono',monospace;white-space:nowrap;">🔍 Relacionado</span>`;
+      const trafico  = t.trafico
+        ? `<span class="trend-traffic">${t.trafico}</span>`
+        : '';
       return `<div class="trend-item">
         <span class="trend-rank">#${i+1}</span>
         ${imgHtml}
-        <div class="trend-name">${t.termino}</div>
-        ${t.contexto ? `<div class="trend-context" title="${t.contexto}">${t.contexto}</div>` : '<div></div>'}
-        ${t.fuente   ? `<div class="trend-fuente">📰 ${t.fuente}</div>` : '<div></div>'}
-        <span class="trend-traffic">${t.trafico || '—'}</span>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <div class="trend-name" style="margin:0;">${t.termino}</div>
+            ${badge}
+          </div>
+          ${t.contexto ? `<div class="trend-context" title="${t.contexto}">${t.contexto}</div>` : ''}
+          ${t.fuente   ? `<div class="trend-fuente">📰 ${t.fuente}</div>` : ''}
+        </div>
+        ${trafico}
         <button class="trend-usar-btn" onclick="usarTendencia('${t.termino.replace(/'/g,"\\'")}')">＋ Usar</button>
       </div>`;
     }).join('');
