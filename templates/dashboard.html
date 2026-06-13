@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1417,7 +1417,7 @@ input::placeholder, textarea::placeholder {
       <div class="stat-cell">
         <span class="stat-dot-cell" style="background:var(--amber)"></span>
         <div class="stat-val" id="statLikes">0</div>
-        <div class="stat-lbl">Likes</div>
+        <div class="stat-lbl">L. dados</div>
       </div>
     </div>
 
@@ -2180,7 +2180,7 @@ input::placeholder, textarea::placeholder {
         </div>
         <div class="kpi-card kpi-likes">
           <div class="kpi-icon">❤️</div>
-          <div class="kpi-label">Likes Totales</div>
+          <div class="kpi-label">Likes Recibidos</div>
           <div class="kpi-value" id="kpi-likes">0</div>
           <div class="kpi-delta" id="kpi-likes-delta">Cargando...</div>
         </div>
@@ -3847,20 +3847,35 @@ function switchMainPanel(name) {
 }
 
 function actualizarKPIs() {
-  let p=0, c=0, l=0;
+  let p=0, c=0;
   for (const k in statsData) {
-    p += statsData[k].posts        || 0;
-    c += statsData[k].comentarios  || 0;
-    l += statsData[k].likes        || 0;
+    p += statsData[k].posts       || 0;
+    c += statsData[k].comentarios || 0;
   }
   document.getElementById('kpi-posts').textContent       = p;
-  document.getElementById('kpi-likes').textContent       = l;
   document.getElementById('kpi-comentarios').textContent = c;
 
   const ultimoCiclo = Object.values(statsData).map(s => s.ultimo_ciclo).filter(x => x && x !== 'Nunca')[0];
   document.getElementById('kpi-posts-delta').textContent       = ultimoCiclo ? '⏱ Último: ' + ultimoCiclo : 'Sin actividad aún';
-  document.getElementById('kpi-likes-delta').textContent       = l > 0 ? '▲ Desde Instagram API' : 'Conecta Instagram API';
-  document.getElementById('kpi-comentarios-delta').textContent = c > 0 ? '▲ Desde Instagram API' : 'Conecta Instagram API';
+  document.getElementById('kpi-comentarios-delta').textContent = c > 0 ? '▲ Bot acumulado' : 'Sin actividad aún';
+
+  // Fetch real likes received from Instagram Graph API
+  document.getElementById('kpi-likes').textContent       = '…';
+  document.getElementById('kpi-likes-delta').textContent = 'Consultando Instagram…';
+  const clienteId = document.getElementById('select-cliente')?.value || 'aurakey';
+  fetch(`/api/insights/${clienteId}`).then(r => r.json()).then(d => {
+    if (d.ok && Array.isArray(d.media_reciente) && d.media_reciente.length) {
+      const realLikes = d.media_reciente.reduce((s, m) => s + (m.like_count || 0), 0);
+      document.getElementById('kpi-likes').textContent       = realLikes;
+      document.getElementById('kpi-likes-delta').textContent = `❤️ Últimas ${d.media_reciente.length} publicaciones`;
+    } else {
+      document.getElementById('kpi-likes').textContent       = '—';
+      document.getElementById('kpi-likes-delta').textContent = d.error || 'Sin datos de Instagram';
+    }
+  }).catch(() => {
+    document.getElementById('kpi-likes').textContent       = '—';
+    document.getElementById('kpi-likes-delta').textContent = '⚠ No se pudo conectar';
+  });
 }
 
 function renderChartsAnalytics() {
