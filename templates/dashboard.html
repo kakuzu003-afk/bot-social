@@ -161,19 +161,21 @@ body::before {
 .stat-cell:last-child { border-right:none; }
 .stat-val {
   font-family:'Orbitron',monospace;
-  font-size:20px; font-weight:700;
-  color:#fff; line-height:1;
-  margin-bottom:4px;
-  text-shadow: 0 0 15px rgba(208,120,48,0.8);
+  font-size:26px; font-weight:900;
+  color:#ffffff; line-height:1;
+  margin-bottom:5px;
+  text-shadow: 0 0 18px rgba(0,217,255,0.9);
 }
 .stat-lbl {
-  font-size:10px; color:var(--text2);
-  text-transform:uppercase; letter-spacing:.1em;
-  font-family:'Share Tech Mono',monospace;
+  font-size:13px; color:#ffffff;
+  font-weight:700;
+  text-transform:uppercase; letter-spacing:.08em;
+  font-family:'Poppins',sans-serif;
+  opacity:0.9;
 }
 .stat-dot-cell {
-  display:block; margin:0 auto 4px;
-  width:5px; height:5px; border-radius:50%;
+  display:block; margin:0 auto 5px;
+  width:7px; height:7px; border-radius:50%;
 }
 
 /* tab nav */
@@ -1298,17 +1300,17 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 .comentario-reply-input:focus { border-color:#d07830; }
 
 /* Horarios óptimos */
-.horario-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.horario-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
 .horario-day { text-align:center; }
-.horario-day-label { font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--text3); margin-bottom:4px; }
+.horario-day-label { font-family:'Poppins',sans-serif; font-size:11px; font-weight:700; color:#ffffff; margin-bottom:5px; }
 .horario-slot {
-  border-radius:5px; padding:3px 2px;
-  font-family:'Share Tech Mono',monospace; font-size:8px;
-  text-align:center; margin-bottom:3px;
+  border-radius:6px; padding:5px 3px;
+  font-family:'Poppins',sans-serif; font-size:11px; font-weight:700;
+  text-align:center; margin-bottom:4px;
 }
-.horario-slot.hot  { background:rgba(208,120,48,0.35); color:#fcd34d; border:1px solid rgba(208,120,48,0.5); }
-.horario-slot.warm { background:rgba(208,120,48,0.12); color:var(--text2); border:1px solid rgba(208,120,48,0.2); }
-.horario-slot.cold { background:rgba(30,20,10,0.4);   color:var(--text3); border:1px solid var(--border); }
+.horario-slot.hot  { background:rgba(255,107,53,0.85); color:#000000; border:1px solid rgba(255,107,53,0.9); }
+.horario-slot.warm { background:rgba(0,217,255,0.75);  color:#000000; border:1px solid rgba(0,217,255,0.85); }
+.horario-slot.cold { background:rgba(15,16,35,0.6);    color:#8899cc; border:1px solid rgba(0,217,255,0.1); }
 
 /* Estrategia tag */
 .estrategia-tag {
@@ -1467,11 +1469,13 @@ input, select, textarea {
 
 /* Stats números */
 .stat-val {
-  font-size: 22px !important;
+  font-size: 28px !important;
+  color: #ffffff !important;
 }
 .stat-lbl {
-  font-size: 11px !important;
-  color: var(--text2) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
 }
 
 /* Botón ejecutar */
@@ -1578,10 +1582,27 @@ body, select, input, textarea, button, .field-label, .tab-btn,
 .status-dot.off { background: var(--red) !important; box-shadow: 0 0 8px var(--red) !important; }
 
 /* ── STATS STRIP ─────────────────── */
-.stats-strip { border-bottom-color: rgba(0,217,255,0.12) !important; }
-.stat-cell { border-right-color: rgba(0,217,255,0.1) !important; }
-.stat-val { text-shadow: 0 0 15px rgba(0,217,255,0.7) !important; font-family: 'Orbitron', monospace !important; }
-.stat-lbl { color: var(--text2) !important; }
+.stats-strip { border-bottom-color: rgba(0,217,255,0.15) !important; }
+.stat-cell {
+  border-right-color: rgba(0,217,255,0.12) !important;
+  background: rgba(0,0,0,0.25) !important;
+  padding: 14px 10px !important;
+}
+.stat-val {
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 20px rgba(0,217,255,0.9), 0 2px 4px rgba(0,0,0,0.8) !important;
+  font-family: 'Orbitron', monospace !important;
+}
+.stat-lbl {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  opacity: 0.9;
+  font-family: 'Poppins', sans-serif !important;
+  letter-spacing: 0.06em !important;
+}
 
 /* ── TAB NAV ─────────────────────── */
 .tab-nav { border-bottom-color: rgba(0,217,255,0.12) !important; }
@@ -1869,10 +1890,10 @@ textarea.prompt-ta:focus { border-color: var(--purple) !important; }
 .comentario-reply-input:focus { border-color: var(--cyan) !important; }
 
 /* ── HORARIOS ────────────────────── */
-.horario-slot.hot  { background: rgba(255,107,53,0.35) !important; color: #ffd080 !important; border-color: rgba(255,107,53,0.5) !important; }
-.horario-slot.warm { background: rgba(0,217,255,0.12) !important; color: var(--text2) !important; border-color: rgba(0,217,255,0.2) !important; }
-.horario-slot.cold { background: rgba(10,14,39,0.6) !important; color: var(--text3) !important; border-color: rgba(0,217,255,0.06) !important; }
-.horario-day-label { color: var(--text3) !important; }
+.horario-slot.hot  { background: rgba(255,107,53,0.88) !important; color: #000000 !important; font-weight: 800 !important; font-size: 11px !important; border-color: rgba(255,107,53,0.95) !important; }
+.horario-slot.warm { background: rgba(0,217,255,0.80) !important; color: #000000 !important; font-weight: 700 !important; font-size: 11px !important; border-color: rgba(0,217,255,0.9) !important; }
+.horario-slot.cold { background: rgba(15,16,35,0.6) !important; color: #8899cc !important; font-weight: 600 !important; font-size: 11px !important; border-color: rgba(0,217,255,0.08) !important; }
+.horario-day-label { color: #ffffff !important; font-size: 11px !important; font-weight: 700 !important; font-family: 'Poppins', sans-serif !important; }
 
 /* ── TOASTS ──────────────────────── */
 .toast.success { background: rgba(0,255,65,0.1) !important; border-color: rgba(0,255,65,0.35) !important; color: var(--green) !important; }
