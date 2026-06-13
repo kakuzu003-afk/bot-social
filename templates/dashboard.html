@@ -532,61 +532,46 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   margin-bottom:5px;
 }
 
-/* ── Presets de servicio ── */
-.presets-panel {
-  margin-top:10px;
-  background:rgba(208,120,48,0.04);
-  border:1px solid rgba(208,120,48,0.18);
-  border-radius:9px;
-  padding:9px 10px;
+/* ── Buscador de catálogo inline ── */
+.cat-search-wrap { position:relative; margin-top:8px; }
+.cat-search-results {
+  position:absolute; top:100%; left:0; right:0; z-index:50;
+  background:var(--bg2); border:1px solid var(--border2);
+  border-top:none; border-radius:0 0 8px 8px;
+  max-height:180px; overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:var(--border2) transparent;
 }
-.presets-header {
+.cat-result-item {
   display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:7px;
+  padding:7px 11px; cursor:pointer; gap:8px;
+  transition:background .1s; border-bottom:1px solid rgba(255,255,255,0.04);
 }
-.presets-header-label {
-  font-family:'Share Tech Mono',monospace; font-size:9px;
-  color:var(--cyan); text-transform:uppercase; letter-spacing:.1em;
-}
-.btn-save-preset {
-  font-family:'Share Tech Mono',monospace; font-size:9px;
-  background:rgba(208,120,48,0.15); border:1px solid rgba(208,120,48,0.4);
-  border-radius:5px; padding:3px 8px; color:var(--cyan);
-  cursor:pointer; transition:all .15s; white-space:nowrap;
-}
-.btn-save-preset:hover { background:rgba(208,120,48,0.28); }
-.presets-empty {
-  font-family:'Share Tech Mono',monospace; font-size:9px;
-  color:var(--text3); text-align:center; padding:6px 0;
-}
-.presets-list { display:flex; flex-direction:column; gap:5px; }
-.preset-chip {
-  display:flex; align-items:center; gap:8px;
-  background:rgba(20,12,4,0.8); border:1px solid rgba(208,120,48,0.22);
-  border-radius:7px; padding:7px 9px; cursor:pointer;
-  transition:all .15s; position:relative;
-}
-.preset-chip:hover { border-color:rgba(208,120,48,0.55); background:rgba(208,120,48,0.08); }
-.preset-chip-icon { font-size:12px; flex-shrink:0; }
-.preset-chip-info { flex:1; min-width:0; }
-.preset-chip-name {
+.cat-result-item:last-child { border-bottom:none; }
+.cat-result-item:hover { background:rgba(208,120,48,0.12); }
+.cat-result-name {
   font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
-  color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.preset-chip-meta {
+.cat-result-price {
+  font-family:'Share Tech Mono',monospace; font-size:10px;
+  color:var(--amber); white-space:nowrap; flex-shrink:0;
+}
+.cat-result-empty {
+  padding:10px 12px; font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--text3); text-align:center;
+}
+/* ── Opción guardar al ejecutar ── */
+.guardar-config-row {
+  display:flex; align-items:center; gap:7px;
+  padding:7px 10px; margin-bottom:8px;
+  background:rgba(208,120,48,0.04); border:1px solid rgba(208,120,48,0.15);
+  border-radius:7px; cursor:pointer; user-select:none;
+}
+.guardar-config-row input[type=checkbox] { accent-color:var(--cyan); cursor:pointer; flex-shrink:0; }
+.guardar-config-row span {
   font-family:'Share Tech Mono',monospace; font-size:9px;
-  color:var(--text3); margin-top:1px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  color:var(--text2); text-transform:uppercase; letter-spacing:.07em;
 }
-.preset-chip-meta .pm-price {
-  color:var(--amber); font-weight:700;
-}
-.preset-chip-del {
-  background:none; border:none; color:var(--text3); cursor:pointer;
-  font-size:14px; padding:0 2px; line-height:1; flex-shrink:0;
-  transition:color .15s;
-}
-.preset-chip-del:hover { color:var(--red); }
 
 /* ── Music mode ── */
 .music-mode-row { display:flex; gap:5px; margin:4px 0; }
@@ -1461,17 +1446,10 @@ input::placeholder, textarea::placeholder {
 
         <div class="field-label" style="margin-top:14px;">📋 Nombre del servicio</div>
         <input type="text" class="product-title-field" id="ciclo-titulo" placeholder="Ej: Xbox Game Pass, Spotify Premium, Kaspersky…">
-        <div class="product-title-hint">Identifica el servicio — úsalo con búsqueda libre y precio para guardar un preset</div>
-
-        <!-- Panel de presets de servicio -->
-        <div class="presets-panel" id="presets-panel-ciclo">
-          <div class="presets-header">
-            <span class="presets-header-label">💾 Servicios guardados</span>
-            <button class="btn-save-preset" onclick="guardarPresetServicio('ciclo')">+ Guardar actual</button>
-          </div>
-          <div class="presets-list" id="presets-list-ciclo">
-            <div class="presets-empty">Sin presets guardados aún</div>
-          </div>
+        <div class="product-title-hint">Escribe o busca un producto del catálogo para autocompletar</div>
+        <div class="cat-search-wrap">
+          <input type="text" class="search-input" id="ciclo-cat-search" placeholder="🔍 Buscar en catálogo…" oninput="catBuscar(this.value,'ciclo')" onfocus="catBuscar(this.value,'ciclo')" autocomplete="off">
+          <div class="cat-search-results" id="ciclo-cat-results" style="display:none;"></div>
         </div>
 
         <div class="field-label" style="margin-top:12px;">⚡ Búsqueda libre</div>
@@ -1725,6 +1703,10 @@ input::placeholder, textarea::placeholder {
         </div>
 
         <div class="btn-sticky-wrap">
+          <label class="guardar-config-row">
+            <input type="checkbox" id="ciclo-guardar-cfg">
+            <span>💾 Guardar nombre, búsqueda y precio al ejecutar</span>
+          </label>
           <button class="btn-execute" id="btnExecute" onclick="ejecutarCiclo()">▶ Ejecutar ciclo</button>
         </div>
         <div class="btn-row" style="padding: 0 16px 12px;">
@@ -1755,17 +1737,10 @@ input::placeholder, textarea::placeholder {
 
           <div class="pub-section-label">📋 Nombre del servicio</div>
           <input type="text" class="product-title-field" id="pub-post-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass…">
-          <div class="product-title-hint">Identifica el servicio — guarda junto con búsqueda libre y precio</div>
-
-          <!-- Panel de presets de servicio (Publicar) -->
-          <div class="presets-panel" id="presets-panel-pub" style="margin-bottom:8px;">
-            <div class="presets-header">
-              <span class="presets-header-label">💾 Servicios guardados</span>
-              <button class="btn-save-preset" onclick="guardarPresetServicio('pub')">+ Guardar actual</button>
-            </div>
-            <div class="presets-list" id="presets-list-pub">
-              <div class="presets-empty">Sin presets guardados aún</div>
-            </div>
+          <div class="product-title-hint">Escribe o busca un producto del catálogo para autocompletar</div>
+          <div class="cat-search-wrap" style="margin-bottom:8px;">
+            <input type="text" class="search-input" id="pub-cat-search" placeholder="🔍 Buscar en catálogo…" oninput="catBuscar(this.value,'pub')" onfocus="catBuscar(this.value,'pub')" autocomplete="off">
+            <div class="cat-search-results" id="pub-cat-results" style="display:none;"></div>
           </div>
 
           <div class="pub-section-label" style="margin-top:10px;">🖼️ Imagen propia</div>
@@ -1842,6 +1817,10 @@ input::placeholder, textarea::placeholder {
           </div>
 
           <div class="btn-sticky-wrap">
+            <label class="guardar-config-row">
+              <input type="checkbox" id="pub-guardar-cfg">
+              <span>💾 Guardar nombre y precio al generar</span>
+            </label>
             <button class="btn-publish" id="btnPublicar" onclick="generarPost()">🧠 Generar borrador Post</button>
           </div>
         </div><!-- /subpanel-post -->
@@ -1990,6 +1969,10 @@ input::placeholder, textarea::placeholder {
           </div>
 
           <div class="btn-sticky-wrap">
+            <label class="guardar-config-row">
+              <input type="checkbox" id="reel-guardar-cfg">
+              <span>💾 Guardar nombre y precio al generar</span>
+            </label>
             <button class="btn-publish" id="btnGenerarReel" onclick="generarReel()">🧠 Generar borrador Reel</button>
           </div>
         </div><!-- /subpanel-reel -->
@@ -2382,96 +2365,101 @@ function switchTab(name) {
   });
 }
 
-// ── Presets de servicio ────────────────────────────────────
-const PRESETS_KEY = 'botSocial_servicioPresets';
+// ── Buscador de catálogo inline ────────────────────────────
+const CAT_QUICK_KEY = 'botSocial_catQuick';
 
-function _loadPresets() {
-  try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); } catch(e) { return []; }
+function _catQuickLoad() {
+  try { return JSON.parse(localStorage.getItem(CAT_QUICK_KEY) || '[]'); } catch(e) { return []; }
 }
-function _savePresets(list) {
-  localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
-}
+function _catQuickSave(list) { localStorage.setItem(CAT_QUICK_KEY, JSON.stringify(list)); }
 
-function renderPresetsServicio() {
-  const list = _loadPresets();
-  ['ciclo','pub'].forEach(ctx => {
-    const container = document.getElementById('presets-list-' + ctx);
-    if (!container) return;
-    if (!list.length) {
-      container.innerHTML = '<div class="presets-empty">Sin presets guardados aún</div>';
-      return;
-    }
-    container.innerHTML = list.map(p => `
-      <div class="preset-chip" onclick="activarPresetServicio('${p.id}')">
-        <span class="preset-chip-icon">📋</span>
-        <div class="preset-chip-info">
-          <div class="preset-chip-name">${_esc(p.nombre)}</div>
-          <div class="preset-chip-meta">
-            ${p.busqueda ? _esc(p.busqueda) : '<em>sin búsqueda</em>'}
-            ${p.precio ? ' · <span class="pm-price">' + _esc(p.precio) + '</span>' : ''}
-          </div>
-        </div>
-        <button class="preset-chip-del" onclick="event.stopPropagation();eliminarPresetServicio('${p.id}')" title="Eliminar">×</button>
-      </div>`).join('');
-  });
-}
-
-function guardarPresetServicio(ctx) {
-  const nombre  = (ctx === 'ciclo'
-    ? document.getElementById('ciclo-titulo')
-    : document.getElementById('pub-post-titulo')).value.trim();
-  const busqueda = ctx === 'ciclo'
-    ? (document.getElementById('input-busqueda') || {value:''}).value.trim()
-    : '';
-  const precio   = ctx === 'ciclo'
-    ? (document.getElementById('input-precio') || {value:''}).value.trim()
-    : (document.getElementById('pub-post-precio') || {value:''}).value.trim();
-
-  if (!nombre) { agregarLog('⚠️ Escribe el nombre del servicio antes de guardar','warning'); return; }
-
-  const list = _loadPresets();
+// Guarda nombre+busqueda+precio en lista rápida local
+function catGuardarConfig(nombre, busqueda, precio) {
+  if (!nombre) return;
+  const list = _catQuickLoad();
   const existe = list.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
-  if (existe) {
-    existe.busqueda = busqueda; existe.precio = precio;
-    agregarLog(`💾 Preset actualizado: ${nombre}`, 'info');
-  } else {
-    list.push({ id: Date.now().toString(36), nombre, busqueda, precio });
-    agregarLog(`💾 Preset guardado: ${nombre}`, 'info');
+  if (existe) { existe.busqueda = busqueda; existe.precio = precio; }
+  else { list.unshift({ id: Date.now().toString(36), nombre, busqueda, precio }); }
+  if (list.length > 50) list.length = 50;
+  _catQuickSave(list);
+}
+
+// Busca en catálogo API + lista rápida local y muestra dropdown
+let _catCache = null;
+async function catBuscar(q, ctx) {
+  const resultsEl = document.getElementById((ctx==='ciclo'?'ciclo':'pub') + '-cat-results');
+  if (!resultsEl) return;
+
+  // Cargar catálogo una vez
+  if (!_catCache) {
+    try {
+      const r = await fetch('/api/catalog');
+      _catCache = r.ok ? await r.json() : [];
+    } catch(e) { _catCache = []; }
   }
-  _savePresets(list);
-  renderPresetsServicio();
+
+  const query = (q || '').toLowerCase().trim();
+  // Mezcla: catálogo API + guardados rápidos locales
+  const local  = _catQuickLoad();
+  const apiItems = (_catCache || []).map(p => ({ nombre: p.nombre||'', precio: p.precio||'', busqueda: p.busqueda||p.hashtags||'', _src:'cat' }));
+  const locItems = local.map(p => ({ ...p, _src:'local' }));
+  // Dedup: si ya está en API, no duplicar desde local
+  const apiNombres = new Set(apiItems.map(p => p.nombre.toLowerCase()));
+  const merged = [...apiItems, ...locItems.filter(p => !apiNombres.has(p.nombre.toLowerCase()))];
+
+  const filtered = query
+    ? merged.filter(p => p.nombre.toLowerCase().includes(query) || (p.busqueda||'').toLowerCase().includes(query))
+    : merged.slice(0, 20);
+
+  if (!filtered.length) {
+    resultsEl.innerHTML = `<div class="cat-result-empty">Sin resultados${query ? ' para "'+query+'"' : ''}</div>`;
+  } else {
+    resultsEl.innerHTML = filtered.map(p => `
+      <div class="cat-result-item" onclick="catSeleccionar(${JSON.stringify(JSON.stringify(p))},'${ctx}')">
+        <span class="cat-result-name">${p.nombre}</span>
+        ${p.precio ? `<span class="cat-result-price">${p.precio}</span>` : ''}
+      </div>`).join('');
+  }
+  resultsEl.style.display = 'block';
 }
 
-function activarPresetServicio(id) {
-  const p = _loadPresets().find(x => x.id === id);
-  if (!p) return;
-  // Ciclo
-  const ct = document.getElementById('ciclo-titulo');
-  const cb = document.getElementById('input-busqueda');
-  const cp = document.getElementById('input-precio');
-  if (ct) ct.value = p.nombre;
-  if (cb) { cb.value = p.busqueda || ''; cb.dispatchEvent(new Event('input')); }
-  if (cp && p.precio) cp.value = p.precio;
-  // Publicar post
-  const pt = document.getElementById('pub-post-titulo');
-  const pp = document.getElementById('pub-post-precio');
-  if (pt) pt.value = p.nombre;
-  if (pp && p.precio) pp.value = p.precio;
-  agregarLog(`✅ Preset activado: ${p.nombre}${p.busqueda ? ' — búsqueda: "'+p.busqueda+'"' : ''}${p.precio ? ' — '+p.precio : ''}`, 'info');
+function catSeleccionar(pJson, ctx) {
+  const p = JSON.parse(pJson);
+  // Rellenar campos según contexto
+  if (ctx === 'ciclo') {
+    const t = document.getElementById('ciclo-titulo'); if (t) t.value = p.nombre;
+    const b = document.getElementById('input-busqueda');
+    if (b && p.busqueda) { b.value = p.busqueda; b.dispatchEvent(new Event('input')); }
+    const pr = document.getElementById('input-precio'); if (pr && p.precio) pr.value = p.precio;
+    const s = document.getElementById('ciclo-cat-search'); if (s) s.value = '';
+    document.getElementById('ciclo-cat-results').style.display = 'none';
+  } else {
+    const t = document.getElementById('pub-post-titulo'); if (t) t.value = p.nombre;
+    const pr = document.getElementById('pub-post-precio'); if (pr && p.precio) pr.value = p.precio;
+    const s = document.getElementById('pub-cat-search'); if (s) s.value = '';
+    document.getElementById('pub-cat-results').style.display = 'none';
+  }
+  agregarLog(`📋 Seleccionado: ${p.nombre}${p.precio?' — '+p.precio:''}`, 'info');
 }
 
-function eliminarPresetServicio(id) {
-  const list = _loadPresets().filter(p => p.id !== id);
-  _savePresets(list);
-  renderPresetsServicio();
-}
+// Cerrar dropdown al hacer clic fuera
+document.addEventListener('click', e => {
+  ['ciclo-cat-results','pub-cat-results'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.parentElement.contains(e.target)) el.style.display = 'none';
+  });
+});
 
-function _esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// Guardar configuración al ejecutar (llamado desde ejecutarCiclo/generarPost/generarReel)
+function _checkGuardarConfig(checkboxId, nombre, busqueda, precio) {
+  const cb = document.getElementById(checkboxId);
+  if (cb && cb.checked && nombre) {
+    catGuardarConfig(nombre, busqueda, precio);
+    agregarLog(`💾 Configuración guardada: "${nombre}"${precio?' — '+precio:''}`, 'info');
+    cb.checked = false;
+    _catCache = null; // forzar recarga para incluir la nueva entrada
+  }
 }
-
-// Inicializar presets al cargar
-document.addEventListener('DOMContentLoaded', () => { renderPresetsServicio(); });
 
 // ── Search input mode indicator ───────────────────────────
 const inputBusqueda = document.getElementById('input-busqueda');
@@ -3004,6 +2992,7 @@ async function generarPost() {
 
   const titulo        = (document.getElementById('pub-post-titulo').value || '').trim();
   const precio        = document.getElementById('pub-post-precio').value || 'Consultar por DM';
+  _checkGuardarConfig('pub-guardar-cfg', titulo, '', document.getElementById('pub-post-precio').value.trim());
   const overlayActivo = document.getElementById('toggleOverlay').checked;
   const textoOverlay  = document.getElementById('overlayTexto').value.trim();
   const fontSize      = parseInt(document.getElementById('overlayFontSize').value);
@@ -3038,6 +3027,7 @@ async function generarReel() {
   if (!cliente_id) { agregarLog('⚠️ Selecciona un cliente primero','warning'); return; }
   const titulo  = (document.getElementById('pub-reel-titulo').value || '').trim();
   const precio  = document.getElementById('reel-precio').value || 'Consultar por DM';
+  _checkGuardarConfig('reel-guardar-cfg', titulo, '', document.getElementById('reel-precio').value.trim());
   const mood    = document.getElementById('reel-mood').value;
   const btn = document.getElementById('btnGenerarReel');
   btn.classList.add('loading'); btn.textContent = '⏳ Generando…';
@@ -3197,6 +3187,7 @@ function ejecutarCiclo() {
   const wmInfo   = usar_watermark ? ' | 🏷️wm' : '';
   const ltInfo   = lower_third ? ` | 📺"${lower_third.texto}"` : '';
   agregarLog(`🚀 Ciclo: ${nombreCliente} — "${busqueda}" | ${mood}${gradeInfo}${wmInfo}${ltInfo}${refInfo}`, 'info');
+  _checkGuardarConfig('ciclo-guardar-cfg', titulo||busqueda, busqueda, document.getElementById('input-precio').value.trim());
 
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading'); btn.textContent = '⏳ Procesando…';
