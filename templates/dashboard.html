@@ -4899,11 +4899,14 @@ async function seoBuscarHashtags() {
         <div class="ht-tier-label ${cls}">${label} <span style="opacity:.6;font-size:8px;">${desc}</span></div>
         <div class="ht-tags">${(tags||[]).map(t=>`<span class="ht-tag ${cls}" onclick="navigator.clipboard.writeText('${t}')" title="Clic para copiar">${t}</span>`).join('')}</div>
       </div>`;
+    const totalTags = (h.grandes||[]).length + (h.medianos||[]).length + (h.nicho||[]).length;
     el.innerHTML =
-      renderTier(h.grandes,  'grande',  '🔴 Masivos',   '+1M posts') +
-      renderTier(h.medianos, 'mediano', '🟡 Balance',   '100K-1M') +
-      renderTier(h.nicho,    'nicho',   '🟢 Nicho',    '<100K') +
-      (h.tip ? `<div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text2);padding:8px 10px;background:rgba(208,120,48,0.06);border-radius:6px;border-left:2px solid var(--amber);">💡 ${h.tip}</div>` : '');
+      (h.mezcla ? `<div style="font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;color:var(--cyan);padding:7px 11px;background:rgba(0,217,255,0.07);border:1px solid rgba(0,217,255,0.2);border-radius:7px;margin-bottom:4px;">⚡ ${h.mezcla}</div>` : '') +
+      renderTier(h.grandes,  'grande',  '🔴 Masivos',   `+1M posts · ${(h.grandes||[]).length} tags`) +
+      renderTier(h.medianos, 'mediano', '🟡 Balance',   `100K-1M · ${(h.medianos||[]).length} tags`) +
+      renderTier(h.nicho,    'nicho',   '🟢 Nicho',    `<100K · ${(h.nicho||[]).length} tags`) +
+      (h.tip ? `<div style="font-family:'Poppins',sans-serif;font-size:11px;color:var(--text2);padding:8px 11px;background:rgba(168,85,247,0.07);border-radius:6px;border-left:2px solid var(--purple);margin-top:2px;">💡 ${h.tip}</div>` : '') +
+      `<button onclick="seoUsarHashtagsEnPost()" style="width:100%;margin-top:8px;padding:9px;border-radius:8px;background:rgba(0,255,65,0.1);border:1px solid rgba(0,255,65,0.3);color:var(--green);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(0,255,65,0.2)'" onmouseout="this.style.background='rgba(0,255,65,0.1)'">⚡ Usar ${totalTags} hashtags en próximo post</button>`;
     document.getElementById('seo-btn-copiar').style.display = 'block';
     window._seoLastHashtags = h;
   } catch(e) {
@@ -4916,7 +4919,28 @@ function seoCopiarHashtags() {
   const h = window._seoLastHashtags;
   if (!h) return;
   const all = [...(h.grandes||[]), ...(h.medianos||[]), ...(h.nicho||[])].join(' ');
-  navigator.clipboard.writeText(all).then(() => agregarLog('📋 Hashtags copiados al portapapeles','success'));
+  navigator.clipboard.writeText(all).then(() => mostrarToast('📋 Hashtags copiados', 'success'));
+}
+
+function seoUsarHashtagsEnPost() {
+  const h = window._seoLastHashtags;
+  if (!h) return;
+  // Mezcla estratégica: 3 masivos + todos los medianos + todos los nicho
+  const set = [
+    ...(h.grandes||[]).slice(0,3),
+    ...(h.medianos||[]),
+    ...(h.nicho||[])
+  ];
+  const campo = document.getElementById('prod-hashtags');
+  if (campo) {
+    campo.value = set.join(' ');
+    // Ir al tab de Ciclo para que el usuario vea el resultado
+    switchTab('ciclo');
+    mostrarToast(`✅ ${set.length} hashtags cargados en el formulario`, 'success');
+    agregarLog(`🏷️ Set de hashtags SEO cargado: ${set.length} tags (3 masivos + ${(h.medianos||[]).length} balance + ${(h.nicho||[]).length} nicho)`, 'info');
+  } else {
+    mostrarToast('Abre el tab Ciclo primero', 'warning');
+  }
 }
 
 async function seoGenerarIdeas() {

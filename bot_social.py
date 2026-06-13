@@ -3315,33 +3315,35 @@ def api_seo_hashtags():
     nicho = data.get('nicho', 'general')
     try:
         res = groq_client.chat.completions.create(
-            model='llama-3.1-8b-instant',
-            messages=[{'role': 'user', 'content': f"""Eres un experto en SEO de Instagram para Latinoamérica.
+            model='llama-3.3-70b-versatile',
+            messages=[{'role': 'user', 'content': f"""Eres un experto en SEO de Instagram para Latinoamérica con 10 años de experiencia creciendo cuentas de 0 a 100K seguidores.
 
 Tema del post: {tema}
 Nicho del negocio: {nicho}
 
-Genera hashtags ESPECÍFICOS Y RELEVANTES para este tema y nicho.
-REGLAS:
-- Todos deben ser directamente relacionados con "{tema}" o "{nicho}"
-- Incluir variantes en español e inglés según lo que se usa en LATAM
-- Mezclar hashtags de marca/producto, de comunidad y de problema/solución
-- NO incluir hashtags genéricos sin relación (ej: #love #instagood #photography si no aplican)
+Tu misión: generar hashtags estratificados por tamaño para maximizar el alcance de una cuenta pequeña/mediana en Instagram LATAM.
 
-Devuelve SOLO este JSON (sin texto extra):
+ESTRATEGIA DE TAMAÑO (crítica para algoritmo de Instagram):
+- MASIVOS (>1M posts): solo 3-5 para visibilidad de marca, muy difícil rankear
+- BALANCE (100K-1M posts): 8-10 para alcance moderado con competencia manejable
+- NICHO (<100K posts): 12-15 para aparecer primero, conversión alta, audiencia calificada
+
+REGLAS ESTRICTAS:
+- 100% relacionados con "{tema}" y "{nicho}" — CERO hashtags genéricos sin relación directa
+- Mezcla español e inglés según uso real en LATAM (ej: #mochilas + #backpack)
+- Incluye variantes: producto, problema que resuelve, comunidad del nicho, resultado deseado
+- Los hashtags de nicho deben ser MUY ESPECÍFICOS (ej: #mochilasartesanales en vez de #mochila)
+- NO incluir: #love #instagood #photooftheday #follow ni ningún hashtag viral sin relación al tema
+
+Devuelve SOLO este JSON (sin texto extra ni markdown):
 {{
   "grandes":  ["#tag1","#tag2","#tag3","#tag4","#tag5"],
   "medianos": ["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8","#tag9","#tag10"],
-  "nicho":    ["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8","#tag9","#tag10"],
-  "tip": "consejo concreto de 1 oración para combinarlos y maximizar alcance en este nicho"
-}}
-
-- grandes: 5 hashtags de alto volumen relacionados al tema (>1M posts)
-- medianos: 10 hashtags de volumen medio relacionados al tema (100K-1M posts)
-- nicho: 10 hashtags muy específicos del nicho/producto (<100K posts, alta conversión)
-
-Todos deben empezar con # y ser hashtags que realmente existen en Instagram."""}],
-            temperature=0.5, max_tokens=800,
+  "nicho":    ["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8","#tag9","#tag10","#tag11","#tag12"],
+  "mezcla": "usa 3 masivos + 8 medianos + 12 nicho = 23 hashtags óptimos por post",
+  "tip": "consejo específico de 1 oración sobre cómo combinarlos para este nicho y tema"
+}}"""}],
+            temperature=0.4, max_tokens=1000,
             response_format={'type': 'json_object'}
         )
         hashtags = _json.loads(res.choices[0].message.content)
