@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -531,6 +531,62 @@ input[type=range].weight-slider::-webkit-slider-thumb {
   color:var(--text3); text-transform:uppercase; letter-spacing:.06em;
   margin-bottom:5px;
 }
+
+/* ── Presets de servicio ── */
+.presets-panel {
+  margin-top:10px;
+  background:rgba(208,120,48,0.04);
+  border:1px solid rgba(208,120,48,0.18);
+  border-radius:9px;
+  padding:9px 10px;
+}
+.presets-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:7px;
+}
+.presets-header-label {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:var(--cyan); text-transform:uppercase; letter-spacing:.1em;
+}
+.btn-save-preset {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  background:rgba(208,120,48,0.15); border:1px solid rgba(208,120,48,0.4);
+  border-radius:5px; padding:3px 8px; color:var(--cyan);
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.btn-save-preset:hover { background:rgba(208,120,48,0.28); }
+.presets-empty {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:var(--text3); text-align:center; padding:6px 0;
+}
+.presets-list { display:flex; flex-direction:column; gap:5px; }
+.preset-chip {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(20,12,4,0.8); border:1px solid rgba(208,120,48,0.22);
+  border-radius:7px; padding:7px 9px; cursor:pointer;
+  transition:all .15s; position:relative;
+}
+.preset-chip:hover { border-color:rgba(208,120,48,0.55); background:rgba(208,120,48,0.08); }
+.preset-chip-icon { font-size:12px; flex-shrink:0; }
+.preset-chip-info { flex:1; min-width:0; }
+.preset-chip-name {
+  font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+  color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.preset-chip-meta {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  color:var(--text3); margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.preset-chip-meta .pm-price {
+  color:var(--amber); font-weight:700;
+}
+.preset-chip-del {
+  background:none; border:none; color:var(--text3); cursor:pointer;
+  font-size:14px; padding:0 2px; line-height:1; flex-shrink:0;
+  transition:color .15s;
+}
+.preset-chip-del:hover { color:var(--red); }
 
 /* ── Music mode ── */
 .music-mode-row { display:flex; gap:5px; margin:4px 0; }
@@ -1404,9 +1460,20 @@ input::placeholder, textarea::placeholder {
           <span id="clienteLabel">Cargando clientes…</span>
         </div>
 
-        <div class="field-label" style="margin-top:14px;">🏷️ Título del producto</div>
-        <input type="text" class="product-title-field" id="ciclo-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass, Kaspersky…">
-        <div class="product-title-hint">Solo para el bot — no aparece en la imagen ni el caption</div>
+        <div class="field-label" style="margin-top:14px;">📋 Nombre del servicio</div>
+        <input type="text" class="product-title-field" id="ciclo-titulo" placeholder="Ej: Xbox Game Pass, Spotify Premium, Kaspersky…">
+        <div class="product-title-hint">Identifica el servicio — úsalo con búsqueda libre y precio para guardar un preset</div>
+
+        <!-- Panel de presets de servicio -->
+        <div class="presets-panel" id="presets-panel-ciclo">
+          <div class="presets-header">
+            <span class="presets-header-label">💾 Servicios guardados</span>
+            <button class="btn-save-preset" onclick="guardarPresetServicio('ciclo')">+ Guardar actual</button>
+          </div>
+          <div class="presets-list" id="presets-list-ciclo">
+            <div class="presets-empty">Sin presets guardados aún</div>
+          </div>
+        </div>
 
         <div class="field-label" style="margin-top:12px;">⚡ Búsqueda libre</div>
         <div class="search-wrapper">
@@ -1687,9 +1754,20 @@ input::placeholder, textarea::placeholder {
         ══════════════════════════════════════ -->
         <div id="subpanel-post">
 
-          <div class="pub-section-label">🏷️ Título del producto</div>
+          <div class="pub-section-label">📋 Nombre del servicio</div>
           <input type="text" class="product-title-field" id="pub-post-titulo" placeholder="Ej: Duolingo Max, Xbox Game Pass…">
-          <div class="product-title-hint">Solo para el bot — no aparece en la imagen</div>
+          <div class="product-title-hint">Identifica el servicio — guarda junto con búsqueda libre y precio</div>
+
+          <!-- Panel de presets de servicio (Publicar) -->
+          <div class="presets-panel" id="presets-panel-pub" style="margin-bottom:8px;">
+            <div class="presets-header">
+              <span class="presets-header-label">💾 Servicios guardados</span>
+              <button class="btn-save-preset" onclick="guardarPresetServicio('pub')">+ Guardar actual</button>
+            </div>
+            <div class="presets-list" id="presets-list-pub">
+              <div class="presets-empty">Sin presets guardados aún</div>
+            </div>
+          </div>
 
           <div class="pub-section-label" style="margin-top:10px;">🖼️ Imagen propia</div>
           <div class="upload-section">
@@ -2337,6 +2415,97 @@ function switchTab(name) {
   });
   if (name === 'perfiles') cargarPerfiles();
 }
+
+// ── Presets de servicio ────────────────────────────────────
+const PRESETS_KEY = 'botSocial_servicioPresets';
+
+function _loadPresets() {
+  try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); } catch(e) { return []; }
+}
+function _savePresets(list) {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(list));
+}
+
+function renderPresetsServicio() {
+  const list = _loadPresets();
+  ['ciclo','pub'].forEach(ctx => {
+    const container = document.getElementById('presets-list-' + ctx);
+    if (!container) return;
+    if (!list.length) {
+      container.innerHTML = '<div class="presets-empty">Sin presets guardados aún</div>';
+      return;
+    }
+    container.innerHTML = list.map(p => `
+      <div class="preset-chip" onclick="activarPresetServicio('${p.id}')">
+        <span class="preset-chip-icon">📋</span>
+        <div class="preset-chip-info">
+          <div class="preset-chip-name">${_esc(p.nombre)}</div>
+          <div class="preset-chip-meta">
+            ${p.busqueda ? _esc(p.busqueda) : '<em>sin búsqueda</em>'}
+            ${p.precio ? ' · <span class="pm-price">' + _esc(p.precio) + '</span>' : ''}
+          </div>
+        </div>
+        <button class="preset-chip-del" onclick="event.stopPropagation();eliminarPresetServicio('${p.id}')" title="Eliminar">×</button>
+      </div>`).join('');
+  });
+}
+
+function guardarPresetServicio(ctx) {
+  const nombre  = (ctx === 'ciclo'
+    ? document.getElementById('ciclo-titulo')
+    : document.getElementById('pub-post-titulo')).value.trim();
+  const busqueda = ctx === 'ciclo'
+    ? (document.getElementById('input-busqueda') || {value:''}).value.trim()
+    : '';
+  const precio   = ctx === 'ciclo'
+    ? (document.getElementById('input-precio') || {value:''}).value.trim()
+    : (document.getElementById('pub-post-precio') || {value:''}).value.trim();
+
+  if (!nombre) { agregarLog('⚠️ Escribe el nombre del servicio antes de guardar','warning'); return; }
+
+  const list = _loadPresets();
+  const existe = list.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+  if (existe) {
+    existe.busqueda = busqueda; existe.precio = precio;
+    agregarLog(`💾 Preset actualizado: ${nombre}`, 'info');
+  } else {
+    list.push({ id: Date.now().toString(36), nombre, busqueda, precio });
+    agregarLog(`💾 Preset guardado: ${nombre}`, 'info');
+  }
+  _savePresets(list);
+  renderPresetsServicio();
+}
+
+function activarPresetServicio(id) {
+  const p = _loadPresets().find(x => x.id === id);
+  if (!p) return;
+  // Ciclo
+  const ct = document.getElementById('ciclo-titulo');
+  const cb = document.getElementById('input-busqueda');
+  const cp = document.getElementById('input-precio');
+  if (ct) ct.value = p.nombre;
+  if (cb) { cb.value = p.busqueda || ''; cb.dispatchEvent(new Event('input')); }
+  if (cp && p.precio) cp.value = p.precio;
+  // Publicar post
+  const pt = document.getElementById('pub-post-titulo');
+  const pp = document.getElementById('pub-post-precio');
+  if (pt) pt.value = p.nombre;
+  if (pp && p.precio) pp.value = p.precio;
+  agregarLog(`✅ Preset activado: ${p.nombre}${p.busqueda ? ' — búsqueda: "'+p.busqueda+'"' : ''}${p.precio ? ' — '+p.precio : ''}`, 'info');
+}
+
+function eliminarPresetServicio(id) {
+  const list = _loadPresets().filter(p => p.id !== id);
+  _savePresets(list);
+  renderPresetsServicio();
+}
+
+function _esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Inicializar presets al cargar
+document.addEventListener('DOMContentLoaded', () => { renderPresetsServicio(); });
 
 // ── Search input mode indicator ───────────────────────────
 const inputBusqueda = document.getElementById('input-busqueda');
