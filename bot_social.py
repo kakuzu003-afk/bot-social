@@ -3116,15 +3116,17 @@ def api_tendencias():
             tendencias = []
             errors = []
 
+            CHROME_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
             def _fetch_suggest():
                 try:
                     url = f"https://suggestqueries.google.com/complete/search?output=firefox&q={urllib.parse.quote(q)}&hl=es&gl=CL"
-                    r = requests.get(url, timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+                    r = req.get(url, timeout=8, headers={'User-Agent': CHROME_UA, 'Accept-Language': 'es-CL,es;q=0.9'})
                     suggestions = r.json()[1] if r.ok else []
                     for s in suggestions:
                         tendencias.append({'termino': s, 'trafico': '', 'contexto': '', 'fuente': 'Google Suggest', 'imagen': ''})
                 except Exception as e:
-                    errors.append(str(e))
+                    errors.append(f"suggest:{e}")
 
             def _fetch_trends():
                 try:
@@ -3139,14 +3141,14 @@ def api_tendencias():
                             if not any(x['termino'].lower() == t.get('termino', '').lower() for x in tendencias):
                                 tendencias.insert(0, t)
                 except Exception as e:
-                    errors.append(str(e))
+                    errors.append(f"trends:{e}")
 
             t1 = threading.Thread(target=_fetch_trends)
             t2 = threading.Thread(target=_fetch_suggest)
             t1.start(); t2.start()
             t1.join(); t2.join()
 
-            return jsonify({'ok': True, 'q': q, 'tendencias': tendencias[:20], 'total': len(tendencias)})
+            return jsonify({'ok': True, 'q': q, 'tendencias': tendencias[:20], 'total': len(tendencias), 'errors': errors if errors else None})
         except Exception as e:
             return jsonify({'ok': False, 'q': q, 'tendencias': [], 'total': 0, 'error': str(e)})
 
