@@ -3107,7 +3107,49 @@ def api_productos_prefill(pid):
 @app.route('/api/tendencias', methods=['GET'])
 @requiere_auth
 def api_tendencias():
-    """Tendencias actuales de Chile desde Google Trends, filtradas por nicho."""
+    """Tendencias de Chile. Con ?q=keyword busca términos relacionados; sin él devuelve tendencias del día."""
+    q = request.args.get('q', '').strip()
+
+    if q:
+        try:
+            import urllib.parse, threading
+            tendencias = []
+            errors = []
+
+            def _fetch_suggest():
+                try:
+                    url = f"https://suggestqueries.google.com/complete/search?output=firefox&q={urllib.parse.quote(q)}&hl=es&gl=CL"
+                    r = requests.get(url, timeout=6, headers={'User-Agent': 'Mozilla/5.0'})
+                    suggestions = r.json()[1] if r.ok else []
+                    for s in suggestions:
+                        tendencias.append({'termino': s, 'trafico': '', 'contexto': '', 'fuente': 'Google Suggest', 'imagen': ''})
+                except Exception as e:
+                    errors.append(str(e))
+
+            def _fetch_trends():
+                try:
+                    from motor_tendencias import MotorTendenciasChile
+                    motor = MotorTendenciasChile()
+                    items = motor.obtener_tendencias_google(limite=20, nicho='general')
+                    ql = q.lower()
+                    for t in items:
+                        termino = t.get('termino', '').lower()
+                        contexto = t.get('contexto', '').lower()
+                        if ql in termino or ql in contexto:
+                            if not any(x['termino'].lower() == t.get('termino', '').lower() for x in tendencias):
+                                tendencias.insert(0, t)
+                except Exception as e:
+                    errors.append(str(e))
+
+            t1 = threading.Thread(target=_fetch_trends)
+            t2 = threading.Thread(target=_fetch_suggest)
+            t1.start(); t2.start()
+            t1.join(); t2.join()
+
+            return jsonify({'ok': True, 'q': q, 'tendencias': tendencias[:20], 'total': len(tendencias)})
+        except Exception as e:
+            return jsonify({'ok': False, 'q': q, 'tendencias': [], 'total': 0, 'error': str(e)})
+
     nicho = request.args.get('nicho', 'general').lower()
     try:
         from motor_tendencias import MotorTendenciasChile

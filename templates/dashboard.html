@@ -2261,20 +2261,22 @@ input::placeholder, textarea::placeholder {
       <div class="chart-card" style="margin-bottom:20px;">
         <div class="chart-card-title" style="justify-content:space-between;margin-bottom:10px;">
           <span style="font-size:16px;font-weight:700;">🔥 <span style="color:#c89840">Tendencias</span> — Google Trends Chile</span>
-          <button class="btn-refresh-trends" onclick="cargarTendenciasAnalytics()">↻ Actualizar</button>
+          <button class="btn-refresh-trends" onclick="buscarTendencias()">↻ Actualizar</button>
         </div>
-        <div class="trend-nicho-bar" id="trendNichoBar">
-          <button class="trend-nicho-pill active" data-nicho="general"        onclick="seleccionarNicho(this)">🌐 General</button>
-          <button class="trend-nicho-pill"        data-nicho="tecnologia"     onclick="seleccionarNicho(this)">💻 Tecnología</button>
-          <button class="trend-nicho-pill"        data-nicho="gaming"         onclick="seleccionarNicho(this)">🎮 Gaming</button>
-          <button class="trend-nicho-pill"        data-nicho="entretenimiento" onclick="seleccionarNicho(this)">🎬 Entretenimiento</button>
-          <button class="trend-nicho-pill"        data-nicho="deportes"       onclick="seleccionarNicho(this)">⚽ Deportes</button>
-          <button class="trend-nicho-pill"        data-nicho="negocios"       onclick="seleccionarNicho(this)">💼 Negocios</button>
-          <button class="trend-nicho-pill"        data-nicho="internet"       onclick="seleccionarNicho(this)">📱 Internet/Apps</button>
-          <button class="trend-nicho-pill"        data-nicho="noticias"       onclick="seleccionarNicho(this)">📰 Noticias</button>
+        <div style="position:relative;margin-bottom:14px;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;z-index:1;">🔍</span>
+          <input
+            type="text"
+            id="trend-search-input"
+            class="search-input"
+            style="padding-left:36px;font-size:14px;width:100%;"
+            placeholder="Buscar tendencia: zapatillas, gaming, tecnología…"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') buscarTendencias()"
+          >
         </div>
         <div class="trend-list" id="trendList">
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">Haz clic en Actualizar para cargar tendencias en tiempo real</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">Escribe un término y presiona Enter, o haz clic en Actualizar para ver tendencias del día</div>
         </div>
       </div>
 
@@ -3996,36 +3998,26 @@ function renderChartsAnalytics() {
   }
 }
 
-let _trendNichoActual = 'general';
-
-function seleccionarNicho(btn) {
-  document.querySelectorAll('.trend-nicho-pill').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  _trendNichoActual = btn.dataset.nicho;
-  cargarTendenciasAnalytics();
-}
-
-const NICHO_EMOJIS = {
-  general:'🌐', tecnologia:'💻', gaming:'🎮', entretenimiento:'🎬',
-  deportes:'⚽', negocios:'💼', internet:'📱', noticias:'📰'
-};
-
-async function cargarTendenciasAnalytics() {
+async function buscarTendencias() {
+  const q = (document.getElementById('trend-search-input')?.value || '').trim();
   const list = document.getElementById('trendList');
-  list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">⏳ Cargando tendencias de Chile…</div>`;
-  document.getElementById('kpi-tendencias').textContent = '…';
+  const kpi  = document.getElementById('kpi-tendencias');
+  const label = q ? `"${q}"` : 'Chile (hoy)';
+  list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">⏳ Buscando tendencias de ${label}…</div>`;
+  if (kpi) kpi.textContent = '…';
   try {
-    const res  = await fetch('/api/tendencias?nicho=' + _trendNichoActual);
+    const url = q ? `/api/tendencias?q=${encodeURIComponent(q)}` : '/api/tendencias';
+    const res  = await fetch(url);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
     const items = data.tendencias || [];
-    document.getElementById('kpi-tendencias').textContent = items.length;
+    if (kpi) kpi.textContent = items.length;
     if (!items.length) {
-      list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">No se encontraron tendencias para este nicho</div>`;
+      list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">No se encontraron tendencias para ${label}</div>`;
       return;
     }
-    const emoji = NICHO_EMOJIS[_trendNichoActual] || '🔥';
     list.innerHTML = items.map((t, i) => {
+      const emoji = q ? '🔍' : '🔥';
       const imgHtml = t.imagen
         ? `<img class="trend-img" src="${t.imagen}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="trend-img-placeholder" style="display:none">${emoji}</div>`
         : `<div class="trend-img-placeholder">${emoji}</div>`;
@@ -4043,6 +4035,9 @@ async function cargarTendenciasAnalytics() {
     list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);text-align:center;padding:24px;">❌ ${e.message}</div>`;
   }
 }
+
+// Alias para compatibilidad con llamadas existentes
+function cargarTendenciasAnalytics() { buscarTendencias(); }
 
 function usarTendencia(termino) {
   const campos = ['input-busqueda', 'pub-cat-search', 'ciclo-cat-search'];
