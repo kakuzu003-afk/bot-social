@@ -1491,18 +1491,15 @@ input::placeholder, textarea::placeholder {
           <span id="clienteLabel">Cargando clientes…</span>
         </div>
 
-        <div class="field-label" style="margin-top:14px;">📋 Nombre del servicio</div>
-        <input type="text" class="product-title-field" id="ciclo-titulo" placeholder="Ej: Xbox Game Pass, Spotify Premium, Kaspersky…">
-        <div class="product-title-hint">Escribe o busca un producto del catálogo para autocompletar</div>
-        <div class="cat-search-wrap">
-          <input type="text" class="search-input" id="ciclo-cat-search" placeholder="🔍 Buscar en catálogo…" oninput="catBuscar(this.value,'ciclo')" onfocus="catBuscar(this.value,'ciclo')" autocomplete="off">
-          <div class="cat-search-results" id="ciclo-cat-results" style="display:none;"></div>
-        </div>
-
-        <div class="field-label" style="margin-top:12px;">⚡ Búsqueda libre</div>
+        <div class="field-label" style="margin-top:14px;">⚡ Búsqueda libre</div>
         <div class="search-wrapper">
           <span class="search-icon">⚡</span>
           <input type="text" class="search-input" id="input-busqueda" placeholder="laptop gamer, curso inglés…">
+        </div>
+        <div class="product-title-hint">Escribe el producto o búscalo en el catálogo para autocompletar</div>
+        <div class="cat-search-wrap">
+          <input type="text" class="search-input" id="ciclo-cat-search" placeholder="🔍 Buscar en catálogo…" oninput="catBuscar(this.value,'ciclo')" onfocus="catBuscar(this.value,'ciclo')" autocomplete="off">
+          <div class="cat-search-results" id="ciclo-cat-results" style="display:none;"></div>
         </div>
         <div class="mode-tag preset" id="modeIndicator">
           <div class="md"></div>
@@ -2486,9 +2483,8 @@ function catSeleccionar(pJson, ctx) {
   const p = JSON.parse(pJson);
   // Rellenar campos según contexto
   if (ctx === 'ciclo') {
-    const t = document.getElementById('ciclo-titulo'); if (t) t.value = p.nombre;
     const b = document.getElementById('input-busqueda');
-    if (b && p.busqueda) { b.value = p.busqueda; b.dispatchEvent(new Event('input')); }
+    if (b) { b.value = p.busqueda || p.nombre; b.dispatchEvent(new Event('input')); }
     const pr = document.getElementById('input-precio'); if (pr && p.precio) pr.value = p.precio;
     const s = document.getElementById('ciclo-cat-search'); if (s) s.value = '';
     document.getElementById('ciclo-cat-results').style.display = 'none';
@@ -3195,7 +3191,6 @@ function setModoImagen(modo) {
 // ── Ejecutar ciclo ───────────────────────────────────────
 function ejecutarCiclo() {
   const busqueda   = inputBusqueda.value.trim();
-  const titulo     = document.getElementById('ciclo-titulo').value.trim();
   const precio     = document.getElementById('input-precio').value || 'Consultar por DM';
   const cliente_id = document.getElementById('select-cliente').value;
   const mood       = document.getElementById('select-mood').value;
@@ -3218,9 +3213,9 @@ function ejecutarCiclo() {
   const motor_imagen        = window._motorImagen === 'auto' ? null : (window._motorImagen || null);
 
   const body = {
-    busqueda_libre: titulo || busqueda,
+    busqueda_libre: busqueda,
     precio, cliente_id, mood, hacer_reel,
-    titulo_producto:       titulo || null,
+    titulo_producto:       busqueda || null,
     imagen_referencia_url: modoImagen==='referencia' ? urlReferencia : null,
     style_weight:          modoImagen==='referencia' ? styleWeight   : null,
     color_grade:           colorGrade,
@@ -3246,7 +3241,7 @@ function ejecutarCiclo() {
   const wmInfo   = usar_watermark ? ' | 🏷️wm' : '';
   const ltInfo   = lower_third ? ` | 📺"${lower_third.texto}"` : '';
   agregarLog(`🚀 Ciclo: ${nombreCliente} — "${busqueda}" | ${mood}${gradeInfo}${wmInfo}${ltInfo}${refInfo}`, 'info');
-  _checkGuardarConfig('ciclo-guardar-cfg', titulo||busqueda, busqueda, document.getElementById('input-precio').value.trim());
+  _checkGuardarConfig('ciclo-guardar-cfg', busqueda, busqueda, document.getElementById('input-precio').value.trim());
 
   const btn = document.getElementById('btnExecute');
   btn.classList.add('loading'); btn.textContent = '⏳ Procesando…';
@@ -4040,10 +4035,8 @@ async function buscarTendencias() {
 function cargarTendenciasAnalytics() { buscarTendencias(); }
 
 function usarTendencia(termino) {
-  const campos = ['input-busqueda', 'pub-cat-search', 'ciclo-cat-search'];
+  const campos = ['input-busqueda', 'pub-cat-search'];
   campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = termino; });
-  const tituloEl = document.getElementById('ciclo-titulo');
-  if (tituloEl && !tituloEl.value) tituloEl.value = termino;
   agregarLog('🔥 Tendencia cargada: "' + termino + '"', 'info');
 }
 
@@ -4424,7 +4417,7 @@ async function cargarSelectoresProductos() {
     const data = await r.json();
     const prods = Array.isArray(data) ? data : (data.profiles || data.productos || []);
     
-    const selectores = ['ciclo-titulo', 'pub-post-titulo', 'pub-reel-titulo'];
+    const selectores = ['pub-post-titulo', 'pub-reel-titulo'];
     selectores.forEach(function(id) {
       const sel = document.getElementById(id);
       if (!sel) return;
@@ -4449,20 +4442,7 @@ async function cargarSelectoresProductos() {
 }
 
 function cicloSeleccionarProducto(val) {
-  if (!val) return;
-  const sel = document.getElementById('ciclo-titulo');
-  const opt = sel.options[sel.selectedIndex];
-  // Autocompletar precio
-  const precioInput = document.getElementById('input-precio');
-  if (precioInput && opt.dataset.precio) {
-    precioInput.value = opt.dataset.precio;
-  }
-  // Hint
-  const hint = document.getElementById('ciclo-prod-hint');
-  if (hint && opt.dataset.nombre) {
-    hint.textContent = '✅ ' + opt.dataset.nombre + (opt.dataset.precio ? ' · ' + opt.dataset.precio : '');
-    hint.style.color = 'var(--green)';
-  }
+  // Migrado: la selección de producto ahora usa catSeleccionar() vía ciclo-cat-search
 }
 
 function pubSeleccionarProducto(tipo, val) {
