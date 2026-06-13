@@ -3195,18 +3195,44 @@ def _buscar_tendencias_keyword(q):
             t['_src'] = 'trends'
             final.append(t)
 
-    # Agregar Suggest enriquecidos con Google News
-    for i, term in enumerate(suggest_terms):
+    # Enriquecer Trends con array de noticias (contexto ya viene del RSS)
+    for t in final:
+        if '_src' not in t:
+            t['_src'] = 'trends'
+        if t.get('contexto'):
+            t.setdefault('noticias', [{
+                'titulo': t['contexto'],
+                'fuente': t.get('fuente', ''),
+                'imagen': t.get('imagen', ''),
+            }])
+        else:
+            t.setdefault('noticias', [])
+
+    # Agregar Suggest enriquecidos: buscar noticias relevantes por keyword
+    for term in suggest_terms:
         if term.lower() in seen:
             continue
         seen.add(term.lower())
-        news = news_items[i] if i < len(news_items) else {}
+        tl = term.lower()
+        words = [w for w in tl.split() if len(w) > 3]
+        # Ordenar noticias por relevancia al término
+        relevant = []
+        for n in news_items:
+            score = sum(1 for w in words if w in n['titulo'].lower())
+            if score > 0 or tl in n['titulo'].lower():
+                relevant.append((score, n))
+        relevant.sort(key=lambda x: -x[0])
+        top_news = [n for _, n in relevant[:3]]
+        # Si no hay noticias relevantes, tomar las primeras disponibles
+        if not top_news and news_items:
+            top_news = news_items[:2]
         final.append({
             'termino':  term,
             'trafico':  '',
-            'contexto': news.get('titulo', ''),
-            'fuente':   news.get('fuente', 'Google Suggest'),
-            'imagen':   news.get('imagen', ''),
+            'contexto': top_news[0]['titulo'] if top_news else '',
+            'fuente':   top_news[0]['fuente']  if top_news else 'Google Suggest',
+            'imagen':   top_news[0]['imagen']  if top_news else '',
+            'noticias': top_news,
             '_src':     'suggest',
         })
 
