@@ -3348,34 +3348,54 @@ Todos deben empezar con # y ser reales de Instagram."""}],
 def api_seo_ideas():
     import json as _json
     data  = request.get_json() or {}
-    nicho = data.get('nicho', 'general')
+    nicho = data.get('nicho', '').strip()
+    if not nicho:
+        return jsonify({'ok': False, 'error': 'Escribe tu producto, servicio o nicho primero'})
+
+    # Solo buscar tendencias del mismo nicho del usuario, nunca 'general'
+    trend_str = ''
     try:
         from motor_tendencias import MotorTendenciasChile
-        tendencias = MotorTendenciasChile().obtener_tendencias_google(limite=5, nicho='general')
-        trend_str  = ', '.join([t['termino'] for t in tendencias]) if tendencias else 'sin datos'
+        tendencias = MotorTendenciasChile().obtener_tendencias_google(limite=4, nicho=nicho)
+        relevantes = [t['termino'] for t in tendencias if t.get('termino')][:4]
+        if relevantes:
+            trend_str = f"\nTendencias actuales relacionadas con el nicho: {', '.join(relevantes)}"
     except:
-        trend_str = 'sin datos'
-    try:
-        res = groq_client.chat.completions.create(
-            model='llama-3.3-70b-versatile',
-            messages=[{'role': 'user', 'content': f"""Eres un estratega de contenido viral para Instagram en Latinoamérica.
+        pass
 
-Nicho: {nicho}
-Tendencias actuales en Chile: {trend_str}
+    prompt = f"""Eres un consultor experto en marketing digital y contenido para Instagram en Latinoamérica.
+Tu cliente vende o trabaja con: "{nicho}"
+{trend_str}
 
-Genera 6 ideas de Reels que combinen el nicho con las tendencias. Devuelve SOLO este JSON:
+Tu tarea: genera 6 ideas de Reels de alta conversión, 100% relevantes para "{nicho}".
+
+REGLAS ESTRICTAS:
+- Cada idea debe hablar DIRECTAMENTE del producto/servicio "{nicho}"
+- NO menciones personas famosas, deportistas ni noticias que no tengan relación directa
+- Usa formatos probados: unboxing, comparativa, beneficio clave, error común, tutorial, testimonio, curiosidad
+- El hook debe generar curiosidad o dolor/deseo específico del cliente ideal de "{nicho}"
+- Los hashtags deben ser relevantes para "{nicho}" y su audiencia en LATAM
+- Enfócate en VENDER o generar LEADS, no solo en entretener
+
+Devuelve SOLO este JSON:
 {{
   "ideas": [
     {{
-      "titulo": "título atractivo del Reel",
-      "hook": "primeras palabras del video (máx 10 palabras, que enganchen)",
-      "formato": "tipo: tutorial / trending sound / storytelling / antes-después / POV / etc.",
-      "razon": "por qué va a funcionar (1 oración)",
+      "titulo": "título del Reel (máx 12 palabras, orientado a resultados)",
+      "hook": "primeras palabras del video que enganchen en 3 segundos (máx 10 palabras)",
+      "formato": "unboxing / comparativa / tutorial / antes-después / POV / beneficio / error-común / testimonio",
+      "razon": "por qué va a convertir para este negocio (1 oración concreta)",
       "hashtags": ["#tag1","#tag2","#tag3","#tag4","#tag5"]
     }}
   ]
-}}"""}],
-            temperature=0.8, max_tokens=1400,
+}}"""
+
+    try:
+        res = groq_client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[{'role': 'user', 'content': prompt}],
+            temperature=0.6,
+            max_tokens=1600,
             response_format={'type': 'json_object'}
         )
         ideas = _json.loads(res.choices[0].message.content)

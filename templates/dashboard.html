@@ -4928,7 +4928,7 @@ async function seoGenerarIdeas() {
       <div class="idea-card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div class="idea-titulo">${i+1}. ${idea.titulo}</div>
-          <button onclick="usarIdea(${JSON.stringify(JSON.stringify(idea))})" style="font-size:9px;padding:2px 9px;border-radius:5px;background:rgba(208,120,48,0.12);border:1px solid rgba(208,120,48,0.35);color:var(--amber);cursor:pointer;font-family:'Share Tech Mono',monospace;white-space:nowrap;flex-shrink:0;">＋ Usar</button>
+          <button onclick="usarIdea(${JSON.stringify(JSON.stringify(idea))})" style="font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.5);color:#d09aff;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseover="this.style.background='rgba(168,85,247,0.3)'" onmouseout="this.style.background='rgba(168,85,247,0.15)'">＋ Usar</button>
         </div>
         <div class="idea-hook">"${idea.hook}"</div>
         <div class="idea-meta">📽️ ${idea.formato}</div>
