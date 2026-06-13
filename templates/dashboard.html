@@ -1069,35 +1069,82 @@ textarea.prompt-ta:focus { border-color:var(--purple); }
 .chart-card-title span { color:var(--neon); }
 
 /* Tendencias activas */
+.trend-nicho-bar {
+  display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;
+}
+.trend-nicho-pill {
+  font-family:'Share Tech Mono',monospace; font-size:9px; font-weight:700;
+  padding:4px 12px; border-radius:99px; cursor:pointer;
+  border:1px solid rgba(208,120,48,0.3); background:rgba(208,120,48,0.05);
+  color:var(--text2); text-transform:uppercase; letter-spacing:.04em;
+  transition:all .18s;
+}
+.trend-nicho-pill:hover  { background:rgba(208,120,48,0.15); color:var(--text); }
+.trend-nicho-pill.active { background:rgba(208,120,48,0.22); border-color:var(--amber); color:var(--amber); }
 .trend-list { display:flex; flex-direction:column; gap:8px; }
 .trend-item {
-  display:flex; align-items:center; gap:12px;
-  padding:14px 16px;
+  display:grid;
+  grid-template-columns:30px auto 1fr auto;
+  grid-template-rows:auto auto;
+  column-gap:12px; row-gap:3px;
+  padding:12px 14px;
   background:var(--bg3);
   border:1px solid var(--border2);
   border-radius:10px;
+  align-items:start;
+  transition:background .15s;
 }
+.trend-item:hover { background:rgba(208,120,48,0.06); }
 .trend-rank {
   font-family:'Orbitron',monospace;
-  font-size:13px; font-weight:700;
-  color:#c89840; min-width:26px;
+  font-size:12px; font-weight:700;
+  color:var(--green); min-width:26px;
+  grid-row: 1 / 3; align-self:center;
+}
+.trend-img {
+  width:40px; height:40px; border-radius:6px; object-fit:cover;
+  background:var(--bg4); grid-row:1 / 3; align-self:center;
+  flex-shrink:0;
+}
+.trend-img-placeholder {
+  width:40px; height:40px; border-radius:6px;
+  background:rgba(208,120,48,0.1); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; grid-row:1 / 3; align-self:center;
 }
 .trend-name {
-  flex:1; font-size:16px; font-weight:600; color:#f0eafa;
+  font-family:'Rajdhani',sans-serif;
+  font-size:15px; font-weight:700; color:var(--text);
+  line-height:1.2;
+}
+.trend-context {
+  font-size:11px; color:var(--text2);
+  overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; max-width:100%;
+  grid-column:3;
+}
+.trend-fuente {
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px; color:var(--text3);
+  grid-column:3; align-self:end;
 }
 .trend-traffic {
   font-family:'Share Tech Mono',monospace;
-  font-size:11px; color:#fcd34d;
+  font-size:10px; color:#fcd34d;
   background:rgba(252,211,77,0.1);
   border:1px solid rgba(252,211,77,0.25);
   border-radius:99px; padding:3px 10px;
+  white-space:nowrap; align-self:start;
+  grid-row:1; grid-column:4;
 }
-.trend-context {
-  font-size:12px; color:#b8a0e0;
-  margin-top:3px; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
-  max-width:280px;
+.trend-usar-btn {
+  font-family:'Share Tech Mono',monospace; font-size:9px;
+  padding:2px 8px; border-radius:5px; cursor:pointer;
+  border:1px solid rgba(208,120,48,0.3); background:transparent;
+  color:var(--amber); grid-row:2; grid-column:4;
+  transition:all .15s; white-space:nowrap;
 }
+.trend-usar-btn:hover { background:rgba(208,120,48,0.15); }
 
 /* Estrategia tag */
 .estrategia-tag {
@@ -2212,9 +2259,19 @@ input::placeholder, textarea::placeholder {
 
       <!-- Tendencias en tiempo real -->
       <div class="chart-card" style="margin-bottom:20px;">
-        <div class="chart-card-title" style="justify-content:space-between;">
-          <span style="font-size:16px;font-weight:700;">🔥 <span style="color:#c89840">Tendencias</span> — Google Trends Chile ahora</span>
+        <div class="chart-card-title" style="justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:16px;font-weight:700;">🔥 <span style="color:#c89840">Tendencias</span> — Google Trends Chile</span>
           <button class="btn-refresh-trends" onclick="cargarTendenciasAnalytics()">↻ Actualizar</button>
+        </div>
+        <div class="trend-nicho-bar" id="trendNichoBar">
+          <button class="trend-nicho-pill active" data-nicho="general"        onclick="seleccionarNicho(this)">🌐 General</button>
+          <button class="trend-nicho-pill"        data-nicho="tecnologia"     onclick="seleccionarNicho(this)">💻 Tecnología</button>
+          <button class="trend-nicho-pill"        data-nicho="gaming"         onclick="seleccionarNicho(this)">🎮 Gaming</button>
+          <button class="trend-nicho-pill"        data-nicho="entretenimiento" onclick="seleccionarNicho(this)">🎬 Entretenimiento</button>
+          <button class="trend-nicho-pill"        data-nicho="deportes"       onclick="seleccionarNicho(this)">⚽ Deportes</button>
+          <button class="trend-nicho-pill"        data-nicho="negocios"       onclick="seleccionarNicho(this)">💼 Negocios</button>
+          <button class="trend-nicho-pill"        data-nicho="internet"       onclick="seleccionarNicho(this)">📱 Internet/Apps</button>
+          <button class="trend-nicho-pill"        data-nicho="noticias"       onclick="seleccionarNicho(this)">📰 Noticias</button>
         </div>
         <div class="trend-list" id="trendList">
           <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">Haz clic en Actualizar para cargar tendencias en tiempo real</div>
@@ -3939,28 +3996,60 @@ function renderChartsAnalytics() {
   }
 }
 
+let _trendNichoActual = 'general';
+
+function seleccionarNicho(btn) {
+  document.querySelectorAll('.trend-nicho-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  _trendNichoActual = btn.dataset.nicho;
+  cargarTendenciasAnalytics();
+}
+
+const NICHO_EMOJIS = {
+  general:'🌐', tecnologia:'💻', gaming:'🎮', entretenimiento:'🎬',
+  deportes:'⚽', negocios:'💼', internet:'📱', noticias:'📰'
+};
+
 async function cargarTendenciasAnalytics() {
   const list = document.getElementById('trendList');
-  list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">⏳ Cargando tendencias de Chile...</div>';
-  document.getElementById('kpi-tendencias').textContent = '...';
+  list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">⏳ Cargando tendencias de Chile…</div>`;
+  document.getElementById('kpi-tendencias').textContent = '…';
   try {
-    const res  = await fetch('/api/tendencias');
+    const res  = await fetch('/api/tendencias?nicho=' + _trendNichoActual);
     const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
     const items = data.tendencias || [];
     document.getElementById('kpi-tendencias').textContent = items.length;
-    if (!items.length) { list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text3);text-align:center;padding:20px;">No se encontraron tendencias</div>'; return; }
-    list.innerHTML = items.map((t,i) => `
-      <div class="trend-item">
+    if (!items.length) {
+      list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:24px;">No se encontraron tendencias para este nicho</div>`;
+      return;
+    }
+    const emoji = NICHO_EMOJIS[_trendNichoActual] || '🔥';
+    list.innerHTML = items.map((t, i) => {
+      const imgHtml = t.imagen
+        ? `<img class="trend-img" src="${t.imagen}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="trend-img-placeholder" style="display:none">${emoji}</div>`
+        : `<div class="trend-img-placeholder">${emoji}</div>`;
+      return `<div class="trend-item">
         <span class="trend-rank">#${i+1}</span>
-        <div style="flex:1;min-width:0;">
-          <div class="trend-name">${t.termino}</div>
-          ${t.contexto ? `<div class="trend-context">${t.contexto}</div>` : ''}
-        </div>
-        <span class="trend-traffic">${t.trafico}</span>
-      </div>`).join('');
+        ${imgHtml}
+        <div class="trend-name">${t.termino}</div>
+        ${t.contexto ? `<div class="trend-context" title="${t.contexto}">${t.contexto}</div>` : '<div></div>'}
+        ${t.fuente   ? `<div class="trend-fuente">📰 ${t.fuente}</div>` : '<div></div>'}
+        <span class="trend-traffic">${t.trafico || '—'}</span>
+        <button class="trend-usar-btn" onclick="usarTendencia('${t.termino.replace(/'/g,"\\'")}')">＋ Usar</button>
+      </div>`;
+    }).join('');
   } catch(e) {
-    list.innerHTML = '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--red);text-align:center;padding:20px;">❌ Error al cargar tendencias</div>';
+    list.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);text-align:center;padding:24px;">❌ ${e.message}</div>`;
   }
+}
+
+function usarTendencia(termino) {
+  const campos = ['input-busqueda', 'pub-cat-search', 'ciclo-cat-search'];
+  campos.forEach(id => { const el = document.getElementById(id); if (el) el.value = termino; });
+  const tituloEl = document.getElementById('ciclo-titulo');
+  if (tituloEl && !tituloEl.value) tituloEl.value = termino;
+  agregarLog('🔥 Tendencia cargada: "' + termino + '"', 'info');
 }
 
 // Interceptar captions para registrar estrategias y actividad

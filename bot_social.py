@@ -3107,14 +3107,15 @@ def api_productos_prefill(pid):
 @app.route('/api/tendencias', methods=['GET'])
 @requiere_auth
 def api_tendencias():
-    """Endpoint que devuelve las tendencias actuales de Chile desde Google Trends."""
+    """Tendencias actuales de Chile desde Google Trends, filtradas por nicho."""
+    nicho = request.args.get('nicho', 'general').lower()
     try:
         from motor_tendencias import MotorTendenciasChile
         motor = MotorTendenciasChile()
-        tendencias = motor.obtener_tendencias_google(limite=8)
-        return jsonify({'tendencias': tendencias, 'total': len(tendencias)})
+        tendencias = motor.obtener_tendencias_google(limite=15, nicho=nicho)
+        return jsonify({'ok': True, 'nicho': nicho, 'tendencias': tendencias, 'total': len(tendencias)})
     except Exception as e:
-        return jsonify({'tendencias': [], 'total': 0, 'error': str(e)})
+        return jsonify({'ok': False, 'nicho': nicho, 'tendencias': [], 'total': 0, 'error': str(e)})
 
 @app.route('/api/preview', methods=['POST'])
 @requiere_auth
