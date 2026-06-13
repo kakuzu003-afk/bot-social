@@ -3041,6 +3041,10 @@ div[style*="rgba(208,120,48"] { border-color: rgba(0,217,255,0.2) !important; ba
             <input type="text" class="seo-input" id="seo-tema-hashtag" placeholder="Tema del contenido: gaming, recetas…">
             <input type="text" class="seo-input" id="seo-nicho-hashtag" placeholder="Nicho: entretenimiento, educación…">
             <button class="seo-btn" id="seo-btn-hashtags" onclick="seoBuscarHashtags()">🔍 Generar Hashtags</button>
+            <div style="display:flex;align-items:flex-start;gap:6px;padding:7px 10px;background:rgba(255,184,0,0.07);border:1px solid rgba(255,184,0,0.25);border-radius:7px;font-family:'Poppins',sans-serif;font-size:11px;color:#c8a830;line-height:1.4;">
+              <span style="font-size:14px;flex-shrink:0;">⚠️</span>
+              <span>Los hashtags son <strong>sugerencias de IA</strong> basadas en el nicho — no son datos en tiempo real de Instagram. Verifica popularidad en la app antes de publicar.</span>
+            </div>
             <div id="seo-result-hashtags" style="display:none;flex-direction:column;gap:8px;"></div>
           </div>
         </div>
@@ -4924,11 +4928,12 @@ async function seoGenerarIdeas() {
     const res  = await fetch('/api/seo/ideas', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ nicho }) });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error);
-    el.innerHTML = (data.ideas||[]).map((idea, i) => `
+    window._seoIdeasCache = data.ideas || [];
+    el.innerHTML = window._seoIdeasCache.map((idea, i) => `
       <div class="idea-card">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <div class="idea-titulo">${i+1}. ${idea.titulo}</div>
-          <button onclick="usarIdea(${JSON.stringify(JSON.stringify(idea))})" style="font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.5);color:#d09aff;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseover="this.style.background='rgba(168,85,247,0.3)'" onmouseout="this.style.background='rgba(168,85,247,0.15)'">＋ Usar</button>
+          <button onclick="usarIdea(${i})" style="font-size:11px;padding:4px 12px;border-radius:6px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.5);color:#d09aff;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseover="this.style.background='rgba(168,85,247,0.3)'" onmouseout="this.style.background='rgba(168,85,247,0.15)'">▶ Usar</button>
         </div>
         <div class="idea-hook">"${idea.hook}"</div>
         <div class="idea-meta">📽️ ${idea.formato}</div>
@@ -4941,11 +4946,22 @@ async function seoGenerarIdeas() {
   _seoSetLoading('seo-btn-ideas', false, '🎬 Generar Ideas de Reels');
 }
 
-function usarIdea(ideaJson) {
-  const idea = JSON.parse(ideaJson);
+function usarIdea(idx) {
+  const idea = (window._seoIdeasCache || [])[idx];
+  if (!idea) { mostrarToast('No se encontró la idea', 'error'); return; }
+
+  // 1. Cargar título en el campo de búsqueda libre del Ciclo
   const bEl = document.getElementById('input-busqueda');
   if (bEl) { bEl.value = idea.titulo; bEl.dispatchEvent(new Event('input')); }
-  agregarLog(`💡 Idea cargada: "${idea.titulo}"`, 'info');
+
+  // 2. Si hay campo de precio vacío, no tocarlo
+  // 3. Navegar al tab Ciclo para que el usuario vea el resultado
+  switchTab('ciclo');
+
+  // 4. Toast de confirmación con info útil
+  const hashStr = (idea.hashtags || []).slice(0,3).join(' ');
+  mostrarToast(`✅ Idea cargada en Ciclo: "${idea.titulo.substring(0,40)}…" — Hook: "${idea.hook}"`, 'success');
+  agregarLog(`💡 Idea SEO cargada: "${idea.titulo}" | Hook: "${idea.hook}" | ${hashStr}`, 'info');
 }
 
 // Horarios óptimos — datos estáticos basados en benchmarks LATAM

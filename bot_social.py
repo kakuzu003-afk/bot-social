@@ -3316,24 +3316,31 @@ def api_seo_hashtags():
     try:
         res = groq_client.chat.completions.create(
             model='llama-3.1-8b-instant',
-            messages=[{'role': 'user', 'content': f"""Genera hashtags para Instagram para el mercado latinoamericano.
+            messages=[{'role': 'user', 'content': f"""Eres un experto en SEO de Instagram para Latinoamérica.
 
-Tema: {tema}
-Nicho: {nicho}
+Tema del post: {tema}
+Nicho del negocio: {nicho}
+
+Genera hashtags ESPECÍFICOS Y RELEVANTES para este tema y nicho.
+REGLAS:
+- Todos deben ser directamente relacionados con "{tema}" o "{nicho}"
+- Incluir variantes en español e inglés según lo que se usa en LATAM
+- Mezclar hashtags de marca/producto, de comunidad y de problema/solución
+- NO incluir hashtags genéricos sin relación (ej: #love #instagood #photography si no aplican)
 
 Devuelve SOLO este JSON (sin texto extra):
 {{
-  "grandes":  ["#tag", ...],
-  "medianos": ["#tag", ...],
-  "nicho":    ["#tag", ...],
-  "tip": "consejo de 1 oración sobre cómo combinarlos"
+  "grandes":  ["#tag1","#tag2","#tag3","#tag4","#tag5"],
+  "medianos": ["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8","#tag9","#tag10"],
+  "nicho":    ["#tag1","#tag2","#tag3","#tag4","#tag5","#tag6","#tag7","#tag8","#tag9","#tag10"],
+  "tip": "consejo concreto de 1 oración para combinarlos y maximizar alcance en este nicho"
 }}
 
-- grandes: 5 hashtags con más de 1M posts (alcance masivo, mucha competencia)
-- medianos: 10 hashtags con 100K-1M posts (balance ideal)
-- nicho: 10 hashtags con menos de 100K posts (alta relevancia, baja competencia)
+- grandes: 5 hashtags de alto volumen relacionados al tema (>1M posts)
+- medianos: 10 hashtags de volumen medio relacionados al tema (100K-1M posts)
+- nicho: 10 hashtags muy específicos del nicho/producto (<100K posts, alta conversión)
 
-Todos deben empezar con # y ser reales de Instagram."""}],
+Todos deben empezar con # y ser hashtags que realmente existen en Instagram."""}],
             temperature=0.5, max_tokens=800,
             response_format={'type': 'json_object'}
         )
