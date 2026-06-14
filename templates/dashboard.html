@@ -2100,6 +2100,54 @@ div[style*="rgba(208,120,48"] { border-color: rgba(255,255,255,0.07) !important;
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1) !important; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2) !important; }
 
+/* ── MOBILE LAYOUT FIXES ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Header: evitar que el logo-text rompa en múltiples líneas */
+  .header { padding: 0 10px; }
+  .logo { gap: 6px; flex-shrink: 0; }
+  .logo-icon { width: 26px; height: 26px; font-size: 12px; flex-shrink: 0; }
+  .logo-text {
+    font-size: 11px !important;
+    letter-spacing: 0.05em !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+  }
+  .header-right { gap: 6px; flex-shrink: 0; }
+  /* Pills y botones del header más compactos */
+  .status-pill { padding: 4px 8px !important; font-size: 10px !important; gap: 4px !important; }
+  .header-right button { padding: 5px 8px !important; font-size: 10px !important; }
+
+  /* KPI grid: inline style tiene repeat(5,1fr) — forzar 2 columnas con !important */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Charts row: forzar 1 columna */
+  .charts-row { grid-template-columns: 1fr !important; }
+
+  /* Grid de consistencia+alcance: 1 columna en móvil */
+  .main > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+  /* Sidebar: texto más legible en móvil */
+  .stat-val { font-size: 20px !important; color: #ffffff !important; }
+  .stat-lbl { font-size: 11px !important; color: #8A94A8 !important; }
+  .field-label { color: #8A94A8 !important; }
+  .tab-btn { color: #606878 !important; font-size: 12px !important; }
+  .tab-btn.active { color: #D0E4FF !important; }
+  .panel-title { color: #ffffff !important; font-size: 13px !important; }
+
+  /* KPI cards: texto legible */
+  .kpi-label { color: #8A94A8 !important; font-size: 10px !important; }
+  .kpi-value { font-size: 24px !important; color: #ffffff !important; }
+  .kpi-delta { color: #505868 !important; font-size: 10px !important; }
+
+  /* Consistencia + Alcance: 1 columna en móvil */
+  .analytics-double-col { grid-template-columns: 1fr !important; }
+
+  /* Control panel status cards: 1 columna */
+  #mpanel-control div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
 
 </style>
 <!-- CodeMirror editor -->
@@ -2975,7 +3023,7 @@ div[style*="rgba(208,120,48"] { border-color: rgba(255,255,255,0.07) !important;
       </div>
 
       <!-- ★ NUEVO: Consistencia + Alcance Potencial -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div class="analytics-double-col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
 
         <!-- Score de Consistencia -->
         <div class="chart-card" style="padding:14px;">
@@ -3065,7 +3113,7 @@ div[style*="rgba(208,120,48"] { border-color: rgba(255,255,255,0.07) !important;
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div id="ctrl-card-ig" onclick="document.getElementById('ctrl-ig-token').focus()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;" title="Llena las credenciales abajo y pulsa Conectar IG">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#d07830,#ec4899,#e8901a);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">IG</div>
+              <div style="width:28px;height:28px;border-radius:7px;background:rgba(80,110,180,0.25);border:1px solid rgba(120,160,220,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#A8C0DC;">IG</div>
               <span id="ctrl-pill-ig" style="font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(82,82,91,.3);color:#a1a1aa;font-weight:600;">Conectar →</span>
             </div>
             <div style="font-size:10px;color:var(--text3);">Instagram</div>
@@ -3117,9 +3165,9 @@ div[style*="rgba(208,120,48"] { border-color: rgba(255,255,255,0.07) !important;
           <div style="margin-bottom:8px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">GitHub Token</div><input type="text" id="ctrl-gh-token" placeholder="ghp_xxxxxxxxxx" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:10px;color:var(--text1);font-family:monospace;outline:none;word-break:break-all;"></div>
           <div style="margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);margin-bottom:4px;">Repositorio</div><input type="text" id="ctrl-gh-repo" value="kakuzu003-afk/bot-social" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--text1);font-family:monospace;outline:none;"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="ctrlSaveCreds()" style="flex:1;min-width:100px;background:rgba(255,255,255,.9);border:none;border-radius:6px;color:#000;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Guardar</button>
-            <button onclick="ctrlConnectIG()" style="flex:1;min-width:100px;background:linear-gradient(135deg,#a05a18,#dc2626);border:none;border-radius:6px;color:#fff;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar IG</button>
-            <button onclick="ctrlConnectGH()" style="flex:1;min-width:100px;background:#3f3f46;border:none;border-radius:6px;color:#fff;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar GH</button>
+            <button onclick="ctrlSaveCreds()" style="flex:1;min-width:100px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:6px;color:#ffffff;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Guardar</button>
+            <button onclick="ctrlConnectIG()" style="flex:1;min-width:100px;background:rgba(80,120,200,0.14);border:1px solid rgba(140,180,240,0.32);border-radius:6px;color:#C0D4F0;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar IG</button>
+            <button onclick="ctrlConnectGH()" style="flex:1;min-width:100px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#8A94A8;font-weight:700;padding:8px;cursor:pointer;font-size:12px;">Conectar GH</button>
           </div>
         </div>
 
@@ -4814,7 +4862,7 @@ function actualizarKPIs() {
       // ★ Engagement Rate = (likes + comments) / posts
       const engRate = totalPosts > 0 ? ((totalLikes + totalComs) / totalPosts) : 0;
       const engPct  = engRate.toFixed(1);
-      const engColor = engRate >= 6 ? '#00FF41' : engRate >= 3 ? '#FFB800' : '#FF006E';
+      const engColor = engRate >= 6 ? '#A8C8E8' : engRate >= 3 ? '#8898B8' : '#A09090';
       const engLabel = engRate >= 6 ? '🔥 Viral' : engRate >= 3 ? '✅ Bueno' : '⚠️ Bajo';
 
       document.getElementById('kpi-engagement').textContent       = engPct + '%';
@@ -4949,10 +4997,10 @@ function renderHeatmap() {
     xaxis: { labels:{ style:{ colors:'#5C6A99', fontSize:'8px' } } },
     yaxis: { labels:{ style:{ colors:'#5C6A99', fontSize:'9px' } } },
     plotOptions: { heatmap: { shadeIntensity:0.6, colorScale: { ranges:[
-      { from:0, to:0,   color:'#0c0d1e',  name:'Ninguno' },
-      { from:1, to:2,   color:'#003d5c',  name:'Bajo'    },
-      { from:3, to:5,   color:'#00D9FF',  name:'Medio'   },
-      { from:6, to:999, color:'#00FF41',  name:'Alto'    }
+      { from:0, to:0,   color:'#0a0a0e',  name:'Ninguno' },
+      { from:1, to:2,   color:'#1a2540',  name:'Bajo'    },
+      { from:3, to:5,   color:'#2a4070',  name:'Medio'   },
+      { from:6, to:999, color:'#4070B0',  name:'Alto'    }
     ]}}},
     dataLabels: { enabled:false },
     grid: { show:false },
@@ -5005,7 +5053,7 @@ function renderConsistencia() {
     const k = d.toISOString().slice(0,10);
     if (diasPublicacion[k]) postsSemana += diasPublicacion[k];
   }
-  const color = postsSemana >= 5 ? '#00FF41' : postsSemana >= 2 ? '#FFB800' : '#FF006E';
+  const color = postsSemana >= 5 ? '#A8C8E8' : postsSemana >= 2 ? '#9AABB8' : '#B09090';
   const label = postsSemana >= 5 ? '🟢 Consistente' : postsSemana >= 2 ? '🟡 Irregular' : '🔴 Inactivo';
   const tip   = postsSemana >= 5 ? 'Excelente ritmo. Instagram premia la consistencia.' :
                 postsSemana >= 2 ? 'Sube a 5-7 posts/semana para más alcance orgánico.' :
